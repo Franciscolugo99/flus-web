@@ -54,7 +54,7 @@ $ogImage = 'https://' . $site['domain'] . site_url('assets/img/logo1.png');
     <div class="container header-inner">
       <a class="logo" href="<?= e(site_url()) ?>" aria-label="Ir al inicio de FLUS">
         <span class="logo-mark" aria-hidden="true">
-          <img src="<?= e(asset_url('img/logo1.png')) ?>" alt="" class="logo-mark-image">
+          <img src="<?= e(asset_url('img/flus-mark.png')) ?>" alt="" class="logo-mark-image">
         </span>
         <span class="logo-copy">
           <span class="logo-text">FLUS</span>

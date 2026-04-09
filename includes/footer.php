@@ -1,40 +1,24 @@
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-grid">
-      <div class="footer-brand">
-        <div class="footer-logo-panel">
-          <img src="<?= e(asset_url('img/logo1.png')) ?>" alt="Logo FLUS" class="footer-logo-image">
-        </div>
-        <p class="footer-brand-copy">
-          Sistema de gesti&oacute;n comercial para comercios y pymes que necesitan menos planillas,
-          m&aacute;s control diario y una operaci&oacute;n mejor conectada entre ventas, stock, caja y facturaci&oacute;n.
-        </p>
-        <div class="footer-actions">
-          <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
-          <?php if ($site['whatsapp_number'] !== ''): ?>
-            <a class="btn btn-secondary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener">Hablar por WhatsApp</a>
-          <?php endif; ?>
-        </div>
-      </div>
+    <div class="container footer-top">
+      <a class="footer-brand-mini" href="<?= e(site_url()) ?>" aria-label="Ir al inicio de FLUS">
+        <span class="footer-mark" aria-hidden="true">
+          <img src="<?= e(asset_url('img/flus-mark.png')) ?>" alt="" class="footer-mark-image">
+        </span>
+        <span class="footer-brand-lockup">
+          <span class="footer-wordmark">FLUS</span>
+          <span class="footer-tagline">Ventas, stock, caja y facturaci&oacute;n conectadas</span>
+        </span>
+      </a>
 
       <div>
         <strong class="footer-title">Soluciones</strong>
         <ul class="footer-links">
-          <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Sistema de gesti&oacute;n comercial</a></li>
+          <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Sistema de gesti&oacute;n</a></li>
           <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Sistema POS</a></li>
           <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Control de stock</a></li>
-          <li><a href="<?= e(site_url('facturacion.php')) ?>">Facturaci&oacute;n integrada</a></li>
-        </ul>
-      </div>
-
-      <div>
-        <strong class="footer-title">Explorar</strong>
-        <ul class="footer-links">
-          <li><a href="<?= e(site_url()) ?>">Inicio</a></li>
-          <li><a href="<?= e(site_url('contacto.php')) ?>">Contacto y demo</a></li>
-          <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Software para comercios</a></li>
-          <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Software para ventas</a></li>
+          <li><a href="<?= e(site_url('facturacion.php')) ?>">Facturaci&oacute;n</a></li>
         </ul>
       </div>
 
@@ -48,7 +32,7 @@
             <li><a href="tel:<?= e(preg_replace('/\s+/', '', $site['contact_phone'])) ?>"><?= e($site['contact_phone']) ?></a></li>
           <?php endif; ?>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <li><a href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener">Escribinos por WhatsApp</a></li>
+            <li><a href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener">WhatsApp</a></li>
           <?php endif; ?>
         </ul>
       </div>

@@ -103,9 +103,9 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section section-dark section-contact-cta">
   <div class="container">
-    <div class="cta-box">
+    <div class="cta-box compact">
       <h2>La mejor demo es la que se mira desde los problemas reales del negocio</h2>
       <p>
         FLUS se entiende mejor cuando se lo eval&uacute;a sobre la operaci&oacute;n diaria y no como una lista aislada de m&oacute;dulos.
