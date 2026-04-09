@@ -1,59 +1,85 @@
 <?php
-$pageTitle = 'Sistema POS para comercios | FLUS';
-$pageDescription = 'FLUS como sistema POS para comercios: ventas, caja, medios de pago, clientes y control operativo.';
+$pageTitle = 'Sistema POS para comercios con stock y caja integrada | FLUS';
+$pageDescription = 'FLUS funciona como sistema POS para comercios que necesitan ventas, caja, medios de pago, stock y clientes dentro de una misma operacion comercial.';
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
   <div class="container two-col">
     <div>
       <span class="eyebrow">Sistema POS</span>
-      <h1>Un sistema POS pensado para vender con más orden</h1>
+      <h1>Un sistema POS para vender y cobrar con m&aacute;s control, no solo m&aacute;s r&aacute;pido</h1>
       <p>
-        Esta página apunta a posicionar FLUS como sistema POS para comercios que necesitan rapidez en caja,
-        seguimiento de operaciones y mejor control de la información comercial.
+        FLUS ayuda a trabajar el mostrador con agilidad, pero tambi&eacute;n con mejor contexto sobre stock,
+        caja, medios de pago y seguimiento comercial.
       </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver sistema completo</a>
+      </div>
     </div>
 
     <aside class="hero-panel">
-      <h2>Claves de un buen POS</h2>
+      <h2>Qu&eacute; deber&iacute;a aportar un POS serio</h2>
       <ul class="check-list">
-        <li>Velocidad de uso</li>
-        <li>Claridad en medios de pago</li>
-        <li>Trazabilidad de la operación</li>
-        <li>Integración con stock y facturación</li>
+        <li>M&aacute;s agilidad en caja sin perder control</li>
+        <li>Claridad sobre medios de pago y movimientos</li>
+        <li>Relaci&oacute;n directa con stock y clientes</li>
+        <li>M&aacute;s trazabilidad sobre cada operaci&oacute;n</li>
       </ul>
+      <div class="panel-note">
+        Un POS queda corto cuando resuelve el cobro pero deja el resto del negocio afuera.
+      </div>
     </aside>
   </div>
 </section>
 
 <section class="section">
   <div class="container">
-    <h2>Qué debería resolver tu sistema POS</h2>
-    <div class="cards">
-      <article class="card">
-        <h3>Venta ágil</h3>
-        <p>Menos fricción al cobrar y mejor experiencia operativa en mostrador.</p>
+    <span class="section-kicker">Uso real en caja</span>
+    <h2>Los problemas aparecen cuando el sistema POS queda aislado</h2>
+    <div class="metrics">
+      <article class="metric">
+        <strong>Se cobra, pero despu&eacute;s falta contexto</strong>
+        <p>La venta se completa, pero cuesta seguir qu&eacute; pas&oacute; con stock, cliente o comprobante.</p>
       </article>
-      <article class="card">
-        <h3>Control de caja</h3>
-        <p>Orden en movimientos, cierres y seguimiento diario.</p>
+      <article class="metric">
+        <strong>La caja se vuelve un cierre tard&iacute;o</strong>
+        <p>Si el control diario no es claro, los desvios se descubren cuando el problema ya pas&oacute;.</p>
       </article>
-      <article class="card">
-        <h3>Medios de pago</h3>
-        <p>Base clara para administrar efectivo, transferencias y otras formas de cobro.</p>
+      <article class="metric">
+        <strong>Los medios de pago quedan poco ordenados</strong>
+        <p>Efectivo, transferencias y otros cobros necesitan una l&oacute;gica m&aacute;s prolija para revisar la operaci&oacute;n.</p>
       </article>
-      <article class="card">
-        <h3>Clientes</h3>
-        <p>Historial e información útil para seguimiento comercial.</p>
+      <article class="metric">
+        <strong>El mostrador no conversa con stock</strong>
+        <p>Cuando la venta y la disponibilidad no est&aacute;n bien vinculadas, el negocio trabaja con m&aacute;s fricci&oacute;n.</p>
       </article>
-      <article class="card">
-        <h3>Stock enlazado</h3>
-        <p>Un POS aislado se queda corto; FLUS suma control operativo real.</p>
-      </article>
-      <article class="card">
-        <h3>Escalabilidad</h3>
-        <p>Una base más sólida para acompañar el crecimiento del negocio.</p>
-      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark">
+  <div class="container split-grid">
+    <div class="surface-card">
+      <h3>Qu&eacute; valor aporta FLUS como sistema POS</h3>
+      <ul class="plain-list">
+        <li>Venta m&aacute;s &aacute;gil y mejor registrada</li>
+        <li>Caja diaria con m&aacute;s orden y m&aacute;s visibilidad</li>
+        <li>V&iacute;nculo directo con stock y clientes</li>
+        <li>Mejor continuidad entre cobro y facturaci&oacute;n</li>
+      </ul>
+    </div>
+
+    <div class="surface-card">
+      <h3>Qu&eacute; conviene revisar en una demo</h3>
+      <p>
+        Vale la pena mirar c&oacute;mo se comporta el circuito completo: atenci&oacute;n, cobro, caja,
+        medios de pago, stock y comprobantes dentro de la misma l&oacute;gica.
+      </p>
+      <ul class="link-list">
+        <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Ver c&oacute;mo trabaja el stock</a></li>
+        <li><a href="<?= e(site_url('facturacion.php')) ?>">Ver la facturaci&oacute;n integrada</a></li>
+      </ul>
     </div>
   </div>
 </section>
@@ -61,14 +87,13 @@ require __DIR__ . '/includes/header.php';
 <section class="section">
   <div class="container">
     <div class="cta-box">
-      <h2>FLUS no debería venderse solo como caja</h2>
+      <h2>Si busc&aacute;s un software para ventas, mir&aacute; tambi&eacute;n lo que pasa despu&eacute;s del cobro</h2>
       <p>
-        Comercialmente te conviene mostrarlo como sistema POS, pero sin reducirlo a eso.
-        El diferencial está en que no se quede solo en cobrar: también integra stock, clientes, caja y facturación.
+        Ah&iacute; es donde un sistema POS suma o decepciona. FLUS apunta a que la caja no quede separada del resto de la gesti&oacute;n comercial.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver visión completa</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('contacto.php')) ?>">Pedir demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir una demo</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver visi&oacute;n completa</a>
       </div>
     </div>
   </div>

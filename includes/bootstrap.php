@@ -1,7 +1,7 @@
 <?php
 $site = [
     'name' => 'FLUS',
-    'tagline' => 'Sistema de gestión comercial',
+    'tagline' => 'Sistema de gestion comercial',
     'domain' => 'flus.com.ar',
     'contact_email' => 'info@flus.com.ar',
     'contact_phone' => '+54 261-273-1742',
@@ -47,4 +47,21 @@ function has_contact_info(): bool
 {
     global $site;
     return $site['contact_email'] !== '' || $site['contact_phone'] !== '' || $site['whatsapp_number'] !== '';
+}
+
+function whatsapp_url(string $message = ''): string
+{
+    global $site;
+
+    $number = preg_replace('/\D+/', '', $site['whatsapp_number'] ?? '');
+    if ($number === '') {
+        return '#';
+    }
+
+    $url = 'https://wa.me/' . $number;
+    if ($message !== '') {
+        $url .= '?text=' . rawurlencode($message);
+    }
+
+    return $url;
 }

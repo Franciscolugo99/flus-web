@@ -1,1 +1,1 @@
-console.log('FLUS web base cargada correctamente.');
+document.documentElement.classList.add('js');
