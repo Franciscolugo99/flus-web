@@ -2,19 +2,53 @@
 require_once __DIR__ . '/bootstrap.php';
 
 if (!isset($pageTitle)) {
-    $pageTitle = 'FLUS | Sistema de gestion comercial';
+    $pageTitle = 'FLUS | Sistema de gestión comercial';
 }
 
 if (!isset($pageDescription)) {
-    $pageDescription = 'FLUS es un sistema de gestion comercial para ventas, stock, clientes, caja y facturacion.';
+    $pageDescription = 'FLUS es un sistema de gestión comercial para ventas, stock, caja, clientes y facturación.';
 }
 
-$canonical = 'https://' . $site['domain'] . parse_url(site_url(basename($_SERVER['PHP_SELF'] ?? 'index.php')), PHP_URL_PATH);
-if (is_active_page('index.php')) {
-    $canonical = 'https://' . $site['domain'] . '/';
+if (!isset($pageSchemas)) {
+    $pageSchemas = [];
 }
 
-$ogImage = 'https://' . $site['domain'] . site_url('assets/img/logo1.png');
+$currentFile = basename($_SERVER['PHP_SELF'] ?? 'index.php');
+$canonical = is_active_page('index.php')
+    ? page_url()
+    : page_url($currentFile);
+
+$ogImage = page_url('assets/img/logo1.png');
+
+$baseSchemas = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => $site['name'],
+        'url' => page_url(),
+        'logo' => page_url('assets/img/logo1.png'),
+        'email' => $site['contact_email'],
+        'telephone' => $site['contact_phone'],
+    ],
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => $site['name'],
+        'url' => page_url(),
+        'potentialAction' => [
+            '@type' => 'SearchAction',
+            'target' => page_url() . '?s={search_term_string}',
+            'query-input' => 'required name=search_term_string',
+        ],
+    ],
+];
+
+if (isset($pageBreadcrumbs) && is_array($pageBreadcrumbs) && $pageBreadcrumbs !== []) {
+    $baseSchemas[] = breadcrumb_schema($pageBreadcrumbs);
+}
+
+$schemas = array_merge($baseSchemas, $pageSchemas);
+$bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFile, PATHINFO_FILENAME));
 ?>
 <!doctype html>
 <html lang="es">
@@ -24,8 +58,9 @@ $ogImage = 'https://' . $site['domain'] . site_url('assets/img/logo1.png');
   <title><?= e($pageTitle) ?></title>
   <meta name="description" content="<?= e($pageDescription) ?>">
   <meta name="robots" content="index,follow">
-  <meta name="theme-color" content="#081218">
+  <meta name="theme-color" content="#0b141a">
   <link rel="canonical" href="<?= e($canonical) ?>">
+  <link rel="icon" type="image/png" sizes="96x96" href="<?= e(asset_url('img/favicon.png')) ?>">
   <link rel="stylesheet" href="<?= e(asset_url('css/styles.css')) ?>">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?= e($pageTitle) ?>">
@@ -37,39 +72,38 @@ $ogImage = 'https://' . $site['domain'] . site_url('assets/img/logo1.png');
   <meta name="twitter:title" content="<?= e($pageTitle) ?>">
   <meta name="twitter:description" content="<?= e($pageDescription) ?>">
   <meta name="twitter:image" content="<?= e($ogImage) ?>">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": <?= json_encode($site['name']) ?>,
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
-    "description": <?= json_encode($pageDescription, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
-    "url": <?= json_encode('https://' . $site['domain'] . '/', JSON_UNESCAPED_SLASHES) ?>
-  }
-  </script>
+<?php foreach ($schemas as $schema): ?>
+  <script type="application/ld+json"><?= json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?></script>
+<?php endforeach; ?>
 </head>
-<body>
+<body class="<?= e($bodyClass) ?>">
   <header class="site-header">
     <div class="container header-inner">
-      <a class="logo" href="<?= e(site_url()) ?>" aria-label="Ir al inicio de FLUS">
-        <span class="logo-mark" aria-hidden="true">
-          <img src="<?= e(asset_url('img/flus-mark.png')) ?>" alt="" class="logo-mark-image">
+      <a class="brand" href="<?= e(site_url()) ?>" aria-label="Ir al inicio de FLUS">
+        <span class="brand-mark">
+          <img src="<?= e(asset_url('img/flus-mark.png')) ?>" alt="" width="36" height="40">
         </span>
-        <span class="logo-copy">
-          <span class="logo-text">FLUS</span>
-          <span class="logo-subtext">Ventas, stock, caja y facturaci&oacute;n conectadas</span>
+        <span class="brand-copy">
+          <span class="brand-name">FLUS</span>
         </span>
       </a>
 
-      <nav class="nav" aria-label="Principal">
-        <a href="<?= e(site_url()) ?>" class="<?= is_active_page('index.php') ? 'active' : '' ?>" <?= is_active_page('index.php') ? 'aria-current="page"' : '' ?>>Inicio</a>
-        <a href="<?= e(site_url('sistema-de-gestion.php')) ?>" class="<?= is_active_page('sistema-de-gestion.php') ? 'active' : '' ?>" <?= is_active_page('sistema-de-gestion.php') ? 'aria-current="page"' : '' ?>>Sistema de gesti&oacute;n</a>
-        <a href="<?= e(site_url('sistema-pos.php')) ?>" class="<?= is_active_page('sistema-pos.php') ? 'active' : '' ?>" <?= is_active_page('sistema-pos.php') ? 'aria-current="page"' : '' ?>>Sistema POS</a>
-        <a href="<?= e(site_url('control-de-stock.php')) ?>" class="<?= is_active_page('control-de-stock.php') ? 'active' : '' ?>" <?= is_active_page('control-de-stock.php') ? 'aria-current="page"' : '' ?>>Stock</a>
-        <a href="<?= e(site_url('facturacion.php')) ?>" class="<?= is_active_page('facturacion.php') ? 'active' : '' ?>" <?= is_active_page('facturacion.php') ? 'aria-current="page"' : '' ?>>Facturaci&oacute;n</a>
-        <a href="<?= e(site_url('contacto.php')) ?>" class="nav-cta <?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Solicitar demo</a>
-      </nav>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Abrir menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="nav-panel" id="site-nav">
+        <nav class="nav" aria-label="Principal">
+          <a href="<?= e(site_url()) ?>" class="<?= is_active_page('index.php') ? 'active' : '' ?>" <?= is_active_page('index.php') ? 'aria-current="page"' : '' ?>>Inicio</a>
+          <a href="<?= e(site_url('sistema-de-gestion.php')) ?>" class="<?= is_active_page('sistema-de-gestion.php') ? 'active' : '' ?>" <?= is_active_page('sistema-de-gestion.php') ? 'aria-current="page"' : '' ?>>Sistema</a>
+          <a href="<?= e(site_url('sistema-pos.php')) ?>" class="<?= is_active_page('sistema-pos.php') ? 'active' : '' ?>" <?= is_active_page('sistema-pos.php') ? 'aria-current="page"' : '' ?>>POS</a>
+          <a href="<?= e(site_url('control-de-stock.php')) ?>" class="<?= is_active_page('control-de-stock.php') ? 'active' : '' ?>" <?= is_active_page('control-de-stock.php') ? 'aria-current="page"' : '' ?>>Stock</a>
+          <a href="<?= e(site_url('facturacion.php')) ?>" class="<?= is_active_page('facturacion.php') ? 'active' : '' ?>" <?= is_active_page('facturacion.php') ? 'aria-current="page"' : '' ?>>Facturación</a>
+          <a href="<?= e(site_url('contacto.php')) ?>" class="nav-cta <?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Demo</a>
+        </nav>
+      </div>
     </div>
   </header>
 

@@ -1,16 +1,26 @@
 <?php
-$pageTitle = 'Sistema de gestion comercial para comercios y pymes | FLUS';
-$pageDescription = 'Conoce FLUS como sistema de gestion comercial para ventas, stock, clientes, caja y facturacion, pensado para ordenar la operacion diaria con mas control y trazabilidad.';
+require_once __DIR__ . '/includes/bootstrap.php';
+$pageTitle = 'Sistema de gestión comercial para comercios y pymes | FLUS';
+$pageDescription = 'Conocé FLUS como sistema de gestión comercial para ventas, stock, caja, clientes y facturación, pensado para ordenar la operación diaria con más control y trazabilidad.';
+$pageBreadcrumbs = [
+    ['name' => 'Inicio', 'url' => page_url()],
+    ['name' => 'Sistema de gestión', 'url' => page_url('sistema-de-gestion.php')],
+];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
-  <div class="container two-col">
+  <div class="container page-hero-grid">
     <div>
-      <span class="eyebrow">Sistema de gesti&oacute;n comercial</span>
-      <h1>Un sistema de gesti&oacute;n comercial para ordenar la operaci&oacute;n y no solo registrar datos</h1>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="<?= e(site_url()) ?>">Inicio</a>
+        <span>/</span>
+        <span aria-current="page">Sistema de gestión</span>
+      </nav>
+      <span class="eyebrow">Sistema de gestión comercial</span>
+      <h1>Una base más clara para vender, controlar y seguir la operación comercial</h1>
       <p>
-        FLUS est&aacute; orientado a comercios y pymes que necesitan trabajar ventas, stock, caja,
-        clientes y facturaci&oacute;n desde una l&oacute;gica m&aacute;s conectada y profesional.
+        FLUS está pensado para comercios y pymes que necesitan ordenar la gestión diaria con una lógica más conectada entre ventas,
+        stock, caja, clientes y facturación.
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
@@ -19,13 +29,12 @@ require __DIR__ . '/includes/header.php';
     </div>
 
     <aside class="hero-panel">
-      <h2>Qu&eacute; deber&iacute;a resolver un buen sistema</h2>
-      <p>El objetivo no es cargar m&aacute;s pantallas. El objetivo es trabajar con una base m&aacute;s clara para la operaci&oacute;n diaria.</p>
+      <h2>Qué debería aportar un sistema serio</h2>
       <ul class="check-list">
-        <li>Centralizar procesos comerciales clave</li>
-        <li>Dar m&aacute;s visibilidad sobre ventas, stock y caja</li>
-        <li>Reducir cortes entre atenci&oacute;n, cobro y facturaci&oacute;n</li>
-        <li>Mejorar el seguimiento comercial y la trazabilidad</li>
+        <li>Menos dispersión entre áreas y herramientas.</li>
+        <li>Más visibilidad sobre ventas, caja y stock.</li>
+        <li>Mejor continuidad entre operación y seguimiento.</li>
+        <li>Una base más profesional para crecer con orden.</li>
       </ul>
     </aside>
   </div>
@@ -33,28 +42,24 @@ require __DIR__ . '/includes/header.php';
 
 <section class="section">
   <div class="container">
-    <span class="section-kicker">Qu&eacute; ordena</span>
-    <h2>Las &aacute;reas que un sistema de gesti&oacute;n comercial tiene que conectar bien</h2>
-    <p class="section-lead">
-      Cuando la gesti&oacute;n se apoya en un mismo criterio operativo, el negocio gana control, coherencia y capacidad de seguimiento.
-    </p>
-
-    <div class="metrics">
-      <article class="metric">
-        <strong>Ventas y atenci&oacute;n</strong>
-        <p>La operaci&oacute;n se vuelve m&aacute;s consistente cuando la venta no queda separada del resto del circuito.</p>
+    <span class="section-kicker">Qué ordena</span>
+    <h2>La gestión comercial vale más cuando une criterios, no cuando suma pantallas</h2>
+    <div class="feature-grid">
+      <article class="feature-card">
+        <h3>Ventas y atención</h3>
+        <p>La venta deja de quedar aislada y pasa a formar parte del seguimiento comercial completo.</p>
       </article>
-      <article class="metric">
-        <strong>Stock</strong>
-        <p>La disponibilidad y los movimientos dejan de ser un dato aislado y pasan a ser parte de la decisi&oacute;n diaria.</p>
+      <article class="feature-card">
+        <h3>Stock y disponibilidad</h3>
+        <p>Los productos y movimientos se leen mejor cuando están conectados a la operación real.</p>
       </article>
-      <article class="metric">
-        <strong>Caja y medios de pago</strong>
-        <p>M&aacute;s orden para seguir aperturas, cierres, cobros y movimientos con menos fricci&oacute;n.</p>
+      <article class="feature-card">
+        <h3>Caja y cobros</h3>
+        <p>Más claridad para revisar medios de pago, cierres y control diario sin trabajar a ciegas.</p>
       </article>
-      <article class="metric">
-        <strong>Clientes y facturaci&oacute;n</strong>
-        <p>Historial, comprobantes y seguimiento quedan mejor alineados con la realidad comercial.</p>
+      <article class="feature-card">
+        <h3>Clientes y comprobantes</h3>
+        <p>Mejor continuidad entre lo que pasó en la operación y lo que después hay que seguir.</p>
       </article>
     </div>
   </div>
@@ -65,23 +70,22 @@ require __DIR__ . '/includes/header.php';
     <div class="surface-card">
       <h3>Problemas que busca corregir</h3>
       <ul class="plain-list">
-        <li>Informaci&oacute;n repartida entre planillas y herramientas sueltas</li>
-        <li>Stock poco confiable para vender con seguridad</li>
-        <li>Caja desconectada del resto de la operaci&oacute;n</li>
-        <li>Poco contexto para revisar clientes, movimientos y comprobantes</li>
+        <li>Información repartida entre planillas y herramientas sueltas.</li>
+        <li>Stock poco confiable para operar con seguridad.</li>
+        <li>Caja desconectada del resto del circuito comercial.</li>
+        <li>Seguimiento débil sobre clientes, movimientos y comprobantes.</li>
       </ul>
     </div>
 
     <div class="surface-card">
-      <h3>Qu&eacute; cambia cuando est&aacute; bien planteado</h3>
+      <h3>Qué conviene evaluar en una demo</h3>
       <p>
-        Un sistema de gesti&oacute;n comercial vale m&aacute;s cuando mejora el trabajo diario. Eso implica menos tareas repetidas,
-        mejor continuidad entre &aacute;reas y una base m&aacute;s clara para seguir el negocio.
+        La conversación tiene más sentido cuando se mira cómo se conecta el flujo completo y no solo un módulo suelto.
       </p>
       <ul class="link-list">
         <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Profundizar en el sistema POS</a></li>
         <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Ver control de stock</a></li>
-        <li><a href="<?= e(site_url('facturacion.php')) ?>">Ver facturaci&oacute;n integrada</a></li>
+        <li><a href="<?= e(site_url('facturacion.php')) ?>">Ver facturación</a></li>
       </ul>
     </div>
   </div>
@@ -90,10 +94,9 @@ require __DIR__ . '/includes/header.php';
 <section class="section">
   <div class="container">
     <div class="cta-box">
-      <h2>Evalu&aacute; FLUS mirando la operaci&oacute;n completa, no una lista aislada de funciones</h2>
+      <h2>Si querés evaluar FLUS con criterio real, mirá cómo se comporta la operación completa</h2>
       <p>
-        Si quer&eacute;s revisar un sistema de gesti&oacute;n comercial con criterio real, lo importante es ver c&oacute;mo se conectan ventas,
-        caja, stock, clientes y facturaci&oacute;n en el d&iacute;a a d&iacute;a.
+        Ahí es donde un sistema de gestión comercial suma valor de verdad: cuando ayuda a vender, controlar y seguir mejor el negocio.
       </p>
       <div class="inline-actions">
         <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir una demo</a>

@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://flus.com.ar/</loc></url>
-  <url><loc>https://flus.com.ar/sistema-de-gestion.php</loc></url>
-  <url><loc>https://flus.com.ar/sistema-pos.php</loc></url>
-  <url><loc>https://flus.com.ar/control-de-stock.php</loc></url>
-  <url><loc>https://flus.com.ar/facturacion.php</loc></url>
-  <url><loc>https://flus.com.ar/contacto.php</loc></url>
+  <url>
+    <loc>https://flus.com.ar/</loc>
+    <lastmod>2026-04-09</lastmod>
+  </url>
+  <url>
+    <loc>https://flus.com.ar/sistema-de-gestion.php</loc>
+    <lastmod>2026-04-09</lastmod>
+  </url>
+  <url>
+    <loc>https://flus.com.ar/sistema-pos.php</loc>
+    <lastmod>2026-04-09</lastmod>
+  </url>
+  <url>
+    <loc>https://flus.com.ar/control-de-stock.php</loc>
+    <lastmod>2026-04-09</lastmod>
+  </url>
+  <url>
+    <loc>https://flus.com.ar/facturacion.php</loc>
+    <lastmod>2026-04-09</lastmod>
+  </url>
+  <url>
+    <loc>https://flus.com.ar/contacto.php</loc>
+    <lastmod>2026-04-09</lastmod>
+  </url>
 </urlset>

@@ -1,7 +1,7 @@
 <?php
 $site = [
     'name' => 'FLUS',
-    'tagline' => 'Sistema de gestion comercial',
+    'tagline' => 'Sistema de gestión comercial',
     'domain' => 'flus.com.ar',
     'contact_email' => 'info@flus.com.ar',
     'contact_phone' => '+54 261-273-1742',
@@ -32,6 +32,18 @@ function site_url(string $path = ''): string
     return ($site['base_path'] !== '' ? $site['base_path'] : '') . '/' . $path;
 }
 
+function page_url(string $path = ''): string
+{
+    global $site;
+
+    $path = ltrim($path, '/');
+    if ($path === '') {
+        return 'https://' . $site['domain'] . '/';
+    }
+
+    return 'https://' . $site['domain'] . '/' . $path;
+}
+
 function asset_url(string $path): string
 {
     return site_url('assets/' . ltrim($path, '/'));
@@ -41,6 +53,11 @@ function is_active_page(string $file): bool
 {
     $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
     return $currentPage === $file;
+}
+
+function phone_href(string $phone): string
+{
+    return preg_replace('/\D+/', '', $phone);
 }
 
 function has_contact_info(): bool
@@ -64,4 +81,29 @@ function whatsapp_url(string $message = ''): string
     }
 
     return $url;
+}
+
+function breadcrumb_schema(array $items): array
+{
+    $list = [];
+    $position = 1;
+
+    foreach ($items as $item) {
+        if (!isset($item['name'], $item['url'])) {
+            continue;
+        }
+
+        $list[] = [
+            '@type' => 'ListItem',
+            'position' => $position++,
+            'name' => $item['name'],
+            'item' => $item['url'],
+        ];
+    }
+
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => $list,
+    ];
 }

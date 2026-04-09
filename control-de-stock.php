@@ -1,30 +1,40 @@
 <?php
+require_once __DIR__ . '/includes/bootstrap.php';
 $pageTitle = 'Control de stock para comercios y pymes | FLUS';
-$pageDescription = 'FLUS ayuda a controlar stock, productos, movimientos y disponibilidad dentro del flujo comercial del negocio, con menos incertidumbre y mas trazabilidad.';
+$pageDescription = 'FLUS ayuda a controlar stock, productos, movimientos y disponibilidad dentro del flujo comercial del negocio, con menos incertidumbre y más trazabilidad.';
+$pageBreadcrumbs = [
+    ['name' => 'Inicio', 'url' => page_url()],
+    ['name' => 'Control de stock', 'url' => page_url('control-de-stock.php')],
+];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
-  <div class="container two-col">
+  <div class="container page-hero-grid">
     <div>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="<?= e(site_url()) ?>">Inicio</a>
+        <span>/</span>
+        <span aria-current="page">Control de stock</span>
+      </nav>
       <span class="eyebrow">Control de stock</span>
-      <h1>M&aacute;s control de stock para vender con seguridad y operar con menos dudas</h1>
+      <h1>Más claridad sobre disponibilidad y movimientos para vender con menos dudas</h1>
       <p>
-        Un stock poco confiable no solo genera faltantes. Tambi&eacute;n afecta ventas, reposici&oacute;n,
-        caja y la calidad de la informaci&oacute;n con la que el negocio decide.
+        FLUS ayuda a leer mejor lo que pasa con los productos dentro de la operación diaria:
+        qué se vendió, qué se movió, qué queda disponible y dónde conviene revisar.
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver sistema completo</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
       </div>
     </div>
 
     <aside class="hero-panel">
-      <h2>Qu&eacute; tiene que resolver el stock</h2>
+      <h2>Qué debería aportar un buen control de stock</h2>
       <ul class="check-list">
-        <li>Dar claridad sobre disponibilidad real</li>
-        <li>Permitir seguir movimientos con m&aacute;s trazabilidad</li>
-        <li>Mejorar la relaci&oacute;n entre ventas y productos</li>
-        <li>Ayudar a reponer con mejor criterio</li>
+        <li>Disponibilidad más confiable para vender.</li>
+        <li>Movimientos con mejor contexto operativo.</li>
+        <li>Menos incertidumbre al reponer.</li>
+        <li>Más trazabilidad para revisar lo que pasó.</li>
       </ul>
     </aside>
   </div>
@@ -32,24 +42,24 @@ require __DIR__ . '/includes/header.php';
 
 <section class="section">
   <div class="container">
-    <span class="section-kicker">S&iacute;ntomas comunes</span>
-    <h2>Cuando el control de stock es flojo, la operaci&oacute;n trabaja a ciegas</h2>
-    <div class="metrics">
-      <article class="metric">
-        <strong>Disponibilidad poco clara</strong>
-        <p>Se vende con dudas, se responde tarde y el equipo pierde confianza en la informaci&oacute;n.</p>
+    <span class="section-kicker">Problema habitual</span>
+    <h2>Cuando el stock no es confiable, el negocio vende con inseguridad</h2>
+    <div class="feature-grid">
+      <article class="feature-card">
+        <h3>Disponibilidad dudosa</h3>
+        <p>La operación trabaja con preguntas básicas que deberían resolverse rápido.</p>
       </article>
-      <article class="metric">
-        <strong>Movimientos dif&iacute;ciles de reconstruir</strong>
-        <p>Entradas, salidas y ajustes quedan poco visibles y despu&eacute;s cuesta entender qu&eacute; pas&oacute;.</p>
+      <article class="feature-card">
+        <h3>Movimientos difíciles de seguir</h3>
+        <p>Sin buen contexto, cuesta reconstruir qué pasó con un producto o por qué cambió el stock.</p>
       </article>
-      <article class="metric">
-        <strong>Reposici&oacute;n reactiva</strong>
-        <p>Se compra tarde o sin suficiente contexto porque faltan referencias operativas confiables.</p>
+      <article class="feature-card">
+        <h3>Reposición sin criterio suficiente</h3>
+        <p>Si el dato no es confiable, comprar y ordenar stock se vuelve más reactivo.</p>
       </article>
-      <article class="metric">
-        <strong>Demasiada dependencia de planillas</strong>
-        <p>El control termina afuera del sistema y eso vuelve fr&aacute;gil toda la gesti&oacute;n diaria.</p>
+      <article class="feature-card">
+        <h3>Venta desconectada de la disponibilidad</h3>
+        <p>El mostrador pierde seguridad cuando no conversa bien con la realidad del depósito o exhibición.</p>
       </article>
     </div>
   </div>
@@ -58,24 +68,23 @@ require __DIR__ . '/includes/header.php';
 <section class="section section-dark">
   <div class="container split-grid">
     <div class="surface-card">
-      <h3>Qu&eacute; aporta FLUS al control de stock</h3>
+      <h3>Cómo suma FLUS</h3>
       <ul class="plain-list">
-        <li>M&aacute;s orden sobre cat&aacute;logo, referencias y disponibilidad</li>
-        <li>Seguimiento m&aacute;s claro de movimientos dentro de la operaci&oacute;n</li>
-        <li>Mejor v&iacute;nculo entre ventas, productos y reposici&oacute;n</li>
-        <li>Una base m&aacute;s confiable para tomar decisiones diarias</li>
+        <li>Más visibilidad sobre productos y movimientos.</li>
+        <li>Mejor lectura de la disponibilidad real.</li>
+        <li>Relación más clara entre venta y stock.</li>
+        <li>Una base más ordenada para reponer y revisar.</li>
       </ul>
     </div>
 
     <div class="surface-card">
-      <h3>D&oacute;nde se nota m&aacute;s</h3>
+      <h3>Qué conviene revisar en una demo</h3>
       <p>
-        Se nota cuando el negocio necesita vender con seguridad, evitar errores manuales
-        y revisar stock sin estar reconstruyendo la informaci&oacute;n todo el tiempo.
+        El stock vale más cuando se lo mira dentro del circuito comercial y no como una lista suelta de productos.
       </p>
       <ul class="link-list">
-        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Ver c&oacute;mo se conecta con el sistema POS</a></li>
-        <li><a href="<?= e(site_url('facturacion.php')) ?>">Ver la relaci&oacute;n con facturaci&oacute;n</a></li>
+        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Ver relación con el sistema POS</a></li>
+        <li><a href="<?= e(site_url('facturacion.php')) ?>">Ver relación con facturación</a></li>
       </ul>
     </div>
   </div>
@@ -84,13 +93,13 @@ require __DIR__ . '/includes/header.php';
 <section class="section">
   <div class="container">
     <div class="cta-box">
-      <h2>Si hoy vend&eacute;s con dudas sobre la disponibilidad, ya hay un problema operativo para resolver</h2>
+      <h2>Si hoy el stock deja dudas, hay margen claro para trabajar con más criterio</h2>
       <p>
-        FLUS busca que el control de stock deje de ser una tarea paralela y pase a formar parte del circuito comercial normal del negocio.
+        FLUS busca que la disponibilidad y los movimientos formen parte de una operación más conectada y más revisable.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Ver FLUS en una demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Volver al sistema de gesti&oacute;n</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir una demo</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver sistema completo</a>
       </div>
     </div>
   </div>
