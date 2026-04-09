@@ -50,9 +50,9 @@ if (is_active_page('index.php')) {
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="logo" href="<?= htmlspecialchars(($baseUrl ?? '') . '/') ?>">
-       <img
-        src="<?= htmlspecialchars(($baseUrl ?? '') . './assets/img/logo1.png') ?>"
+      <a class="logo" href="<?= e(site_url()) ?>">
+        <img
+          src="<?= e(asset_url('img/logo1.png')) ?>"
           alt="FLUS"
           class="logo-mark"
         >
