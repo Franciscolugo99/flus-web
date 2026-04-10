@@ -90,6 +90,19 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
+<div class="trust-strip" aria-label="Capacidades clave de FLUS">
+  <div class="container">
+    <div class="trust-items">
+      <span class="trust-item"><span class="trust-dot"></span>Ventas y POS</span>
+      <span class="trust-item"><span class="trust-dot"></span>Control de stock</span>
+      <span class="trust-item"><span class="trust-dot"></span>Clientes y seguimiento</span>
+      <span class="trust-item"><span class="trust-dot"></span>Caja y cobranzas</span>
+      <span class="trust-item"><span class="trust-dot"></span>Facturación</span>
+      <span class="trust-item"><span class="trust-dot"></span>Reportes operativos</span>
+    </div>
+  </div>
+</div>
+
 <section class="section">
   <div class="container">
     <span class="section-kicker">Qu&eacute; resuelve</span>

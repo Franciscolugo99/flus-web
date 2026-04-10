@@ -19,6 +19,11 @@ $canonical = is_active_page('index.php')
     : page_url($currentFile);
 
 $ogImage = page_url('assets/img/logo1.png');
+$stylesPath = __DIR__ . '/../assets/css/styles.css';
+$stylesHref = asset_url('css/styles.css');
+if (is_file($stylesPath)) {
+    $stylesHref .= '?v=' . filemtime($stylesPath);
+}
 
 $baseSchemas = [
     [
@@ -61,7 +66,7 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
   <meta name="theme-color" content="#0b141a">
   <link rel="canonical" href="<?= e($canonical) ?>">
   <link rel="icon" type="image/png" sizes="96x96" href="<?= e(asset_url('img/favicon.png')) ?>">
-  <link rel="stylesheet" href="<?= e(asset_url('css/styles.css')) ?>">
+  <link rel="stylesheet" href="<?= e($stylesHref) ?>">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?= e($pageTitle) ?>">
   <meta property="og:description" content="<?= e($pageDescription) ?>">
@@ -77,7 +82,7 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
 <?php endforeach; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
-  <header class="site-header">
+  <header class="site-header" id="site-header">
     <div class="container header-inner">
       <a class="brand" href="<?= e(site_url()) ?>" aria-label="Ir al inicio de FLUS">
         <span class="brand-mark">

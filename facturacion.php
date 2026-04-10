@@ -16,7 +16,7 @@ require __DIR__ . '/includes/header.php';
         <span>/</span>
         <span aria-current="page">Facturación</span>
       </nav>
-      <span class="eyebrow">Facturación</span>
+      <span class="eyebrow">Orden documental</span>
       <h1>Facturación integrada para que la venta no se corte a mitad de camino</h1>
       <p>
         Cuando la facturación acompaña el mismo circuito comercial, el negocio gana continuidad,

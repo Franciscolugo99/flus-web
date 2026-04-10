@@ -16,7 +16,7 @@ require __DIR__ . '/includes/header.php';
         <span>/</span>
         <span aria-current="page">Sistema de gestión</span>
       </nav>
-      <span class="eyebrow">Sistema de gestión comercial</span>
+      <span class="eyebrow">Gesti&oacute;n comercial</span>
       <h1>Una base más clara para vender, controlar y seguir la operación comercial</h1>
       <p>
         FLUS está pensado para comercios y pymes que necesitan ordenar la gestión diaria con una lógica más conectada entre ventas,

@@ -16,7 +16,7 @@ require __DIR__ . '/includes/header.php';
         <span>/</span>
         <span aria-current="page">Sistema POS</span>
       </nav>
-      <span class="eyebrow">Sistema POS</span>
+      <span class="eyebrow">Pantalla de cobro</span>
       <h1>Un sistema POS para vender y cobrar con m&aacute;s control, no solo m&aacute;s r&aacute;pido</h1>
       <p>
         FLUS ayuda a trabajar el mostrador con agilidad, pero tambi&eacute;n con mejor contexto sobre caja,

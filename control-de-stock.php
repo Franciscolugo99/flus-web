@@ -16,7 +16,7 @@ require __DIR__ . '/includes/header.php';
         <span>/</span>
         <span aria-current="page">Control de stock</span>
       </nav>
-      <span class="eyebrow">Control de stock</span>
+      <span class="eyebrow">Inventario operativo</span>
       <h1>Más claridad sobre disponibilidad y movimientos para vender con menos dudas</h1>
       <p>
         FLUS ayuda a leer mejor lo que pasa con los productos dentro de la operación diaria:

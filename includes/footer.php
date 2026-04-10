@@ -14,7 +14,7 @@
         <div class="footer-cta-row">
           <a href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <a href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="footer-whatsapp" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener">Escribinos por WhatsApp</a>
           <?php endif; ?>
         </div>
       </div>
@@ -56,6 +56,7 @@
 
     <div class="container footer-bottom">
       <p>&copy; <?= date('Y') ?> FLUS. Gestión comercial para una operación más ordenada, trazable y profesional.</p>
+      <p><?= e($site['domain']) ?></p>
     </div>
   </footer>
 
