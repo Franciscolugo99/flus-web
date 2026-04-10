@@ -56,3 +56,79 @@ if (header) {
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 }
+
+
+const carousels = document.querySelectorAll('[data-carousel]');
+
+carousels.forEach((carousel) => {
+  const tabs = Array.from(carousel.querySelectorAll('[data-slide]'));
+  const slides = Array.from(carousel.querySelectorAll('.story-slide'));
+  const intervalMs = Number(carousel.getAttribute('data-interval')) || 5000;
+  let current = 0;
+  let timer = null;
+
+  if (!tabs.length || !slides.length || tabs.length !== slides.length) {
+    return;
+  }
+
+  const goTo = (index) => {
+    current = (index + slides.length) % slides.length;
+
+    tabs.forEach((tab, idx) => {
+      const active = idx === current;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      tab.setAttribute('tabindex', active ? '0' : '-1');
+      slides[idx].classList.toggle('is-active', active);
+      slides[idx].hidden = !active;
+    });
+  };
+
+  const start = () => {
+    stop();
+    timer = window.setInterval(() => {
+      goTo(current + 1);
+    }, intervalMs);
+  };
+
+  const stop = () => {
+    if (timer) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+  };
+
+  tabs.forEach((tab, idx) => {
+    tab.addEventListener('click', () => {
+      goTo(idx);
+      start();
+    });
+
+    tab.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        tabs[(idx + 1) % tabs.length].focus();
+        goTo(idx + 1);
+        start();
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        tabs[(idx - 1 + tabs.length) % tabs.length].focus();
+        goTo(idx - 1);
+        start();
+      }
+    });
+  });
+
+  carousel.addEventListener('mouseenter', stop);
+  carousel.addEventListener('mouseleave', start);
+  carousel.addEventListener('focusin', stop);
+  carousel.addEventListener('focusout', () => {
+    if (!carousel.contains(document.activeElement)) {
+      start();
+    }
+  });
+
+  goTo(0);
+  start();
+});

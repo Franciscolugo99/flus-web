@@ -103,6 +103,100 @@ require __DIR__ . '/includes/header.php';
   </div>
 </div>
 
+
+<section class="section">
+  <div class="container">
+    <span class="section-kicker">Pantallas reales</span>
+    <h2>Una sola vista a la vez para entender mejor qu&eacute; resuelve FLUS</h2>
+    <p class="section-lead">
+      En lugar de apilar capturas, esta secci&oacute;n recorre los puntos m&aacute;s fuertes del sistema con una imagen y una explicaci&oacute;n por paso.
+    </p>
+
+    <div class="story-carousel" data-carousel data-interval="5200">
+      <div class="story-carousel__nav" role="tablist" aria-label="Recorrido por pantallas de FLUS">
+        <button class="story-dot is-active" type="button" role="tab" aria-selected="true" aria-controls="story-slide-1" id="story-tab-1" data-slide="0">Caja y cobro</button>
+        <button class="story-dot" type="button" role="tab" aria-selected="false" aria-controls="story-slide-2" id="story-tab-2" data-slide="1">Panel general</button>
+        <button class="story-dot" type="button" role="tab" aria-selected="false" aria-controls="story-slide-3" id="story-tab-3" data-slide="2">Control de stock</button>
+        <button class="story-dot" type="button" role="tab" aria-selected="false" aria-controls="story-slide-4" id="story-tab-4" data-slide="3">Historial de ventas</button>
+      </div>
+
+      <div class="story-carousel__viewport">
+        <article class="story-slide is-active" id="story-slide-1" role="tabpanel" aria-labelledby="story-tab-1">
+          <div class="story-slide__copy">
+            <span class="story-slide__eyebrow">Operaci&oacute;n en caja</span>
+            <h3>Una pantalla clara para vender, cobrar y cerrar la operaci&oacute;n sin fricci&oacute;n</h3>
+            <p>
+              FLUS muestra ticket, medios de pago, monto recibido y total a cobrar dentro del mismo flujo para que el cajero trabaje con m&aacute;s ritmo y menos pasos sueltos.
+            </p>
+            <ul class="plain-list">
+              <li>B&uacute;squeda de producto, ticket y cobro en la misma vista.</li>
+              <li>Panel lateral con medios de pago y monto recibido.</li>
+              <li>Total destacado para reducir errores al cerrar la venta.</li>
+            </ul>
+          </div>
+          <figure class="story-slide__media product-shot">
+            <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla de caja de FLUS con ticket, medios de pago y total a cobrar" width="1608" height="978" loading="lazy" decoding="async">
+          </figure>
+        </article>
+
+        <article class="story-slide" id="story-slide-2" role="tabpanel" aria-labelledby="story-tab-2" hidden>
+          <div class="story-slide__copy">
+            <span class="story-slide__eyebrow">Visi&oacute;n general</span>
+            <h3>Indicadores visuales para detectar ventas, productos y categor&iacute;as con m&aacute;s movimiento</h3>
+            <p>
+              El panel general permite recorrer tendencias, top productos, m&eacute;todos de pago y comportamiento por categor&iacute;a sin salir a buscar datos por m&oacute;dulos separados.
+            </p>
+            <ul class="plain-list">
+              <li>Gr&aacute;ficos simples para leer evoluci&oacute;n y distribuci&oacute;n.</li>
+              <li>Top productos y categor&iacute;as con foco comercial.</li>
+              <li>Buen apoyo para revisar actividad y tomar decisiones r&aacute;pidas.</li>
+            </ul>
+          </div>
+          <figure class="story-slide__media product-shot">
+            <img src="<?= e(asset_url('img/Dashboard.png')) ?>" alt="Dashboard de FLUS con ventas por d&iacute;a, top productos, m&eacute;todos de pago y ventas por categor&iacute;a" width="1536" height="868" loading="lazy" decoding="async">
+          </figure>
+        </article>
+
+        <article class="story-slide" id="story-slide-3" role="tabpanel" aria-labelledby="story-tab-3" hidden>
+          <div class="story-slide__copy">
+            <span class="story-slide__eyebrow">Inventario operativo</span>
+            <h3>Stock visible, filtros pr&aacute;cticos y acciones r&aacute;pidas para trabajar con m&aacute;s contexto</h3>
+            <p>
+              La pantalla de stock combina indicadores, alertas, filtros y tabla operativa para revisar disponibilidad y actuar sin depender de planillas externas.
+            </p>
+            <ul class="plain-list">
+              <li>Resumen de productos, bajo stock y sin stock.</li>
+              <li>Filtros por estado, categor&iacute;a y proveedor.</li>
+              <li>Acciones directas para ajustar o revisar productos.</li>
+            </ul>
+          </div>
+          <figure class="story-slide__media product-shot">
+            <img src="<?= e(asset_url('img/Stock.png')) ?>" alt="Pantalla de control de stock de FLUS con indicadores, filtros y tabla de productos" width="1599" height="854" loading="lazy" decoding="async">
+          </figure>
+        </article>
+
+        <article class="story-slide" id="story-slide-4" role="tabpanel" aria-labelledby="story-tab-4" hidden>
+          <div class="story-slide__copy">
+            <span class="story-slide__eyebrow">Seguimiento comercial</span>
+            <h3>Historial de ventas para revisar tickets, medios de pago y rendimiento del per&iacute;odo</h3>
+            <p>
+              Desde una sola vista se pueden cruzar filtros, revisar indicadores y bajar al detalle de cada venta para entender mejor qu&eacute; pas&oacute; en el per&iacute;odo.
+            </p>
+            <ul class="plain-list">
+              <li>KPIs del per&iacute;odo para leer rendimiento r&aacute;pido.</li>
+              <li>Filtros por fecha, estado y m&aacute;s contexto comercial.</li>
+              <li>Tabla con acciones para entrar al detalle sin perder continuidad.</li>
+            </ul>
+          </div>
+          <figure class="story-slide__media product-shot">
+            <img src="<?= e(asset_url('img/ventas.png')) ?>" alt="Pantalla de ventas de FLUS con indicadores, filtros y listado del historial comercial" width="1440" height="900" loading="lazy" decoding="async">
+          </figure>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="section">
   <div class="container">
     <span class="section-kicker">Qu&eacute; resuelve</span>
