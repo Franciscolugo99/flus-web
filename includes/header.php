@@ -66,6 +66,9 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
   <meta name="theme-color" content="#0b141a">
   <link rel="canonical" href="<?= e($canonical) ?>">
   <link rel="icon" type="image/png" sizes="96x96" href="<?= e(asset_url('img/favicon.png')) ?>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= e($stylesHref) ?>">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?= e($pageTitle) ?>">
