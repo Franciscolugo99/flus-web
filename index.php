@@ -52,6 +52,171 @@ $pageSchemas = [
     ],
 ];
 require __DIR__ . '/includes/header.php';
+
+$homeModules = [
+    [
+        'icon' => 'pos',
+        'name' => 'Caja',
+        'description' => 'Venta rapida, escaneo, cobro y calculo de vuelto.',
+        'tag' => 'POS',
+    ],
+    [
+        'icon' => 'receipt',
+        'name' => 'Ventas',
+        'description' => 'Tickets, estados y revision de operaciones del dia.',
+        'tag' => 'Comercial',
+    ],
+    [
+        'icon' => 'cart',
+        'name' => 'Compras',
+        'description' => 'Registro de ingresos, costos y relacion con proveedores.',
+        'tag' => 'Abastecimiento',
+    ],
+    [
+        'icon' => 'chart',
+        'name' => 'Dashboard',
+        'description' => 'Indicadores diarios, categorias y productos con mas movimiento.',
+        'tag' => 'Analisis',
+    ],
+    [
+        'icon' => 'box',
+        'name' => 'Productos',
+        'description' => 'Alta, edicion, precios y organizacion del catalogo.',
+        'tag' => 'Catalogo',
+    ],
+    [
+        'icon' => 'layers',
+        'name' => 'Stock',
+        'description' => 'Control actual, faltantes y alertas de inventario.',
+        'tag' => 'Inventario',
+    ],
+    [
+        'icon' => 'users',
+        'name' => 'Clientes',
+        'description' => 'Datos, historial y seguimiento comercial por cliente.',
+        'tag' => 'CRM',
+    ],
+    [
+        'icon' => 'wallet',
+        'name' => 'Cuenta corriente',
+        'description' => 'Saldos, movimientos y deuda por cliente.',
+        'tag' => 'Cobranza',
+    ],
+    [
+        'icon' => 'stamp',
+        'name' => 'Facturacion',
+        'description' => 'Comprobantes fiscales y emision integrada al flujo.',
+        'tag' => 'Fiscal',
+    ],
+    [
+        'icon' => 'clock',
+        'name' => 'Historial de caja',
+        'description' => 'Aperturas, cierres y movimientos de caja registrados.',
+        'tag' => 'Caja',
+    ],
+    [
+        'icon' => 'tag',
+        'name' => 'Precios',
+        'description' => 'Listas, actualizacion y revision de margenes.',
+        'tag' => 'Comercial',
+    ],
+    [
+        'icon' => 'megaphone',
+        'name' => 'Promociones',
+        'description' => 'Reglas simples para vender con descuentos o combos.',
+        'tag' => 'Ventas',
+    ],
+    [
+        'icon' => 'clipboard',
+        'name' => 'Inventario',
+        'description' => 'Conteos, ajustes y control general de existencias.',
+        'tag' => 'Inventario',
+    ],
+    [
+        'icon' => 'checklist',
+        'name' => 'Conteo fisico',
+        'description' => 'Recuento en local para contrastar sistema y realidad.',
+        'tag' => 'Control',
+    ],
+    [
+        'icon' => 'refresh',
+        'name' => 'Reposicion',
+        'description' => 'Necesidades de compra segun faltantes y rotacion.',
+        'tag' => 'Abastecimiento',
+    ],
+    [
+        'icon' => 'swap',
+        'name' => 'Movimientos',
+        'description' => 'Entradas, salidas y ajustes con trazabilidad.',
+        'tag' => 'Trazabilidad',
+    ],
+    [
+        'icon' => 'truck',
+        'name' => 'Proveedores',
+        'description' => 'Datos, compras y consulta por proveedor.',
+        'tag' => 'Compras',
+    ],
+    [
+        'icon' => 'settings',
+        'name' => 'Administracion',
+        'description' => 'Usuarios, permisos y configuracion operativa.',
+        'tag' => 'Gestion',
+    ],
+    [
+        'icon' => 'report',
+        'name' => 'Reportes operativos',
+        'description' => 'Ventas, caja y stock para seguimiento diario.',
+        'tag' => 'Reportes',
+    ],
+];
+
+if (!function_exists('flus_home_module_icon')) {
+    function flus_home_module_icon(string $icon): string
+    {
+        switch ($icon) {
+            case 'pos':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v11A2.5 2.5 0 0 1 16.5 20h-9A2.5 2.5 0 0 1 5 17.5z"/><path d="M8 8.5h8"/><path d="M8 12h3"/><path d="M8 15.5h2"/><path d="M14 12h2"/><path d="M14 15.5h2"/></svg>';
+            case 'receipt':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4v-17z"/><path d="M9 8h6"/><path d="M9 11.5h6"/><path d="M9 15h4"/></svg>';
+            case 'cart':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/><path d="M3.5 5h2l1.5 8.2a1.5 1.5 0 0 0 1.5 1.3h8.2a1.5 1.5 0 0 0 1.4-1l2-5.5H7.3"/></svg>';
+            case 'chart':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5h15"/><path d="M7.5 16V10"/><path d="M12 16V6.5"/><path d="M16.5 16V12"/></svg>';
+            case 'box':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 18.5 7v10L12 20.2 5.5 17V7z"/><path d="M12 3.8 5.5 7 12 10.2 18.5 7z"/><path d="M12 10.2v10"/></svg>';
+            case 'layers':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 4.5 8 12 12 19.5 8z"/><path d="M4.5 12 12 16l7.5-4"/><path d="M4.5 16 12 20l7.5-4"/></svg>';
+            case 'users':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M16 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/><path d="M4.8 18.5a4.7 4.7 0 0 1 8.4 0"/><path d="M14 18.5a4 4 0 0 1 5.2-1.5"/></svg>';
+            case 'wallet':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v9A2.5 2.5 0 0 1 16.5 19h-9A2.5 2.5 0 0 1 5 16.5z"/><path d="M15 12h4"/><path d="M17.5 12h.01"/></svg>';
+            case 'stamp':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l3 3v10A2.5 2.5 0 0 1 14.5 19h-7A2.5 2.5 0 0 1 5 16.5v-10A3 3 0 0 1 8 3.5z"/><path d="M14 3.5v4h4"/><path d="m9 14 1.5 1.5L14.5 11"/></svg>';
+            case 'clock':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 8v4l2.8 1.8"/></svg>';
+            case 'tag':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4.5H6.8A1.8 1.8 0 0 0 5 6.3v4.2l7.8 7.8a1.7 1.7 0 0 0 2.4 0l3.1-3.1a1.7 1.7 0 0 0 0-2.4z"/><circle cx="8.3" cy="8.3" r="1.2"/></svg>';
+            case 'megaphone':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12v-1.5a2 2 0 0 1 1.4-1.9L17.5 5v10l-11.1-3.6A2 2 0 0 1 5 9.5z"/><path d="M9 14.2V18"/><path d="M17.5 9.5h1.5a2 2 0 0 1 0 4h-1.5"/></svg>';
+            case 'clipboard':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5h6"/><path d="M9 6.5h6"/><path d="M8 4.5H7A2 2 0 0 0 5 6.5v11A2 2 0 0 0 7 19.5h10a2 2 0 0 0 2-2v-11a2 2 0 0 0-2-2h-1"/><path d="M9 11h6"/><path d="M9 14.5h6"/></svg>';
+            case 'checklist':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7.5h9"/><path d="M8.5 12h9"/><path d="M8.5 16.5h9"/><path d="m5.5 7.5.8.8 1.6-1.6"/><path d="m5.5 12 .8.8 1.6-1.6"/><path d="m5.5 16.5.8.8 1.6-1.6"/></svg>';
+            case 'refresh':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 8.5V4.5h-4"/><path d="M18 9a6.5 6.5 0 0 0-10.8-2"/><path d="M5.5 15.5v4h4"/><path d="M6 15a6.5 6.5 0 0 0 10.8 2"/></svg>';
+            case 'swap':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7.5h10"/><path d="m13.5 4.5 3.5 3-3.5 3"/><path d="M17 16.5H7"/><path d="m10.5 13.5-3.5 3 3.5 3"/></svg>';
+            case 'truck':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/><path d="M4.5 7.5h9v8H4.5z"/><path d="M13.5 10h3l2 2v3.5h-5"/></svg>';
+            case 'settings':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 4.5v2"/><path d="M12 17.5v2"/><path d="M4.5 12h2"/><path d="M17.5 12h2"/><path d="m6.7 6.7 1.4 1.4"/><path d="m15.9 15.9 1.4 1.4"/><path d="m17.3 6.7-1.4 1.4"/><path d="m8.1 15.9-1.4 1.4"/></svg>';
+            case 'report':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 19.5h13"/><path d="M7.5 16V11"/><path d="M12 16V8"/><path d="M16.5 16v-3"/><path d="M7.5 9.5 12 6l4.5 3"/></svg>';
+            default:
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/></svg>';
+        }
+    }
+}
 ?>
 <section class="hero">
   <div class="container hero-grid">
@@ -75,33 +240,93 @@ require __DIR__ . '/includes/header.php';
       </ul>
     </div>
 
-    <div class="hero-media">
-      <figure class="product-shot product-shot--hero">
-        <img
-          src="<?= e(asset_url('img/flus-caja-pos.png')) ?>"
-          alt="Pantalla de caja y cobro en FLUS con ticket, medios de pago y total a cobrar"
-          width="1608"
-          height="978"
-          fetchpriority="high"
-          decoding="async"
-        >
-      </figure>
+    <div class="hero-media hero-media--board">
+      <div class="hero-system-board" aria-label="Resumen operativo de FLUS">
+        <span class="hero-system-board__badge">Operacion conectada</span>
+
+        <div class="hero-system-board__surface">
+          <div class="hero-system-board__topline" aria-hidden="true">
+            <span>Caja abierta</span>
+            <span>Stock sincronizado</span>
+            <span>Seguimiento diario</span>
+          </div>
+
+          <div class="hero-system-board__grid">
+            <article class="hero-system-tile">
+              <span class="hero-system-tile__kicker">Caja</span>
+              <h3>Venta y cobro en la misma vista</h3>
+              <p>Ticket claro, medios de pago visibles y total siempre a mano.</p>
+            </article>
+
+            <article class="hero-system-tile">
+              <span class="hero-system-tile__kicker">Stock</span>
+              <h3>Impacto directo en la operacion</h3>
+              <p>La venta actualiza stock y deja trazabilidad sin salir del flujo.</p>
+            </article>
+
+            <article class="hero-system-tile">
+              <span class="hero-system-tile__kicker">Clientes</span>
+              <h3>Seguimiento sobre cada operacion</h3>
+              <p>Historial, cuenta corriente y contexto comercial en un mismo sistema.</p>
+            </article>
+
+            <article class="hero-system-tile">
+              <span class="hero-system-tile__kicker">Fiscal</span>
+              <h3>Facturacion integrada</h3>
+              <p>Comprobantes y control fiscal conectados al trabajo diario.</p>
+            </article>
+          </div>
+
+          <div class="hero-system-board__summary">
+            <strong>Una operacion impacta donde corresponde.</strong>
+            <p>Ventas, caja, stock y facturacion dentro de una misma estructura de trabajo.</p>
+          </div>
+
+          <div class="hero-system-board__flow" aria-hidden="true">
+            <span>Venta</span>
+            <span>Cobro</span>
+            <span>Stock</span>
+            <span>Fiscal</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<div class="trust-strip" aria-label="Capacidades clave de FLUS">
+<section class="modules-band" aria-labelledby="home-modules-title">
   <div class="container">
-    <div class="trust-items">
-      <span class="trust-item"><span class="trust-dot"></span>Ventas y POS</span>
-      <span class="trust-item"><span class="trust-dot"></span>Control de stock</span>
-      <span class="trust-item"><span class="trust-dot"></span>Clientes y seguimiento</span>
-      <span class="trust-item"><span class="trust-dot"></span>Caja y cobranzas</span>
-      <span class="trust-item"><span class="trust-dot"></span>Facturación</span>
-      <span class="trust-item"><span class="trust-dot"></span>Reportes operativos</span>
+    <div class="modules-band__intro">
+      <span class="section-kicker">Modulos conectados</span>
+      <h2 id="home-modules-title">M&aacute;s que una caja: FLUS re&uacute;ne la operaci&oacute;n comercial en un solo sistema</h2>
+      <p>
+        Ventas, stock, clientes, caja, facturaci&oacute;n y seguimiento diario dentro de una estructura pensada para trabajar con m&aacute;s orden.
+      </p>
+    </div>
+
+    <div class="modules-ticker" data-module-marquee data-speed="32">
+      <div class="modules-ticker__viewport">
+        <div class="modules-ticker__track">
+          <div class="modules-ticker__group">
+            <?php foreach ($homeModules as $module): ?>
+              <article class="module-card" tabindex="0" role="group" aria-label="<?= e($module['name'] . ' | categoria ' . $module['tag']) ?>">
+                <span class="module-card__icon" aria-hidden="true"><?= flus_home_module_icon($module['icon']) ?></span>
+                <h3><?= e($module['name']) ?></h3>
+                <p><?= e($module['description']) ?></p>
+                <span class="module-card__tag"><?= e($module['tag']) ?></span>
+              </article>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modules-band__footer">
+      <p class="modules-band__hint">Una vista continua de modulos para mostrar alcance real sin apilar bloques ni depender de una captura gigante.</p>
+      <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver c&oacute;mo trabaja FLUS</a>
     </div>
   </div>
-</div>
+</section>
 
 
 <section class="section">

@@ -132,3 +132,149 @@ carousels.forEach((carousel) => {
   goTo(0);
   start();
 });
+
+const moduleMarquees = document.querySelectorAll('[data-module-marquee]');
+
+moduleMarquees.forEach((marquee) => {
+  const viewport = marquee.querySelector('.modules-ticker__viewport');
+  const track = marquee.querySelector('.modules-ticker__track');
+  const group = marquee.querySelector('.modules-ticker__group');
+  const speed = Number(marquee.getAttribute('data-speed')) || 30;
+
+  if (!viewport || !track || !group) {
+    return;
+  }
+
+  const clone = group.cloneNode(true);
+  clone.setAttribute('aria-hidden', 'true');
+  clone.querySelectorAll('[tabindex]').forEach((item) => {
+    item.setAttribute('tabindex', '-1');
+  });
+  track.appendChild(clone);
+
+  let groupWidth = 0;
+  let position = 0;
+  let rafId = null;
+  let lastTime = 0;
+  let pointerId = null;
+  let dragStartX = 0;
+  let dragStartPosition = 0;
+  let isDragging = false;
+  let isPausedByPointer = false;
+
+  const normalizePosition = () => {
+    if (!groupWidth) {
+      return;
+    }
+
+    while (position <= -groupWidth) {
+      position += groupWidth;
+    }
+
+    while (position > 0) {
+      position -= groupWidth;
+    }
+  };
+
+  const render = () => {
+    track.style.transform = `translate3d(${position}px, 0, 0)`;
+  };
+
+  const measure = () => {
+    groupWidth = group.getBoundingClientRect().width;
+    normalizePosition();
+    render();
+  };
+
+  const shouldPause = () => (
+    isPausedByPointer ||
+    isDragging ||
+    marquee.matches(':hover') ||
+    marquee.contains(document.activeElement)
+  );
+
+  const tick = (time) => {
+    if (!lastTime) {
+      lastTime = time;
+    }
+
+    const delta = (time - lastTime) / 1000;
+    lastTime = time;
+
+    if (!shouldPause() && groupWidth > 0) {
+      position -= speed * delta;
+      normalizePosition();
+      render();
+    }
+
+    rafId = window.requestAnimationFrame(tick);
+  };
+
+  const onPointerDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+    isDragging = true;
+    isPausedByPointer = true;
+    pointerId = event.pointerId;
+    dragStartX = event.clientX;
+    dragStartPosition = position;
+    viewport.classList.add('is-dragging');
+    viewport.setPointerCapture(pointerId);
+  };
+
+  const onPointerMove = (event) => {
+    if (!isDragging || event.pointerId !== pointerId) {
+      return;
+    }
+
+    position = dragStartPosition + (event.clientX - dragStartX);
+    normalizePosition();
+    render();
+  };
+
+  const onPointerUp = (event) => {
+    if (event.pointerId !== pointerId) {
+      return;
+    }
+
+    isDragging = false;
+    isPausedByPointer = false;
+    viewport.classList.remove('is-dragging');
+
+    if (viewport.hasPointerCapture(pointerId)) {
+      viewport.releasePointerCapture(pointerId);
+    }
+
+    pointerId = null;
+  };
+
+  viewport.addEventListener('pointerdown', onPointerDown);
+  viewport.addEventListener('pointermove', onPointerMove);
+  viewport.addEventListener('pointerup', onPointerUp);
+  viewport.addEventListener('pointercancel', onPointerUp);
+  viewport.addEventListener('mouseleave', () => {
+    if (isDragging) {
+      isDragging = false;
+      isPausedByPointer = false;
+      viewport.classList.remove('is-dragging');
+      pointerId = null;
+    }
+  });
+
+  marquee.addEventListener('focusin', () => {
+    render();
+  });
+
+  marquee.addEventListener('focusout', () => {
+    window.requestAnimationFrame(render);
+  });
+
+  window.addEventListener('resize', measure, { passive: true });
+
+  measure();
+  render();
+  rafId = window.requestAnimationFrame(tick);
+});
+
