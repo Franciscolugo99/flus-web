@@ -155,7 +155,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container contact-form-shell">
     <div class="surface-card contact-form-card" id="formulario-contacto">
       <span class="section-kicker">Formulario de contacto</span>
@@ -164,54 +164,99 @@ require __DIR__ . '/includes/header.php';
         Dejanos tus datos y contanos un poco sobre tu operación. Te respondemos a la brevedad.
       </p>
 
-      <?php if ($contactNotice !== null): ?>
-        <div class="form-alert form-alert-<?= e($contactNoticeType) ?>" role="status">
+      <?php if ($contactNotice !== null && $contactNoticeType === 'error'): ?>
+        <div class="form-alert form-alert-error" role="alert">
           <?= e($contactNotice) ?>
         </div>
       <?php endif; ?>
 
+      <?php if ($contactNotice !== null && $contactNoticeType === 'success'): ?>
+        <div class="form-success-panel" role="status" aria-live="polite">
+          <div class="form-success-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle class="form-success-icon__circle" cx="24" cy="24" r="21" stroke="currentColor" stroke-width="2.5"/>
+              <path class="form-success-icon__check" d="M14 24.5l7.5 7.5 12.5-14" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="form-success-title">¡Consulta enviada!</h3>
+          <p class="form-success-text"><?= e($contactNotice) ?></p>
+          <?php if ($site['whatsapp_number'] !== ''): ?>
+            <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener">
+              También podés escribir por WhatsApp
+            </a>
+          <?php endif; ?>
+        </div>
+      <?php else: ?>
+
       <form class="contact-form" data-contact-form action="<?= e(site_url('contacto.php')) ?>#formulario-contacto" method="post" novalidate>
         <div class="form-grid">
-          <label class="form-field">
-            <span>Nombre</span>
-            <input class="form-input<?= isset($contactErrors['name']) ? ' is-invalid' : '' ?>" type="text" name="name" maxlength="120" value="<?= e($contactForm['name']) ?>" autocomplete="name" required>
-            <?php if (isset($contactErrors['name'])): ?>
-              <small class="form-error"><?= e($contactErrors['name']) ?></small>
-            <?php endif; ?>
-          </label>
 
-          <label class="form-field">
-            <span>Correo</span>
-            <input class="form-input<?= isset($contactErrors['email']) ? ' is-invalid' : '' ?>" type="email" name="email" maxlength="160" value="<?= e($contactForm['email']) ?>" autocomplete="email" required>
-            <?php if (isset($contactErrors['email'])): ?>
-              <small class="form-error"><?= e($contactErrors['email']) ?></small>
-            <?php endif; ?>
-          </label>
+          <div class="form-field form-field--float<?= $contactForm['name'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['name']) ? ' has-error' : '' ?>">
+            <input
+              class="form-input<?= isset($contactErrors['name']) ? ' is-invalid' : '' ?>"
+              type="text" name="name" id="field-name"
+              maxlength="120" value="<?= e($contactForm['name']) ?>"
+              autocomplete="name" required placeholder=" "
+              data-validate="required" data-error-required="Ingresá tu nombre."
+            >
+            <label class="form-label" for="field-name">Nombre <span class="form-required" aria-hidden="true">*</span></label>
+            <small class="form-error" aria-live="polite"><?= isset($contactErrors['name']) ? e($contactErrors['name']) : '' ?></small>
+          </div>
 
-          <label class="form-field">
-            <span>Teléfono</span>
-            <input class="form-input<?= isset($contactErrors['phone']) ? ' is-invalid' : '' ?>" type="text" name="phone" maxlength="60" value="<?= e($contactForm['phone']) ?>" autocomplete="tel">
-            <?php if (isset($contactErrors['phone'])): ?>
-              <small class="form-error"><?= e($contactErrors['phone']) ?></small>
-            <?php endif; ?>
-          </label>
+          <div class="form-field form-field--float<?= $contactForm['email'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['email']) ? ' has-error' : '' ?>">
+            <input
+              class="form-input<?= isset($contactErrors['email']) ? ' is-invalid' : '' ?>"
+              type="email" name="email" id="field-email"
+              maxlength="160" value="<?= e($contactForm['email']) ?>"
+              autocomplete="email" required placeholder=" "
+              data-validate="required|email"
+              data-error-required="Ingresá un correo para responderte."
+              data-error-email="Ingresá un correo válido."
+            >
+            <label class="form-label" for="field-email">Correo <span class="form-required" aria-hidden="true">*</span></label>
+            <small class="form-error" aria-live="polite"><?= isset($contactErrors['email']) ? e($contactErrors['email']) : '' ?></small>
+          </div>
 
-          <label class="form-field">
-            <span>Negocio</span>
-            <input class="form-input<?= isset($contactErrors['company']) ? ' is-invalid' : '' ?>" type="text" name="company" maxlength="120" value="<?= e($contactForm['company']) ?>" autocomplete="organization">
-            <?php if (isset($contactErrors['company'])): ?>
-              <small class="form-error"><?= e($contactErrors['company']) ?></small>
-            <?php endif; ?>
-          </label>
+          <div class="form-field form-field--float<?= $contactForm['phone'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['phone']) ? ' has-error' : '' ?>">
+            <input
+              class="form-input<?= isset($contactErrors['phone']) ? ' is-invalid' : '' ?>"
+              type="text" name="phone" id="field-phone"
+              maxlength="60" value="<?= e($contactForm['phone']) ?>"
+              autocomplete="tel" placeholder=" "
+            >
+            <label class="form-label" for="field-phone">Teléfono</label>
+            <small class="form-error" aria-live="polite"><?= isset($contactErrors['phone']) ? e($contactErrors['phone']) : '' ?></small>
+          </div>
+
+          <div class="form-field form-field--float<?= $contactForm['company'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['company']) ? ' has-error' : '' ?>">
+            <input
+              class="form-input<?= isset($contactErrors['company']) ? ' is-invalid' : '' ?>"
+              type="text" name="company" id="field-company"
+              maxlength="120" value="<?= e($contactForm['company']) ?>"
+              autocomplete="organization" placeholder=" "
+            >
+            <label class="form-label" for="field-company">Negocio</label>
+            <small class="form-error" aria-live="polite"><?= isset($contactErrors['company']) ? e($contactErrors['company']) : '' ?></small>
+          </div>
+
         </div>
 
-        <label class="form-field">
-          <span>Mensaje</span>
-          <textarea class="form-input form-textarea<?= isset($contactErrors['message']) ? ' is-invalid' : '' ?>" name="message" rows="6" maxlength="3000" required><?= e($contactForm['message']) ?></textarea>
-          <?php if (isset($contactErrors['message'])): ?>
-            <small class="form-error"><?= e($contactErrors['message']) ?></small>
-          <?php endif; ?>
-        </label>
+        <div class="form-field form-field--float form-field--textarea<?= $contactForm['message'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['message']) ? ' has-error' : '' ?>">
+          <textarea
+            class="form-input form-textarea<?= isset($contactErrors['message']) ? ' is-invalid' : '' ?>"
+            name="message" id="field-message"
+            rows="5" maxlength="3000" required placeholder=" "
+            data-validate="required" data-error-required="Contanos un poco sobre tu consulta."
+            data-char-counter
+          ><?= e($contactForm['message']) ?></textarea>
+          <label class="form-label" for="field-message">Mensaje <span class="form-required" aria-hidden="true">*</span></label>
+          <div class="form-field-footer">
+            <small class="form-error" aria-live="polite"><?= isset($contactErrors['message']) ? e($contactErrors['message']) : '' ?></small>
+            <span class="form-char-counter" data-max="3000">
+              <span class="form-char-counter__current"><?= mb_strlen($contactForm['message']) ?></span>&nbsp;/ 3000
+            </span>
+          </div>
+        </div>
 
         <div class="form-honeypot" aria-hidden="true">
           <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
@@ -220,11 +265,13 @@ require __DIR__ . '/includes/header.php';
         <div class="form-actions">
           <button class="btn btn-primary contact-submit" type="submit" data-contact-submit>
             <span class="contact-submit__spinner" aria-hidden="true"></span>
-            <span class="contact-submit__label" data-idle-label="Enviar consulta" data-loading-label="Enviando consulta...">Enviar consulta</span>
+            <span class="contact-submit__label" data-idle-label="Enviar consulta" data-loading-label="Enviando…">Enviar consulta</span>
           </button>
           <p class="form-note">Si preferís una respuesta más rápida, también podés escribir por WhatsApp.</p>
         </div>
       </form>
+
+      <?php endif; ?>
     </div>
   </div>
 </section>

@@ -52,7 +52,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Valor operativo</span>
     <h2>La facturación aporta más cuando acompaña el trabajo diario</h2>
@@ -77,7 +77,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section section-dark">
+<section class="section section-dark" data-reveal>
   <div class="container split-grid">
     <div class="surface-card">
       <h3>Qué suele pasar cuando está separada</h3>
@@ -101,7 +101,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <div class="cta-box">
       <h2>Si hoy la facturación obliga a salir de la operación, hay una mejora clara para trabajar</h2>

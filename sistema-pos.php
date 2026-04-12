@@ -52,7 +52,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Uso real en mostrador</span>
     <h2>El problema aparece cuando el POS resuelve el cobro y deja todo lo dem&aacute;s afuera</h2>
@@ -77,7 +77,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container feature-showcase">
     <div class="feature-copy">
       <span class="eyebrow">Operaci&oacute;n en caja</span>
@@ -101,7 +101,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section section-dark">
+<section class="section section-dark" data-reveal>
   <div class="container split-grid">
     <div class="surface-card">
       <h3>Qu&eacute; valor aporta FLUS como POS</h3>
@@ -126,7 +126,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <div class="cta-box">
       <h2>Si busc&aacute;s un software para ventas, conviene mirar tambi&eacute;n lo que pasa despu&eacute;s de cobrar</h2>

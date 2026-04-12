@@ -52,7 +52,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Problema habitual</span>
     <h2>Cuando el stock no es confiable, el negocio vende con inseguridad</h2>
@@ -77,7 +77,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section section-dark">
+<section class="section section-dark" data-reveal>
   <div class="container split-grid">
     <div class="surface-card">
       <h3>Cómo suma FLUS</h3>
@@ -102,7 +102,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <div class="cta-box">
       <h2>Si hoy el stock deja dudas, hay margen claro para trabajar con más criterio</h2>

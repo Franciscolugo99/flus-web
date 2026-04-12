@@ -52,7 +52,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Qué ordena</span>
     <h2>La gestión comercial vale más cuando une criterios, no cuando suma pantallas</h2>
@@ -77,7 +77,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section section-dark">
+<section class="section section-dark" data-reveal>
   <div class="container split-grid">
     <div class="surface-card">
       <h3>Problemas que busca corregir</h3>
@@ -103,7 +103,7 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <div class="cta-box">
       <h2>Si querés evaluar FLUS con criterio real, mirá cómo se comporta la operación completa</h2>

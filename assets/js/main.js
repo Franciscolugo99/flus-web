@@ -316,6 +316,87 @@ carousels.forEach((carousel) => {
   start();
 });
 
+/* ── Floating label helpers ───────────────── */
+const floatFields = document.querySelectorAll('.form-field--float');
+floatFields.forEach((field) => {
+  const input = field.querySelector('.form-input');
+  if (!input) return;
+
+  const syncValue = () => {
+    if (input.value.trim() !== '') {
+      field.classList.add('has-value');
+    } else {
+      field.classList.remove('has-value');
+    }
+  };
+
+  input.addEventListener('input', syncValue);
+  input.addEventListener('change', syncValue);
+  syncValue();
+});
+
+/* ── Blur (field-level) validation ───────── */
+const validateField = (input) => {
+  const rules = (input.getAttribute('data-validate') || '').split('|').filter(Boolean);
+  if (!rules.length) return true;
+
+  const field = input.closest('.form-field--float');
+  const errorEl = field?.querySelector('.form-error');
+  let error = '';
+
+  for (const rule of rules) {
+    if (rule === 'required' && input.value.trim() === '') {
+      error = input.getAttribute('data-error-required') || 'Campo requerido.';
+      break;
+    }
+    if (rule === 'email' && input.value.trim() !== '') {
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim());
+      if (!ok) {
+        error = input.getAttribute('data-error-email') || 'Correo inválido.';
+        break;
+      }
+    }
+  }
+
+  if (error) {
+    input.classList.add('is-invalid');
+    field?.classList.add('has-error');
+    if (errorEl) errorEl.textContent = error;
+    return false;
+  } else {
+    input.classList.remove('is-invalid');
+    field?.classList.remove('has-error');
+    if (errorEl) errorEl.textContent = '';
+    return true;
+  }
+};
+
+document.querySelectorAll('[data-validate]').forEach((input) => {
+  input.addEventListener('blur', () => validateField(input));
+});
+
+/* ── Character counter ────────────────────── */
+document.querySelectorAll('[data-char-counter]').forEach((textarea) => {
+  const field = textarea.closest('.form-field--float');
+  const counter = field?.querySelector('.form-char-counter');
+  const currentEl = counter?.querySelector('.form-char-counter__current');
+  const maxAttr = counter ? parseInt(counter.getAttribute('data-max') || '3000', 10) : 3000;
+  const warnAt = Math.floor(maxAttr * 0.8);
+  const limitAt = Math.floor(maxAttr * 0.95);
+
+  const update = () => {
+    const len = textarea.value.length;
+    if (currentEl) currentEl.textContent = len;
+    if (!counter) return;
+    counter.classList.toggle('is-warn', len >= warnAt && len < limitAt);
+    counter.classList.toggle('is-limit', len >= limitAt);
+  };
+
+  textarea.addEventListener('input', update);
+  update();
+});
+
+/* ── Contact form: loading state ─────────── */
 const contactForms = document.querySelectorAll('[data-contact-form]');
 
 contactForms.forEach((form) => {
@@ -323,16 +404,27 @@ contactForms.forEach((form) => {
   const submitLabel = submitButton?.querySelector('.contact-submit__label');
   const formCard = form.closest('.contact-form-card');
 
-  if (!submitButton || !submitLabel) {
-    return;
-  }
+  if (!submitButton || !submitLabel) return;
 
-  form.addEventListener('submit', () => {
+  form.addEventListener('submit', (event) => {
+    // Run blur validation on all required fields before submitting
+    let valid = true;
+    form.querySelectorAll('[data-validate]').forEach((input) => {
+      if (!validateField(input)) valid = false;
+    });
+
+    if (!valid) {
+      event.preventDefault();
+      const firstInvalid = form.querySelector('.is-invalid');
+      firstInvalid?.focus();
+      return;
+    }
+
     submitButton.disabled = true;
     submitButton.classList.add('is-loading');
     form.classList.add('is-submitting');
     formCard?.classList.add('is-submitting');
-    submitLabel.textContent = submitLabel.getAttribute('data-loading-label') || 'Enviando...';
+    submitLabel.textContent = submitLabel.getAttribute('data-loading-label') || 'Enviando…';
   });
 });
 
@@ -480,3 +572,34 @@ moduleMarquees.forEach((marquee) => {
   render();
   rafId = window.requestAnimationFrame(tick);
 });
+
+/* ── Scroll reveal (IntersectionObserver) ── */
+(function () {
+  // Respect reduced motion preference
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReduced) return;
+
+  const targets = document.querySelectorAll('[data-reveal]');
+  if (!targets.length || !('IntersectionObserver' in window)) {
+    // Fallback: just show everything
+    targets.forEach((el) => el.classList.add('is-revealed'));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+          observer.unobserve(entry.target); // Fire once only
+        }
+      });
+    },
+    {
+      rootMargin: '0px 0px -80px 0px', // Trigger 80px before fully in view
+      threshold: 0.08,
+    }
+  );
+
+  targets.forEach((el) => observer.observe(el));
+})();

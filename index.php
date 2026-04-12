@@ -221,19 +221,19 @@ if (!function_exists('flus_home_module_icon')) {
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-copy">
-      <span class="eyebrow">Sistema de gesti&oacute;n comercial para comercios y pymes</span>
-      <h1>FLUS conecta venta, cobro, stock y seguimiento en un mismo flujo de trabajo</h1>
-      <p>
+      <span class="eyebrow hero-stagger hero-stagger--1">Sistema de gesti&oacute;n comercial para comercios y pymes</span>
+      <h1 class="hero-stagger hero-stagger--2">FLUS conecta venta, cobro, stock y seguimiento en un mismo flujo de trabajo</h1>
+      <p class="hero-stagger hero-stagger--3">
         FLUS integra la operaci&oacute;n comercial del d&iacute;a a d&iacute;a: ventas, cobro, stock, clientes y facturaci&oacute;n
         dentro de un mismo flujo de trabajo. Menos herramientas sueltas, mejor control y m&aacute;s visibilidad sobre lo que pasa en el negocio.
       </p>
 
-      <div class="hero-actions">
+      <div class="hero-actions hero-stagger hero-stagger--4">
         <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
         <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
       </div>
 
-      <ul class="hero-points">
+      <ul class="hero-points hero-stagger hero-stagger--5">
         <li>Ticket visible y medios de pago claros para vender con m&aacute;s ritmo.</li>
         <li>Caja, stock y cobro dentro del mismo flujo operativo.</li>
         <li>Menos planillas y mejor seguimiento comercial despu&eacute;s de cada venta.</li>
@@ -294,7 +294,7 @@ if (!function_exists('flus_home_module_icon')) {
   </div>
 </section>
 
-<section class="modules-band" aria-labelledby="home-modules-title">
+<section class="modules-band" data-reveal aria-labelledby="home-modules-title">
   <div class="container">
     <div class="modules-band__intro">
       <span class="section-kicker">M&oacute;dulos conectados</span>
@@ -329,7 +329,7 @@ if (!function_exists('flus_home_module_icon')) {
 </section>
 
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Pantallas reales</span>
     <h2>Una sola vista a la vez para entender mejor qu&eacute; resuelve FLUS</h2>
@@ -422,7 +422,7 @@ if (!function_exists('flus_home_module_icon')) {
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Qu&eacute; resuelve</span>
     <h2>Cuando la operaci&oacute;n est&aacute; partida, el negocio pierde control</h2>
@@ -452,7 +452,7 @@ if (!function_exists('flus_home_module_icon')) {
   </div>
 </section>
 
-<section class="section section-dark">
+<section class="section section-dark" data-reveal>
   <div class="container">
     <span class="section-kicker">C&oacute;mo trabaja FLUS</span>
     <h2>Un circuito m&aacute;s ordenado para la gesti&oacute;n comercial diaria</h2>
@@ -481,7 +481,7 @@ if (!function_exists('flus_home_module_icon')) {
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container split-grid">
     <div>
       <span class="section-kicker">Soluciones</span>
@@ -526,7 +526,7 @@ if (!function_exists('flus_home_module_icon')) {
   </div>
 </section>
 
-<section class="section">
+<section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Preguntas frecuentes</span>
     <h2>Lo que suele evaluarse antes de pedir una demo</h2>
@@ -551,7 +551,7 @@ if (!function_exists('flus_home_module_icon')) {
   </div>
 </section>
 
-<section class="section section-dark">
+<section class="section section-dark" data-reveal>
   <div class="container">
     <div class="cta-box">
       <h2>Si tu operaci&oacute;n ya necesita m&aacute;s orden, conviene mirar FLUS sobre el flujo real del negocio</h2>

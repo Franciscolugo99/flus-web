@@ -1985,3 +1985,261 @@ body.nav-open .nav-toggle span:nth-child(4) {
     font-size: 0.85rem;
   }
 }
+
+/* ══════════════════════════════════════════════
+   FLOATING LABELS
+   ══════════════════════════════════════════════ */
+
+.form-field--float {
+  position: relative;
+  display: block;
+}
+
+/* The floating label sits inside the input area */
+.form-field--float .form-label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  pointer-events: none;
+  transform-origin: left center;
+  transition:
+    top 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    font-size 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.22s ease;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+/* Textarea: label starts higher */
+.form-field--textarea .form-label {
+  top: 22px;
+  transform: translateY(0);
+}
+
+/* Floated state: input focused OR has value */
+.form-field--float .form-input:focus ~ .form-label,
+.form-field--float .form-input:not(:placeholder-shown) ~ .form-label,
+.form-field--float.has-value .form-label {
+  top: 0;
+  transform: translateY(-50%) scale(0.82);
+  color: var(--accent-deep);
+  font-weight: 700;
+}
+
+/* Textarea floated state */
+.form-field--textarea .form-input:focus ~ .form-label,
+.form-field--textarea .form-input:not(:placeholder-shown) ~ .form-label,
+.form-field--textarea.has-value .form-label {
+  top: 0;
+  transform: translateY(-50%) scale(0.82);
+  color: var(--accent-deep);
+}
+
+/* Error state label color */
+.form-field--float.has-error .form-label {
+  color: #bf3b3b;
+}
+
+/* Inputs need top padding to make room for the floated label */
+.form-field--float .form-input {
+  padding-top: 16px;
+  padding-bottom: 4px;
+}
+
+/* Textarea top padding */
+.form-field--float.form-field--textarea .form-input {
+  padding-top: 22px;
+}
+
+/* Required asterisk */
+.form-required {
+  color: var(--accent-deep);
+  font-size: 0.9em;
+}
+
+/* Field footer: error + char counter side by side */
+.form-field-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 20px;
+}
+
+/* Character counter */
+.form-char-counter {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  transition: color 0.2s ease;
+  margin-left: auto;
+}
+
+.form-char-counter.is-warn {
+  color: #c47a00;
+  font-weight: 700;
+}
+
+.form-char-counter.is-limit {
+  color: #bf3b3b;
+  font-weight: 700;
+}
+
+/* ── Success panel ─────────────────────────── */
+.form-success-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 24px 32px;
+  gap: 16px;
+  animation: success-panel-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes success-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.form-success-icon {
+  width: 72px;
+  height: 72px;
+  color: var(--accent-deep);
+}
+
+.form-success-icon__circle {
+  stroke-dasharray: 132;
+  stroke-dashoffset: 132;
+  animation: draw-circle 0.6s ease 0.1s forwards;
+}
+
+.form-success-icon__check {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: draw-check 0.4s ease 0.65s forwards;
+}
+
+@keyframes draw-circle {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes draw-check {
+  to { stroke-dashoffset: 0; }
+}
+
+.form-success-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-strong);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.form-success-text {
+  color: var(--text-soft);
+  font-size: 1rem;
+  max-width: 440px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════
+   SCROLL REVEAL
+   ══════════════════════════════════════════════ */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.62s ease,
+    transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered children inside revealed sections */
+[data-reveal].is-revealed .feature-card:nth-child(1),
+[data-reveal].is-revealed .step-card:nth-child(1),
+[data-reveal].is-revealed .faq-item:nth-child(1),
+[data-reveal].is-revealed .contact-card:nth-child(1) {
+  transition-delay: 0.05s;
+}
+
+[data-reveal].is-revealed .feature-card:nth-child(2),
+[data-reveal].is-revealed .step-card:nth-child(2),
+[data-reveal].is-revealed .faq-item:nth-child(2),
+[data-reveal].is-revealed .contact-card:nth-child(2) {
+  transition-delay: 0.1s;
+}
+
+[data-reveal].is-revealed .feature-card:nth-child(3),
+[data-reveal].is-revealed .step-card:nth-child(3),
+[data-reveal].is-revealed .faq-item:nth-child(3),
+[data-reveal].is-revealed .contact-card:nth-child(3) {
+  transition-delay: 0.15s;
+}
+
+[data-reveal].is-revealed .feature-card:nth-child(4),
+[data-reveal].is-revealed .step-card:nth-child(4),
+[data-reveal].is-revealed .faq-item:nth-child(4),
+[data-reveal].is-revealed .contact-card:nth-child(4) {
+  transition-delay: 0.2s;
+}
+
+/* No reveal animation if user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   HERO STAGGER ENTRANCE
+   ══════════════════════════════════════════════ */
+
+.hero-stagger {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: hero-stagger-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.hero-stagger--1 { animation-delay: 0.05s; }
+.hero-stagger--2 { animation-delay: 0.18s; }
+.hero-stagger--3 { animation-delay: 0.3s;  }
+.hero-stagger--4 { animation-delay: 0.42s; }
+.hero-stagger--5 { animation-delay: 0.52s; }
+
+@keyframes hero-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stagger {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
