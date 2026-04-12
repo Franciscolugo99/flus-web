@@ -2768,3 +2768,39 @@ body.nav-open .nav-toggle span:nth-child(4) {
     animation: none;
   }
 }
+
+/* ── Skip to content ──────────────────────── */
+.skip-link {
+  position: fixed;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  padding: 10px 18px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-deep);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: top 0.18s ease;
+  outline: none;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── data-reveal: GPU compositing ─────────── */
+[data-reveal] {
+  will-change: opacity, transform;
+}
+
+[data-reveal].is-revealed {
+  will-change: auto;
+}
+
+/* ── Stagger for module-cards inside reveal ─ */
+[data-reveal].is-revealed .module-card:nth-child(1) { transition-delay: 0.04s; }
+[data-reveal].is-revealed .module-card:nth-child(2) { transition-delay: 0.08s; }
+[data-reveal].is-revealed .module-card:nth-child(3) { transition-delay: 0.12s; }
+[data-reveal].is-revealed .module-card:nth-child(4) { transition-delay: 0.16s; }
