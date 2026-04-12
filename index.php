@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
-$pageTitle = 'Sistema de gestión comercial para ventas, stock, caja y facturación | FLUS';
-$pageDescription = 'FLUS es un sistema de gestión comercial para comercios y pymes que necesitan ordenar ventas, stock, caja, clientes y facturación con más control diario y menos planillas.';
+$pageTitle = 'Sistema de gestión comercial para ventas, caja, stock y facturación | FLUS';
+$pageDescription = 'FLUS centraliza ventas, caja, stock, clientes y facturación en un solo sistema para comercios y pymes que necesitan más control diario y menos planillas.';
 $pageSchemas = [
     [
         '@context' => 'https://schema.org',
@@ -18,26 +18,26 @@ $pageSchemas = [
         'mainEntity' => [
             [
                 '@type' => 'Question',
-                'name' => '¿FLUS es solo un sistema POS?',
+                'name' => '¿FLUS es solo un sistema de caja?',
                 'acceptedAnswer' => [
                     '@type' => 'Answer',
-                    'text' => 'No. También ayuda a ordenar ventas, caja, stock, clientes y facturación dentro de una misma lógica comercial.',
+                    'text' => 'No. También reúne ventas, caja, stock, clientes, cuenta corriente y facturación dentro de la misma operación diaria.',
                 ],
             ],
             [
                 '@type' => 'Question',
-                'name' => '¿Para que tipo de negocio sirve mejor?',
+                'name' => '¿Para qué tipo de negocio tiene más sentido?',
                 'acceptedAnswer' => [
                     '@type' => 'Answer',
-                    'text' => 'Para comercios y pymes que necesitan menos planillas, más control diario y mejor trazabilidad operativa.',
+                    'text' => 'Para comercios y pymes con ventas diarias, caja, stock y necesidad de seguir clientes, deuda o facturación sin herramientas separadas.',
                 ],
             ],
             [
                 '@type' => 'Question',
-                'name' => '¿Que conviene mirar en una demo?',
+                'name' => '¿Qué conviene mirar primero en una demo?',
                 'acceptedAnswer' => [
                     '@type' => 'Answer',
-                    'text' => 'El circuito real: cómo se vende, cómo se cobra, cómo impacta en stock y cómo se sostiene el seguimiento comercial.',
+                    'text' => 'Conviene mirar una operación completa: venta, cobro, impacto en stock, historial, cliente y facturación dentro del mismo circuito.',
                 ],
             ],
             [
@@ -45,7 +45,7 @@ $pageSchemas = [
                 'name' => '¿Se puede coordinar una demo de FLUS?',
                 'acceptedAnswer' => [
                     '@type' => 'Answer',
-                    'text' => 'Sí. Desde la página de contacto se puede iniciar una conversación para evaluar FLUS sobre la operación real del negocio.',
+                    'text' => 'Sí. Desde la página de contacto se puede coordinar una demo para ver FLUS funcionando con ejemplos de venta, caja, stock y seguimiento comercial.',
                 ],
             ],
         ],
@@ -56,38 +56,20 @@ require __DIR__ . '/includes/header.php';
 $homeModules = [
     [
         'icon' => 'pos',
-        'name' => 'Caja',
-        'description' => 'Venta rápida, escaneo, cobro y cálculo de vuelto.',
+        'name' => 'Caja POS',
+        'description' => 'Venta, ticket y cobro en la misma pantalla para atender con más ritmo.',
         'tag' => 'POS',
     ],
     [
         'icon' => 'receipt',
         'name' => 'Ventas',
-        'description' => 'Tickets, estados y revisión de operaciones del día.',
+        'description' => 'Historial, tickets, estados y consulta por período.',
         'tag' => 'Comercial',
-    ],
-    [
-        'icon' => 'cart',
-        'name' => 'Compras',
-        'description' => 'Registro de ingresos, costos y relación con proveedores.',
-        'tag' => 'Abastecimiento',
-    ],
-    [
-        'icon' => 'chart',
-        'name' => 'Dashboard',
-        'description' => 'Indicadores diarios, categorías y productos con más movimiento.',
-        'tag' => 'Analisis',
-    ],
-    [
-        'icon' => 'box',
-        'name' => 'Productos',
-        'description' => 'Alta, edición, precios y organización del catálogo.',
-        'tag' => 'Catalogo',
     ],
     [
         'icon' => 'layers',
         'name' => 'Stock',
-        'description' => 'Control actual, faltantes y alertas de inventario.',
+        'description' => 'Disponibilidad, alertas y movimientos con trazabilidad.',
         'tag' => 'Inventario',
     ],
     [
@@ -99,74 +81,26 @@ $homeModules = [
     [
         'icon' => 'wallet',
         'name' => 'Cuenta corriente',
-        'description' => 'Saldos, movimientos y deuda por cliente.',
+        'description' => 'Saldos, deuda, cobranzas y movimientos por cliente.',
         'tag' => 'Cobranza',
     ],
     [
         'icon' => 'stamp',
-        'name' => 'Facturacion',
-        'description' => 'Comprobantes fiscales y emisión integrada al flujo.',
+        'name' => 'Facturación',
+        'description' => 'Comprobantes integrados a la operación comercial.',
         'tag' => 'Fiscal',
     ],
     [
-        'icon' => 'clock',
-        'name' => 'Historial de caja',
-        'description' => 'Aperturas, cierres y movimientos de caja registrados.',
-        'tag' => 'Caja',
-    ],
-    [
-        'icon' => 'tag',
-        'name' => 'Precios',
-        'description' => 'Listas, actualización y revisión de márgenes.',
-        'tag' => 'Comercial',
-    ],
-    [
-        'icon' => 'megaphone',
-        'name' => 'Promociones',
-        'description' => 'Reglas simples para vender con descuentos o combos.',
-        'tag' => 'Ventas',
-    ],
-    [
-        'icon' => 'clipboard',
-        'name' => 'Inventario',
-        'description' => 'Conteos, ajustes y control general de existencias.',
-        'tag' => 'Inventario',
-    ],
-    [
-        'icon' => 'checklist',
-        'name' => 'Conteo fisico',
-        'description' => 'Recuento en local para contrastar sistema y realidad.',
-        'tag' => 'Control',
-    ],
-    [
-        'icon' => 'refresh',
-        'name' => 'Reposicion',
-        'description' => 'Necesidades de compra según faltantes y rotación.',
-        'tag' => 'Abastecimiento',
-    ],
-    [
-        'icon' => 'swap',
-        'name' => 'Movimientos',
-        'description' => 'Entradas, salidas y ajustes con trazabilidad.',
-        'tag' => 'Trazabilidad',
-    ],
-    [
-        'icon' => 'truck',
-        'name' => 'Proveedores',
-        'description' => 'Datos, compras y consulta por proveedor.',
+        'icon' => 'cart',
+        'name' => 'Compras y proveedores',
+        'description' => 'Ingresos, costos y abastecimiento conectados al stock.',
         'tag' => 'Compras',
     ],
     [
-        'icon' => 'settings',
-        'name' => 'Administracion',
-        'description' => 'Usuarios, permisos y configuración operativa.',
-        'tag' => 'Gestion',
-    ],
-    [
         'icon' => 'report',
-        'name' => 'Reportes operativos',
-        'description' => 'Ventas, caja y stock para seguimiento diario.',
-        'tag' => 'Reportes',
+        'name' => 'Reportes',
+        'description' => 'Ventas, caja, productos y categorías para seguir el negocio.',
+        'tag' => 'Análisis',
     ],
 ];
 
@@ -221,22 +155,22 @@ if (!function_exists('flus_home_module_icon')) {
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-copy">
-      <span class="eyebrow hero-stagger hero-stagger--1">Sistema de gesti&oacute;n comercial para comercios y pymes</span>
-      <h1 class="hero-stagger hero-stagger--2">FLUS conecta venta, cobro, stock y seguimiento en un mismo flujo de trabajo</h1>
+      <span class="eyebrow hero-stagger hero-stagger--1">Sistema de gestión comercial para comercios y pymes</span>
+      <h1 class="hero-stagger hero-stagger--2">Ventas, caja, stock, clientes y facturación en un solo sistema</h1>
       <p class="hero-stagger hero-stagger--3">
-        FLUS integra la operaci&oacute;n comercial del d&iacute;a a d&iacute;a: ventas, cobro, stock, clientes y facturaci&oacute;n
-        dentro de un mismo flujo de trabajo. Menos herramientas sueltas, mejor control y m&aacute;s visibilidad sobre lo que pasa en el negocio.
+        FLUS está pensado para comercios y pymes que necesitan trabajar con menos planillas y más control.
+        Desde la venta y el cobro hasta el stock, la caja, los clientes y la facturación, todo queda conectado en una misma base.
       </p>
 
       <div class="hero-actions hero-stagger hero-stagger--4">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir demo</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
       </div>
 
       <ul class="hero-points hero-stagger hero-stagger--5">
-        <li>Ticket visible y medios de pago claros para vender con m&aacute;s ritmo.</li>
-        <li>Caja, stock y cobro dentro del mismo flujo operativo.</li>
-        <li>Menos planillas y mejor seguimiento comercial despu&eacute;s de cada venta.</li>
+        <li>Venta, ticket y cobro en la misma pantalla.</li>
+        <li>Stock, caja y cliente actualizados dentro del mismo circuito.</li>
+        <li>Historial, cuenta corriente y reportes para seguir el día a día.</li>
       </ul>
     </div>
 
@@ -246,9 +180,9 @@ if (!function_exists('flus_home_module_icon')) {
 
         <div class="hero-system-board__surface">
           <div class="hero-system-board__topline" aria-hidden="true">
-            <span>Caja abierta</span>
-            <span>Stock sincronizado</span>
-            <span>Seguimiento diario</span>
+            <span>Venta registrada</span>
+            <span>Cobro controlado</span>
+            <span>Stock actualizado</span>
           </div>
 
           <div class="hero-system-board__grid">
@@ -260,14 +194,14 @@ if (!function_exists('flus_home_module_icon')) {
 
             <article class="hero-system-tile">
               <span class="hero-system-tile__kicker">Stock</span>
-              <h3>Impacto directo en la operaci&oacute;n</h3>
-              <p>La venta actualiza stock y deja trazabilidad sin salir del flujo.</p>
+              <h3>Impacto directo en stock</h3>
+              <p>La venta descuenta existencias y deja trazabilidad sin salir de la operación.</p>
             </article>
 
             <article class="hero-system-tile">
               <span class="hero-system-tile__kicker">Clientes</span>
-              <h3>Seguimiento sobre cada operaci&oacute;n</h3>
-              <p>Historial, cuenta corriente y contexto comercial en un mismo sistema.</p>
+              <h3>Seguimiento por cliente</h3>
+              <p>Historial, cuenta corriente y contexto comercial dentro del mismo sistema.</p>
             </article>
 
             <article class="hero-system-tile">
@@ -278,8 +212,8 @@ if (!function_exists('flus_home_module_icon')) {
           </div>
 
           <div class="hero-system-board__summary">
-            <strong>Una operaci&oacute;n impacta donde corresponde.</strong>
-            <p>Ventas, caja, stock y facturación dentro de una misma estructura de trabajo.</p>
+            <strong>Una operación impacta donde corresponde.</strong>
+            <p>Ventas, caja, stock, clientes y facturación trabajando sobre la misma información.</p>
           </div>
 
           <div class="hero-system-board__flow" aria-hidden="true">
@@ -297,10 +231,10 @@ if (!function_exists('flus_home_module_icon')) {
 <section class="modules-band" data-reveal aria-labelledby="home-modules-title">
   <div class="container">
     <div class="modules-band__intro">
-      <span class="section-kicker">M&oacute;dulos conectados</span>
-      <h2 id="home-modules-title">M&aacute;s que una caja: FLUS re&uacute;ne la operaci&oacute;n comercial en un solo sistema</h2>
+      <span class="section-kicker">Módulos principales</span>
+      <h2 id="home-modules-title">FLUS reúne las áreas que más pesan en la operación diaria</h2>
       <p>
-        Ventas, stock, clientes, caja, facturaci&oacute;n y seguimiento diario dentro de una estructura pensada para trabajar con m&aacute;s orden.
+        Caja, ventas, stock, clientes, cuenta corriente, facturación y reportes dentro de la misma base operativa.
       </p>
     </div>
 
@@ -322,8 +256,8 @@ if (!function_exists('flus_home_module_icon')) {
     </div>
 
     <div class="modules-band__footer">
-      <p class="modules-band__hint">Cada m&oacute;dulo trabaja conectado al resto. Lo que pasa en caja impacta en stock, clientes y facturaci&oacute;n dentro del mismo sistema.</p>
-      <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver c&oacute;mo trabaja FLUS</a>
+      <p class="modules-band__hint">Cada módulo comparte información con el resto. Lo que pasa en caja también impacta en stock, clientes, cuenta corriente y facturación.</p>
+      <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
     </div>
   </div>
 </section>
@@ -332,9 +266,9 @@ if (!function_exists('flus_home_module_icon')) {
 <section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Pantallas reales</span>
-    <h2>Una sola vista a la vez para entender mejor qu&eacute; resuelve FLUS</h2>
+    <h2>Así se ve FLUS cuando lo usás en el día a día</h2>
     <p class="section-lead">
-      En lugar de apilar capturas, esta secci&oacute;n recorre los puntos m&aacute;s fuertes del sistema con una imagen y una explicaci&oacute;n por paso.
+      Estas pantallas muestran cómo se ve FLUS al vender, cobrar, revisar ventas y controlar stock sin ir saltando entre herramientas.
     </p>
 
     <div class="story-carousel" data-carousel data-interval="5200">
@@ -349,72 +283,84 @@ if (!function_exists('flus_home_module_icon')) {
         <article class="story-slide is-active" id="story-slide-1" role="tabpanel" aria-labelledby="story-tab-1">
           <div class="story-slide__copy">
             <span class="story-slide__eyebrow">Operaci&oacute;n en caja</span>
-            <h3>Una pantalla clara para vender, cobrar y cerrar la operaci&oacute;n sin fricci&oacute;n</h3>
+            <h3>Vendé y cobrá sin perder de vista el ticket</h3>
             <p>
-              FLUS muestra ticket, medios de pago, monto recibido y total a cobrar dentro del mismo flujo para que el cajero trabaje con m&aacute;s ritmo y menos pasos sueltos.
+              La caja reúne búsqueda, ticket, medios de pago y total a cobrar para que la operación avance con menos pasos y menos errores.
             </p>
             <ul class="plain-list">
-              <li>B&uacute;squeda de producto, ticket y cobro en la misma vista.</li>
-              <li>Panel lateral con medios de pago y monto recibido.</li>
-              <li>Total destacado para reducir errores al cerrar la venta.</li>
+              <li>Búsqueda de producto, ticket y cobro en la misma vista.</li>
+              <li>Medios de pago visibles y monto recibido siempre a mano.</li>
+              <li>Total destacado para cerrar la venta con más seguridad.</li>
             </ul>
           </div>
           <figure class="story-slide__media product-shot">
-            <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla de caja de FLUS con ticket, medios de pago y total a cobrar" width="1608" height="978" loading="lazy" decoding="async">
+            <picture>
+              <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
+              <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla de caja de FLUS con ticket, medios de pago y total a cobrar" width="1608" height="978" loading="lazy" decoding="async">
+            </picture>
           </figure>
         </article>
 
         <article class="story-slide" id="story-slide-2" role="tabpanel" aria-labelledby="story-tab-2" hidden>
           <div class="story-slide__copy">
             <span class="story-slide__eyebrow">Visi&oacute;n general</span>
-            <h3>Indicadores visuales para detectar ventas, productos y categor&iacute;as con m&aacute;s movimiento</h3>
+            <h3>Revisá rápido qué se vendió y cómo se está moviendo el negocio</h3>
             <p>
-              El panel general permite recorrer tendencias, top productos, m&eacute;todos de pago y comportamiento por categor&iacute;a sin salir a buscar datos por m&oacute;dulos separados.
+              El panel general resume ventas, productos, categorías y medios de pago para que puedas leer el día sin andar buscando datos en pantallas separadas.
             </p>
             <ul class="plain-list">
-              <li>Gr&aacute;ficos simples para leer evoluci&oacute;n y distribuci&oacute;n.</li>
-              <li>Top productos y categor&iacute;as con foco comercial.</li>
-              <li>Buen apoyo para revisar actividad y tomar decisiones r&aacute;pidas.</li>
+              <li>Gráficos simples para leer evolución y distribución.</li>
+              <li>Top productos y categorías con foco comercial.</li>
+              <li>Útil para detectar rápido qué está funcionando mejor.</li>
             </ul>
           </div>
           <figure class="story-slide__media product-shot">
-            <img src="<?= e(asset_url('img/Dashboard.png')) ?>" alt="Dashboard de FLUS con ventas por d&iacute;a, top productos, m&eacute;todos de pago y ventas por categor&iacute;a" width="1536" height="868" loading="lazy" decoding="async">
+            <picture>
+              <source srcset="<?= e(asset_url('img/Dashboard.webp')) ?>" type="image/webp">
+              <img src="<?= e(asset_url('img/Dashboard.png')) ?>" alt="Dashboard de FLUS con ventas por día, top productos, métodos de pago y ventas por categoría" width="1536" height="868" loading="lazy" decoding="async">
+            </picture>
           </figure>
         </article>
 
         <article class="story-slide" id="story-slide-3" role="tabpanel" aria-labelledby="story-tab-3" hidden>
           <div class="story-slide__copy">
             <span class="story-slide__eyebrow">Inventario operativo</span>
-            <h3>Stock visible, filtros pr&aacute;cticos y acciones r&aacute;pidas para trabajar con m&aacute;s contexto</h3>
+            <h3>Controlá disponibilidad y actuá antes de quedarte sin stock</h3>
             <p>
-              La pantalla de stock combina indicadores, alertas, filtros y tabla operativa para revisar disponibilidad y actuar sin depender de planillas externas.
+              La vista de stock combina indicadores, alertas, filtros y acciones rápidas para revisar disponibilidad y tomar decisiones sin depender de planillas externas.
             </p>
             <ul class="plain-list">
               <li>Resumen de productos, bajo stock y sin stock.</li>
-              <li>Filtros por estado, categor&iacute;a y proveedor.</li>
+              <li>Filtros por estado, categoría y proveedor.</li>
               <li>Acciones directas para ajustar o revisar productos.</li>
             </ul>
           </div>
           <figure class="story-slide__media product-shot">
-            <img src="<?= e(asset_url('img/Stock.png')) ?>" alt="Pantalla de control de stock de FLUS con indicadores, filtros y tabla de productos" width="1599" height="854" loading="lazy" decoding="async">
+            <picture>
+              <source srcset="<?= e(asset_url('img/Stock.webp')) ?>" type="image/webp">
+              <img src="<?= e(asset_url('img/Stock.png')) ?>" alt="Pantalla de control de stock de FLUS con indicadores, filtros y tabla de productos" width="1599" height="854" loading="lazy" decoding="async">
+            </picture>
           </figure>
         </article>
 
         <article class="story-slide" id="story-slide-4" role="tabpanel" aria-labelledby="story-tab-4" hidden>
           <div class="story-slide__copy">
             <span class="story-slide__eyebrow">Seguimiento comercial</span>
-            <h3>Historial de ventas para revisar tickets, medios de pago y rendimiento del per&iacute;odo</h3>
+            <h3>Consultá ventas y bajá al detalle cuando lo necesites</h3>
             <p>
-              Desde una sola vista se pueden cruzar filtros, revisar indicadores y bajar al detalle de cada venta para entender mejor qu&eacute; pas&oacute; en el per&iacute;odo.
+              El historial permite cruzar filtros, ver indicadores y entrar al detalle de cada venta para entender qué pasó en un período sin perder continuidad.
             </p>
             <ul class="plain-list">
-              <li>KPIs del per&iacute;odo para leer rendimiento r&aacute;pido.</li>
-              <li>Filtros por fecha, estado y m&aacute;s contexto comercial.</li>
-              <li>Tabla con acciones para entrar al detalle sin perder continuidad.</li>
+              <li>KPIs del período para leer rendimiento rápido.</li>
+              <li>Filtros por fecha, estado y medio de pago.</li>
+              <li>Tabla con acciones para entrar al detalle sin romper el flujo.</li>
             </ul>
           </div>
           <figure class="story-slide__media product-shot">
-            <img src="<?= e(asset_url('img/ventas.png')) ?>" alt="Pantalla de ventas de FLUS con indicadores, filtros y listado del historial comercial" width="1440" height="900" loading="lazy" decoding="async">
+            <picture>
+              <source srcset="<?= e(asset_url('img/ventas.webp')) ?>" type="image/webp">
+              <img src="<?= e(asset_url('img/ventas.png')) ?>" alt="Pantalla de ventas de FLUS con indicadores, filtros y listado del historial comercial" width="1440" height="900" loading="lazy" decoding="async">
+            </picture>
           </figure>
         </article>
       </div>
@@ -424,29 +370,28 @@ if (!function_exists('flus_home_module_icon')) {
 
 <section class="section" data-reveal>
   <div class="container">
-    <span class="section-kicker">Qu&eacute; resuelve</span>
-    <h2>Cuando la operaci&oacute;n est&aacute; partida, el negocio pierde control</h2>
+    <span class="section-kicker">Qué resuelve</span>
+    <h2>Lo que más suele desordenarse en un comercio</h2>
     <p class="section-lead">
-      FLUS busca atacar un problema concreto: que ventas, caja, stock y facturaci&oacute;n no queden trabajando por separado.
-      Esa dispersi&oacute;n siempre termina pegando en tiempo, control y seguimiento.
+      FLUS apunta a los puntos que más suelen generar ruido: cobrar, controlar caja, saber qué stock hay y seguir clientes o comprobantes sin depender de sistemas sueltos.
     </p>
 
     <div class="feature-grid">
       <article class="feature-card">
-        <h3>Ventas con m&aacute;s contexto</h3>
-        <p>La operaci&oacute;n no termina en el cobro. Despu&eacute;s importan caja, stock, cliente y comprobante.</p>
+        <h3>Cobro más ágil</h3>
+        <p>La venta, el ticket y el medio de pago quedan dentro de la misma pantalla.</p>
       </article>
       <article class="feature-card">
-        <h3>Caja m&aacute;s clara</h3>
-        <p>M&aacute;s visibilidad sobre medios de pago, movimientos diarios y cierres con criterio real.</p>
+        <h3>Caja del día bajo control</h3>
+        <p>Más visibilidad sobre medios de pago, movimientos diarios y cierres.</p>
       </article>
       <article class="feature-card">
-        <h3>Stock m&aacute;s confiable</h3>
-        <p>Menos dudas sobre disponibilidad, movimientos y el impacto de cada venta.</p>
+        <h3>Stock con menos sorpresas</h3>
+        <p>Menos dudas sobre disponibilidad, movimientos y faltantes.</p>
       </article>
       <article class="feature-card">
-        <h3>Seguimiento comercial</h3>
-        <p>Historial, clientes y facturaci&oacute;n con mejor continuidad operativa.</p>
+        <h3>Clientes y comprobantes visibles</h3>
+        <p>Historial, cuenta corriente y facturación con mejor continuidad operativa.</p>
       </article>
     </div>
   </div>
@@ -454,28 +399,28 @@ if (!function_exists('flus_home_module_icon')) {
 
 <section class="section section-dark" data-reveal>
   <div class="container">
-    <span class="section-kicker">C&oacute;mo trabaja FLUS</span>
-    <h2>Un circuito m&aacute;s ordenado para la gesti&oacute;n comercial diaria</h2>
+    <span class="section-kicker">Cómo trabaja FLUS</span>
+    <h2>Un circuito claro desde la venta hasta el seguimiento</h2>
     <div class="steps-grid">
       <article class="step-card">
         <span class="step-number">01</span>
-        <h3>Venta y atenci&oacute;n</h3>
-        <p>La operaci&oacute;n arranca con una base m&aacute;s prolija para vender, registrar y seguir cada movimiento.</p>
+        <h3>Registrás la venta</h3>
+        <p>Cargás productos, armás el ticket y avanzás sin salir de la pantalla principal.</p>
       </article>
       <article class="step-card">
         <span class="step-number">02</span>
-        <h3>Caja y cobro</h3>
-        <p>Los medios de pago y el control diario quedan m&aacute;s claros dentro del mismo circuito.</p>
+        <h3>Cobrás y cerrás la operación</h3>
+        <p>El cobro queda registrado con más claridad dentro de la misma caja.</p>
       </article>
       <article class="step-card">
         <span class="step-number">03</span>
-        <h3>Stock y disponibilidad</h3>
-        <p>La venta conversa mejor con el stock y eso reduce incertidumbre en la operaci&oacute;n.</p>
+        <h3>El stock se actualiza</h3>
+        <p>La operación impacta en existencias y deja trazabilidad para revisar después.</p>
       </article>
       <article class="step-card">
         <span class="step-number">04</span>
-        <h3>Comprobante y seguimiento</h3>
-        <p>Facturaci&oacute;n, cliente e historial comercial quedan mejor conectados para revisar lo que pas&oacute;.</p>
+        <h3>Consultás cliente, historial y comprobante</h3>
+        <p>La venta no queda aislada: podés seguir cliente, deuda, historial y facturación.</p>
       </article>
     </div>
   </div>
@@ -484,68 +429,68 @@ if (!function_exists('flus_home_module_icon')) {
 <section class="section" data-reveal>
   <div class="container split-grid">
     <div>
-      <span class="section-kicker">Soluciones</span>
-      <h2>Explor&aacute; FLUS desde la parte de la operaci&oacute;n que m&aacute;s te preocupa</h2>
+      <span class="section-kicker">Demo</span>
+      <h2>Qué vas a ver cuando te mostramos FLUS</h2>
       <p class="section-lead">
-        Cada p&aacute;gina interna est&aacute; pensada para bajar el problema a tierra y mostrar c&oacute;mo encaja FLUS en la gesti&oacute;n diaria.
+        La idea no es contarte una promesa general. En una demo conviene mirar cómo se resuelve una operación real del negocio.
       </p>
 
       <div class="link-stack">
-        <a class="stack-link" href="<?= e(site_url('sistema-de-gestion.php')) ?>">
-          <strong>Sistema de gesti&oacute;n</strong>
-          <span>Visi&oacute;n completa para ventas, stock, caja, clientes y facturaci&oacute;n.</span>
-        </a>
         <a class="stack-link" href="<?= e(site_url('sistema-pos.php')) ?>">
-          <strong>Sistema POS</strong>
-          <span>Mostrador, caja y cobro con m&aacute;s orden y mejor continuidad.</span>
+          <strong>Venta y cobro en caja</strong>
+          <span>Cómo se arma el ticket, cómo se cobra y qué información queda registrada.</span>
         </a>
         <a class="stack-link" href="<?= e(site_url('control-de-stock.php')) ?>">
-          <strong>Control de stock</strong>
-          <span>Disponibilidad y movimientos con mejor contexto operativo.</span>
+          <strong>Stock, productos y movimientos</strong>
+          <span>Cómo se consulta disponibilidad y cómo impacta cada venta o ajuste.</span>
+        </a>
+        <a class="stack-link" href="<?= e(site_url('sistema-de-gestion.php')) ?>">
+          <strong>Historial, clientes y seguimiento</strong>
+          <span>Cómo revisar ventas, clientes, cuenta corriente y actividad del período.</span>
         </a>
         <a class="stack-link" href="<?= e(site_url('facturacion.php')) ?>">
-          <strong>Facturaci&oacute;n</strong>
-          <span>Comprobantes integrados a la operaci&oacute;n comercial.</span>
+          <strong>Facturación integrada</strong>
+          <span>Cómo encaja el comprobante dentro del mismo circuito operativo.</span>
         </a>
       </div>
     </div>
 
     <div class="surface-card">
-      <h3>D&oacute;nde tiene m&aacute;s sentido</h3>
+      <h3>Dónde tiene más sentido</h3>
       <p>
-        FLUS encaja mejor en comercios y pymes donde la operaci&oacute;n ya no entra c&oacute;moda en planillas,
-        memoria operativa o herramientas desconectadas.
+        FLUS encaja mejor en comercios y pymes donde ya hace falta centralizar ventas, caja, stock, clientes y facturación en una sola base.
       </p>
       <ul class="plain-list">
-        <li>Comercios con ventas diarias, caja y stock.</li>
-        <li>Equipos que necesitan menos tareas repetidas.</li>
-        <li>Negocios que buscan m&aacute;s orden comercial y m&aacute;s trazabilidad.</li>
-        <li>Operaciones que necesitan crecer con una base m&aacute;s seria.</li>
+        <li>Kioscos, almacenes, dietéticas, vinotecas y otros comercios con mostrador.</li>
+        <li>Negocios con stock, precios, reposición y seguimiento diario.</li>
+        <li>Equipos que hoy dependen de planillas o memoria operativa.</li>
+        <li>Operaciones que necesitan ver ventas, caja y clientes en un solo lugar.</li>
       </ul>
     </div>
   </div>
 </section>
 
+
 <section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Preguntas frecuentes</span>
-    <h2>Lo que suele evaluarse antes de pedir una demo</h2>
+    <h2>Preguntas que vale la pena resolver antes de pedir una demo</h2>
     <div class="faq-grid">
       <article class="faq-item">
-        <h3>&iquest;FLUS es solo un sistema POS?</h3>
-        <p>No. Tambi&eacute;n ayuda a ordenar ventas, caja, stock, clientes y facturaci&oacute;n dentro de una misma l&oacute;gica comercial.</p>
+        <h3>&iquest;FLUS es solo un sistema de caja?</h3>
+        <p>No. También reúne ventas, caja, stock, clientes, cuenta corriente y facturación dentro de la operación diaria.</p>
       </article>
       <article class="faq-item">
-        <h3>&iquest;Para qu&eacute; tipo de negocio sirve mejor?</h3>
-        <p>Para comercios y pymes que necesitan menos planillas, m&aacute;s control diario y mejor trazabilidad operativa.</p>
+        <h3>&iquest;Para qué tipo de negocio tiene más sentido?</h3>
+        <p>Para comercios y pymes con ventas diarias, caja, stock y necesidad de seguir clientes, deuda o facturación sin herramientas separadas.</p>
       </article>
       <article class="faq-item">
-        <h3>&iquest;Qu&eacute; conviene mirar en una demo?</h3>
-        <p>El circuito real: c&oacute;mo se vende, c&oacute;mo se cobra, c&oacute;mo impacta en stock y c&oacute;mo se sostiene el seguimiento comercial.</p>
+        <h3>&iquest;Qué conviene mirar primero en una demo?</h3>
+        <p>Una operación completa: venta, cobro, impacto en stock, historial, cliente y facturación dentro del mismo circuito.</p>
       </article>
       <article class="faq-item">
         <h3>&iquest;Se puede coordinar una demo de FLUS?</h3>
-        <p>S&iacute;. Desde la p&aacute;gina de contacto se puede iniciar una conversaci&oacute;n para evaluar FLUS sobre la operaci&oacute;n real del negocio.</p>
+        <p>Sí. Desde la página de contacto se puede coordinar una demo para ver FLUS funcionando con ejemplos de venta, caja, stock y seguimiento comercial.</p>
       </article>
     </div>
   </div>
@@ -554,13 +499,13 @@ if (!function_exists('flus_home_module_icon')) {
 <section class="section section-dark" data-reveal>
   <div class="container">
     <div class="cta-box">
-      <h2>Si tu operaci&oacute;n ya necesita m&aacute;s orden, conviene mirar FLUS sobre el flujo real del negocio</h2>
+      <h2>Si querés evaluar FLUS, miralo sobre una operación real</h2>
       <p>
-        La mejor demo es la que se eval&uacute;a con ventas, caja, stock y facturaci&oacute;n como parte de una misma conversaci&oacute;n.
+        Te conviene ver venta, cobro, stock, clientes y facturación trabajando juntos para saber si encaja en tu negocio.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir demo</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
       </div>
     </div>
   </div>
