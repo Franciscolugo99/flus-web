@@ -18,6 +18,7 @@ if (toggle && navPanel) {
     event.stopPropagation();
     const isOpen = body.classList.toggle('nav-open');
     toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    toggle.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
   });
 
   if (nav) {
@@ -48,6 +49,17 @@ if (toggle && navPanel) {
   });
 }
 
+/* ── WhatsApp FAB — aparece al bajar 300px ─ */
+const fab = document.getElementById('whatsapp-fab');
+
+if (fab) {
+  const onFabScroll = () => {
+    fab.classList.toggle('is-visible', window.scrollY > 300);
+  };
+  window.addEventListener('scroll', onFabScroll, { passive: true });
+  onFabScroll();
+}
+
 if (header) {
   const onScroll = () => {
     header.classList.toggle('scrolled', window.scrollY > 16);
@@ -63,39 +75,214 @@ const carousels = document.querySelectorAll('[data-carousel]');
 carousels.forEach((carousel) => {
   const tabs = Array.from(carousel.querySelectorAll('[data-slide]'));
   const slides = Array.from(carousel.querySelectorAll('.story-slide'));
+  const brandMarkSrc = document.querySelector('.brand-mark img, .footer-brand-lockup img')?.getAttribute('src') || '';
+  const contourHeadWidth = 7;
+  const contourHeadHeight = 9;
   const intervalMs = Number(carousel.getAttribute('data-interval')) || 5000;
+  const transitionMs = 560;
   let current = 0;
-  let timer = null;
+  let rafId = null;
+  let startedAt = 0;
+  let progress = 0;
+  let leavingTimer = null;
+  let popTimer = null;
 
   if (!tabs.length || !slides.length || tabs.length !== slides.length) {
     return;
   }
 
-  const goTo = (index) => {
-    current = (index + slides.length) % slides.length;
+  slides.forEach((slide, idx) => {
+    slide.hidden = false;
+    slide.classList.toggle('is-active', idx === 0);
+    slide.classList.remove('is-leaving');
+    slide.setAttribute('aria-hidden', idx === 0 ? 'false' : 'true');
+  });
 
-    tabs.forEach((tab, idx) => {
-      const active = idx === current;
-      tab.classList.toggle('is-active', active);
-      tab.setAttribute('aria-selected', active ? 'true' : 'false');
-      tab.setAttribute('tabindex', active ? '0' : '-1');
-      slides[idx].classList.toggle('is-active', active);
-      slides[idx].hidden = !active;
+  const ensureContourUi = (tab) => {
+    let label = tab.querySelector('.story-dot__label');
+    if (!label) {
+      label = document.createElement('span');
+      label.className = 'story-dot__label';
+
+      while (tab.firstChild) {
+        label.appendChild(tab.firstChild);
+      }
+
+      tab.appendChild(label);
+    }
+
+    let contour = tab.querySelector('.story-dot__contour');
+    if (!contour) {
+      contour = document.createElement('span');
+      contour.className = 'story-dot__contour';
+      contour.setAttribute('aria-hidden', 'true');
+      contour.innerHTML = [
+        '<svg focusable="false" aria-hidden="true">',
+        '  <path class="story-dot__contour-value"></path>',
+        `  <image class="story-dot__contour-head-image" width="${contourHeadWidth}" height="${contourHeadHeight}" preserveAspectRatio="xMidYMid meet"></image>`,
+        '</svg>',
+      ].join('');
+      tab.appendChild(contour);
+    }
+
+    const head = contour.querySelector('.story-dot__contour-head-image');
+    if (head && brandMarkSrc) {
+      head.setAttribute('href', brandMarkSrc);
+    }
+
+    return {
+      svg: contour.querySelector('svg'),
+      value: contour.querySelector('.story-dot__contour-value'),
+      head,
+    };
+  };
+
+  const buildContours = () => {
+    tabs.forEach((tab) => {
+      const ui = ensureContourUi(tab);
+      const width = Math.max(tab.clientWidth, 1);
+      const height = Math.max(tab.clientHeight, 1);
+      const strokeWidth = 2.15;
+      const inset = 2 + (strokeWidth / 2);
+      const radius = Math.max(((height - (inset * 2)) / 2), 0);
+      const left = inset;
+      const right = width - inset;
+      const top = inset;
+      const bottom = height - inset;
+      const midX = width / 2;
+      const pathData = [
+        `M ${midX} ${top}`,
+        `H ${right - radius}`,
+        `A ${radius} ${radius} 0 0 1 ${right} ${top + radius}`,
+        `V ${bottom - radius}`,
+        `A ${radius} ${radius} 0 0 1 ${right - radius} ${bottom}`,
+        `H ${left + radius}`,
+        `A ${radius} ${radius} 0 0 1 ${left} ${bottom - radius}`,
+        `V ${top + radius}`,
+        `A ${radius} ${radius} 0 0 1 ${left + radius} ${top}`,
+        `H ${midX}`,
+      ].join(' ');
+
+      ui.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      ui.value.setAttribute('d', pathData);
+
+      const totalLength = ui.value.getTotalLength();
+      ui.value.dataset.length = String(totalLength);
+      ui.value.style.strokeDasharray = `0 ${totalLength}`;
+      ui.head.setAttribute('x', String(midX - (contourHeadWidth / 2)));
+      ui.head.setAttribute('y', String(top - (contourHeadHeight * 0.55)));
+      ui.head.style.opacity = '0';
     });
   };
 
-  const start = () => {
-    stop();
-    timer = window.setInterval(() => {
-      goTo(current + 1);
-    }, intervalMs);
+  const setProgress = (value) => {
+    progress = Math.max(0, Math.min(100, value));
+
+    tabs.forEach((tab, idx) => {
+      const valuePath = tab.querySelector('.story-dot__contour-value');
+      const head = tab.querySelector('.story-dot__contour-head-image');
+
+      if (!valuePath || !head) {
+        return;
+      }
+
+      const totalLength = Number(valuePath.dataset.length || valuePath.getTotalLength());
+
+      if (idx === current) {
+        const drawLength = totalLength * (progress / 100);
+        const point = valuePath.getPointAtLength(Math.min(drawLength, totalLength));
+
+        valuePath.style.strokeDasharray = `${drawLength} ${totalLength}`;
+        head.setAttribute('x', String(point.x - (contourHeadWidth / 2)));
+        head.setAttribute('y', String(point.y - (contourHeadHeight * 0.55)));
+        head.style.opacity = progress > 0.5 ? '1' : '0';
+      } else {
+        valuePath.style.strokeDasharray = `0 ${totalLength}`;
+        head.style.opacity = '0';
+      }
+    });
   };
 
-  const stop = () => {
-    if (timer) {
-      window.clearInterval(timer);
-      timer = null;
+  const goTo = (index) => {
+    const previous = current;
+    current = (index + slides.length) % slides.length;
+    startedAt = 0;
+    progress = 0;
+
+    tabs.forEach((tab, idx) => {
+      const active = idx === current;
+
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      tab.setAttribute('tabindex', active ? '0' : '-1');
+    });
+
+    if (popTimer) {
+      window.clearTimeout(popTimer);
+      popTimer = null;
     }
+
+    tabs.forEach((tab) => {
+      tab.classList.remove('is-popping');
+    });
+
+    tabs[current].classList.add('is-popping');
+    popTimer = window.setTimeout(() => {
+      tabs.forEach((tab) => {
+        tab.classList.remove('is-popping');
+      });
+      popTimer = null;
+    }, 520);
+
+    if (leavingTimer) {
+      window.clearTimeout(leavingTimer);
+      leavingTimer = null;
+    }
+
+    slides.forEach((slide, idx) => {
+      const active = idx === current;
+      const wasActive = idx === previous;
+
+      slide.classList.toggle('is-active', active);
+      slide.classList.toggle('is-leaving', wasActive && !active);
+      slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+
+    if (previous !== current) {
+      leavingTimer = window.setTimeout(() => {
+        slides.forEach((slide, idx) => {
+          if (idx !== current) {
+            slide.classList.remove('is-leaving');
+          }
+        });
+        leavingTimer = null;
+      }, transitionMs);
+    }
+
+    setProgress(0);
+  };
+
+  const tick = (timestamp) => {
+    if (!startedAt) {
+      startedAt = timestamp;
+    }
+
+    const elapsed = timestamp - startedAt;
+    setProgress((elapsed / intervalMs) * 100);
+
+    if (elapsed >= intervalMs) {
+      goTo(current + 1);
+    }
+
+    rafId = window.requestAnimationFrame(tick);
+  };
+
+  const start = () => {
+    if (rafId) {
+      window.cancelAnimationFrame(rafId);
+    }
+
+    rafId = window.requestAnimationFrame(tick);
   };
 
   tabs.forEach((tab, idx) => {
@@ -120,17 +307,33 @@ carousels.forEach((carousel) => {
     });
   });
 
-  carousel.addEventListener('mouseenter', stop);
-  carousel.addEventListener('mouseleave', start);
-  carousel.addEventListener('focusin', stop);
-  carousel.addEventListener('focusout', () => {
-    if (!carousel.contains(document.activeElement)) {
-      start();
-    }
-  });
-
+  buildContours();
+  window.addEventListener('resize', () => {
+    buildContours();
+    setProgress(progress);
+  }, { passive: true });
   goTo(0);
   start();
+});
+
+const contactForms = document.querySelectorAll('[data-contact-form]');
+
+contactForms.forEach((form) => {
+  const submitButton = form.querySelector('[data-contact-submit]');
+  const submitLabel = submitButton?.querySelector('.contact-submit__label');
+  const formCard = form.closest('.contact-form-card');
+
+  if (!submitButton || !submitLabel) {
+    return;
+  }
+
+  form.addEventListener('submit', () => {
+    submitButton.disabled = true;
+    submitButton.classList.add('is-loading');
+    form.classList.add('is-submitting');
+    formCard?.classList.add('is-submitting');
+    submitLabel.textContent = submitLabel.getAttribute('data-loading-label') || 'Enviando...';
+  });
 });
 
 const moduleMarquees = document.querySelectorAll('[data-module-marquee]');
@@ -277,4 +480,3 @@ moduleMarquees.forEach((marquee) => {
   render();
   rafId = window.requestAnimationFrame(tick);
 });
-

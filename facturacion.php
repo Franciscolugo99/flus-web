@@ -6,6 +6,18 @@ $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'Facturación', 'url' => page_url('facturacion.php')],
 ];
+$pageSchemas = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'FLUS — Facturación',
+        'applicationCategory' => 'BusinessApplication',
+        'operatingSystem' => 'Web',
+        'description' => 'Facturación integrada al flujo comercial: comprobantes generados desde la misma venta, con trazabilidad entre cliente, caja y operación.',
+        'url' => page_url('facturacion.php'),
+        'featureList' => 'Facturación electrónica, Comprobantes integrados, Trazabilidad fiscal, Continuidad operativa',
+    ],
+];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">

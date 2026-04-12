@@ -279,7 +279,7 @@ if (!function_exists('flus_home_module_icon')) {
 
           <div class="hero-system-board__summary">
             <strong>Una operaci&oacute;n impacta donde corresponde.</strong>
-            <p>Ventas, caja, stock y facturacion dentro de una misma estructura de trabajo.</p>
+            <p>Ventas, caja, stock y facturación dentro de una misma estructura de trabajo.</p>
           </div>
 
           <div class="hero-system-board__flow" aria-hidden="true">

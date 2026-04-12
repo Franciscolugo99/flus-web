@@ -6,6 +6,18 @@ $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'Control de stock', 'url' => page_url('control-de-stock.php')],
 ];
+$pageSchemas = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'FLUS — Control de stock',
+        'applicationCategory' => 'BusinessApplication',
+        'operatingSystem' => 'Web',
+        'description' => 'Control de stock para comercios y pymes: inventario en tiempo real, movimientos trazables y disponibilidad integrada al punto de venta.',
+        'url' => page_url('control-de-stock.php'),
+        'featureList' => 'Control de inventario, Movimientos de stock, Alertas de bajo stock, Trazabilidad, Integración con ventas',
+    ],
+];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">

@@ -6,6 +6,18 @@ $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'Sistema de gestión', 'url' => page_url('sistema-de-gestion.php')],
 ];
+$pageSchemas = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'FLUS — Sistema de gestión comercial',
+        'applicationCategory' => 'BusinessApplication',
+        'operatingSystem' => 'Web',
+        'description' => 'Sistema de gestión comercial para comercios y pymes: ventas, stock, caja, clientes y facturación integrados en una sola plataforma.',
+        'url' => page_url('sistema-de-gestion.php'),
+        'featureList' => 'Gestión de ventas, Control de stock, Caja y cobranzas, Clientes, Facturación, Reportes operativos',
+    ],
+];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">

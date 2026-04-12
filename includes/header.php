@@ -18,7 +18,7 @@ $canonical = is_active_page('index.php')
     ? page_url()
     : page_url($currentFile);
 
-$ogImage = page_url('assets/img/logo1.png');
+$ogImage = page_url('assets/img/flus-caja-pos.png');
 $stylesPath = __DIR__ . '/../assets/css/styles.css';
 $stylesHref = asset_url('css/styles.css');
 if (is_file($stylesPath)) {
@@ -76,10 +76,15 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
   <meta property="og:url" content="<?= e($canonical) ?>">
   <meta property="og:site_name" content="<?= e($site['name']) ?>">
   <meta property="og:image" content="<?= e($ogImage) ?>">
+  <meta property="og:image:width" content="1608">
+  <meta property="og:image:height" content="978">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="<?= e($pageTitle) ?>">
   <meta name="twitter:description" content="<?= e($pageDescription) ?>">
   <meta name="twitter:image" content="<?= e($ogImage) ?>">
+<?php if (is_active_page('index.php')): ?>
+  <link rel="preload" as="image" href="<?= e(asset_url('img/flus-caja-pos.png')) ?>" fetchpriority="high">
+<?php endif; ?>
 <?php foreach ($schemas as $schema): ?>
   <script type="application/ld+json"><?= json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?></script>
 <?php endforeach; ?>
@@ -109,7 +114,8 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
           <a href="<?= e(site_url('sistema-pos.php')) ?>" class="<?= is_active_page('sistema-pos.php') ? 'active' : '' ?>" <?= is_active_page('sistema-pos.php') ? 'aria-current="page"' : '' ?>>POS</a>
           <a href="<?= e(site_url('control-de-stock.php')) ?>" class="<?= is_active_page('control-de-stock.php') ? 'active' : '' ?>" <?= is_active_page('control-de-stock.php') ? 'aria-current="page"' : '' ?>>Stock</a>
           <a href="<?= e(site_url('facturacion.php')) ?>" class="<?= is_active_page('facturacion.php') ? 'active' : '' ?>" <?= is_active_page('facturacion.php') ? 'aria-current="page"' : '' ?>>Facturación</a>
-          <a href="<?= e(site_url('contacto.php')) ?>" class="nav-cta <?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Demo</a>
+          <a href="<?= e(site_url('contacto.php')) ?>" class="<?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Contacto</a>
+          <a href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" class="nav-cta <?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Demo</a>
         </nav>
       </div>
     </div>

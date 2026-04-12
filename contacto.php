@@ -6,6 +6,122 @@ $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'Contacto y demo', 'url' => page_url('contacto.php')],
 ];
+$pageSchemas = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'ContactPage',
+        'name' => 'Contacto y demo — FLUS',
+        'description' => 'Contacto comercial y solicitud de demo para FLUS, sistema de gestión comercial.',
+        'url' => page_url('contacto.php'),
+    ],
+];
+
+$contactForm = [
+    'name' => '',
+    'email' => '',
+    'phone' => '',
+    'company' => '',
+    'message' => '',
+];
+$contactErrors = [];
+$contactNotice = null;
+$contactNoticeType = 'success';
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $contactForm = [
+        'name' => trim((string) ($_POST['name'] ?? '')),
+        'email' => trim((string) ($_POST['email'] ?? '')),
+        'phone' => trim((string) ($_POST['phone'] ?? '')),
+        'company' => trim((string) ($_POST['company'] ?? '')),
+        'message' => trim((string) ($_POST['message'] ?? '')),
+    ];
+    $websiteField = trim((string) ($_POST['website'] ?? ''));
+
+    if ($contactForm['name'] === '') {
+        $contactErrors['name'] = 'Ingresá tu nombre.';
+    }
+
+    if ($contactForm['email'] === '') {
+        $contactErrors['email'] = 'Ingresá un correo para responderte.';
+    } elseif (!filter_var($contactForm['email'], FILTER_VALIDATE_EMAIL)) {
+        $contactErrors['email'] = 'Ingresá un correo válido.';
+    }
+
+    if ($contactForm['message'] === '') {
+        $contactErrors['message'] = 'Contanos un poco sobre tu consulta.';
+    }
+
+    if (mb_strlen($contactForm['name']) > 120) {
+        $contactErrors['name'] = 'El nombre es demasiado largo.';
+    }
+
+    if (mb_strlen($contactForm['email']) > 160) {
+        $contactErrors['email'] = 'El correo es demasiado largo.';
+    }
+
+    if (mb_strlen($contactForm['phone']) > 60) {
+        $contactErrors['phone'] = 'El teléfono es demasiado largo.';
+    }
+
+    if (mb_strlen($contactForm['company']) > 120) {
+        $contactErrors['company'] = 'El nombre del negocio es demasiado largo.';
+    }
+
+    if (mb_strlen($contactForm['message']) > 3000) {
+        $contactErrors['message'] = 'El mensaje es demasiado largo.';
+    }
+
+    if ($websiteField !== '') {
+        $contactNotice = 'Gracias. Recibimos tu consulta.';
+    } elseif ($contactErrors === []) {
+        $mailTo = trim((string) ($site['mail_to'] ?? $site['contact_email']));
+        $mailFrom = trim((string) ($site['mail_from'] ?? $site['contact_email']));
+        $replyTo = str_replace(["\r", "\n"], '', $contactForm['email']);
+        $safeName = str_replace(["\r", "\n"], '', $contactForm['name']);
+        $subject = 'Nueva consulta web | FLUS';
+        $bodyLines = [
+            'Nueva consulta recibida desde flus.com.ar',
+            '',
+            'Nombre: ' . $contactForm['name'],
+            'Correo: ' . $contactForm['email'],
+            'Telefono: ' . ($contactForm['phone'] !== '' ? $contactForm['phone'] : 'No informado'),
+            'Empresa: ' . ($contactForm['company'] !== '' ? $contactForm['company'] : 'No informada'),
+            '',
+            'Mensaje:',
+            $contactForm['message'],
+        ];
+        $mailSent = false;
+        if ($mailTo !== '') {
+            $mailSent = smtp_send_mail([
+                'to_email' => $mailTo,
+                'from_email' => $mailFrom,
+                'from_name' => 'FLUS',
+                'reply_email' => $replyTo,
+                'reply_name' => $safeName !== '' ? $safeName : 'Contacto web',
+                'subject' => $subject,
+                'body' => implode("\n", $bodyLines),
+            ]);
+        }
+
+        if ($mailSent) {
+            $contactNotice = 'Gracias. Tu mensaje fue enviado y te vamos a responder a la brevedad.';
+            $contactForm = [
+                'name' => '',
+                'email' => '',
+                'phone' => '',
+                'company' => '',
+                'message' => '',
+            ];
+        } else {
+            $contactNotice = 'No pudimos enviar el mensaje en este momento. Probá por WhatsApp o escribinos a info@flus.com.ar.';
+            $contactNoticeType = 'error';
+        }
+    } else {
+        $contactNotice = 'Revisá los campos marcados para poder enviar la consulta.';
+        $contactNoticeType = 'error';
+    }
+}
+
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero page-hero-contact">
@@ -36,6 +152,80 @@ require __DIR__ . '/includes/header.php';
         <li>Definir próximos pasos para una demo más profunda.</li>
       </ul>
     </aside>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container contact-form-shell">
+    <div class="surface-card contact-form-card" id="formulario-contacto">
+      <span class="section-kicker">Formulario de contacto</span>
+      <h2>Escribinos y coordinamos una demo</h2>
+      <p class="section-lead">
+        Dejanos tus datos y contanos un poco sobre tu operación. Te respondemos a la brevedad.
+      </p>
+
+      <?php if ($contactNotice !== null): ?>
+        <div class="form-alert form-alert-<?= e($contactNoticeType) ?>" role="status">
+          <?= e($contactNotice) ?>
+        </div>
+      <?php endif; ?>
+
+      <form class="contact-form" data-contact-form action="<?= e(site_url('contacto.php')) ?>#formulario-contacto" method="post" novalidate>
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Nombre</span>
+            <input class="form-input<?= isset($contactErrors['name']) ? ' is-invalid' : '' ?>" type="text" name="name" maxlength="120" value="<?= e($contactForm['name']) ?>" autocomplete="name" required>
+            <?php if (isset($contactErrors['name'])): ?>
+              <small class="form-error"><?= e($contactErrors['name']) ?></small>
+            <?php endif; ?>
+          </label>
+
+          <label class="form-field">
+            <span>Correo</span>
+            <input class="form-input<?= isset($contactErrors['email']) ? ' is-invalid' : '' ?>" type="email" name="email" maxlength="160" value="<?= e($contactForm['email']) ?>" autocomplete="email" required>
+            <?php if (isset($contactErrors['email'])): ?>
+              <small class="form-error"><?= e($contactErrors['email']) ?></small>
+            <?php endif; ?>
+          </label>
+
+          <label class="form-field">
+            <span>Teléfono</span>
+            <input class="form-input<?= isset($contactErrors['phone']) ? ' is-invalid' : '' ?>" type="text" name="phone" maxlength="60" value="<?= e($contactForm['phone']) ?>" autocomplete="tel">
+            <?php if (isset($contactErrors['phone'])): ?>
+              <small class="form-error"><?= e($contactErrors['phone']) ?></small>
+            <?php endif; ?>
+          </label>
+
+          <label class="form-field">
+            <span>Negocio</span>
+            <input class="form-input<?= isset($contactErrors['company']) ? ' is-invalid' : '' ?>" type="text" name="company" maxlength="120" value="<?= e($contactForm['company']) ?>" autocomplete="organization">
+            <?php if (isset($contactErrors['company'])): ?>
+              <small class="form-error"><?= e($contactErrors['company']) ?></small>
+            <?php endif; ?>
+          </label>
+        </div>
+
+        <label class="form-field">
+          <span>Mensaje</span>
+          <textarea class="form-input form-textarea<?= isset($contactErrors['message']) ? ' is-invalid' : '' ?>" name="message" rows="6" maxlength="3000" required><?= e($contactForm['message']) ?></textarea>
+          <?php if (isset($contactErrors['message'])): ?>
+            <small class="form-error"><?= e($contactErrors['message']) ?></small>
+          <?php endif; ?>
+        </label>
+
+        <div class="form-honeypot" aria-hidden="true">
+          <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary contact-submit" type="submit" data-contact-submit>
+            <span class="contact-submit__spinner" aria-hidden="true"></span>
+            <span class="contact-submit__label" data-idle-label="Enviar consulta" data-loading-label="Enviando consulta...">Enviar consulta</span>
+          </button>
+          <p class="form-note">Si preferís una respuesta más rápida, también podés escribir por WhatsApp.</p>
+        </div>
+      </form>
+    </div>
   </div>
 </section>
 

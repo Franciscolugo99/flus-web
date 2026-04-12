@@ -6,6 +6,18 @@ $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'Sistema POS', 'url' => page_url('sistema-pos.php')],
 ];
+$pageSchemas = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'FLUS — Sistema POS',
+        'applicationCategory' => 'BusinessApplication',
+        'operatingSystem' => 'Web',
+        'description' => 'Sistema POS para comercios con punto de venta ágil, control de caja, múltiples medios de pago y stock integrado.',
+        'url' => page_url('sistema-pos.php'),
+        'featureList' => 'Punto de venta, Control de caja, Medios de pago, Stock integrado, Historial de clientes, Facturación',
+    ],
+];
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
