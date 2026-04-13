@@ -1,3 +1,7 @@
 .DS_Store
 Thumbs.db
 includes/config.local.php
+admin/config/license-private.pem
+admin/config/license-public.pem
+.codex_tmp/
+.rnd
