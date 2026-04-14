@@ -33,6 +33,7 @@
         <strong class="footer-title">Explorar</strong>
         <ul class="footer-links">
           <li><a href="<?= e(site_url()) ?>">Inicio</a></li>
+          <li><a href="<?= e(site_url()) ?>#precios">Planes y precios</a></li>
           <li><a href="<?= e(site_url('contacto.php')) ?>">Contacto y demo</a></li>
           <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Cómo trabaja FLUS</a></li>
         </ul>

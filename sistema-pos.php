@@ -135,7 +135,7 @@ require __DIR__ . '/includes/header.php';
       </p>
       <div class="inline-actions">
         <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir una demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('control-de-stock.php')) ?>">Ver control de stock</a>
+        <a class="btn btn-secondary" href="<?= e(site_url()) ?>#precios">Ver planes y precios</a>
       </div>
     </div>
   </div>

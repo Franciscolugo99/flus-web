@@ -1,5 +1,6 @@
 Options -Indexes
 DirectoryIndex index.php index.html
+ErrorDocument 404 /404.php
 
 # ── Compresión GZIP ──────────────────────────────────────────
 <IfModule mod_deflate.c>

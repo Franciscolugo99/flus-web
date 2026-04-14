@@ -109,13 +109,40 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
 
       <div class="nav-panel" id="site-nav">
         <nav class="nav" aria-label="Principal">
-          <a href="<?= e(site_url()) ?>" class="<?= is_active_page('index.php') ? 'active' : '' ?>" <?= is_active_page('index.php') ? 'aria-current="page"' : '' ?>>Inicio</a>
-          <a href="<?= e(site_url('sistema-de-gestion.php')) ?>" class="<?= is_active_page('sistema-de-gestion.php') ? 'active' : '' ?>" <?= is_active_page('sistema-de-gestion.php') ? 'aria-current="page"' : '' ?>>Sistema</a>
-          <a href="<?= e(site_url('sistema-pos.php')) ?>" class="<?= is_active_page('sistema-pos.php') ? 'active' : '' ?>" <?= is_active_page('sistema-pos.php') ? 'aria-current="page"' : '' ?>>POS</a>
-          <a href="<?= e(site_url('control-de-stock.php')) ?>" class="<?= is_active_page('control-de-stock.php') ? 'active' : '' ?>" <?= is_active_page('control-de-stock.php') ? 'aria-current="page"' : '' ?>>Stock</a>
-          <a href="<?= e(site_url('facturacion.php')) ?>" class="<?= is_active_page('facturacion.php') ? 'active' : '' ?>" <?= is_active_page('facturacion.php') ? 'aria-current="page"' : '' ?>>Facturación</a>
+          <?php
+          $solutionPages = ['sistema-de-gestion.php', 'sistema-pos.php', 'control-de-stock.php', 'facturacion.php'];
+          $solutionActive = false;
+          foreach ($solutionPages as $sp) {
+              if (is_active_page($sp)) { $solutionActive = true; break; }
+          }
+          ?>
+          <div class="nav-dropdown" data-nav-dropdown>
+            <button class="nav-dropdown__trigger <?= $solutionActive ? 'active' : '' ?>" type="button" aria-expanded="false" aria-haspopup="true">
+              Soluciones
+              <svg class="nav-dropdown__arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+            </button>
+            <div class="nav-dropdown__menu">
+              <a href="<?= e(site_url('sistema-de-gestion.php')) ?>" class="<?= is_active_page('sistema-de-gestion.php') ? 'active' : '' ?>">
+                <strong>Sistema de gestión</strong>
+                <span>Ventas, caja, stock, clientes y facturación</span>
+              </a>
+              <a href="<?= e(site_url('sistema-pos.php')) ?>" class="<?= is_active_page('sistema-pos.php') ? 'active' : '' ?>">
+                <strong>Sistema POS</strong>
+                <span>Punto de venta ágil con control de caja</span>
+              </a>
+              <a href="<?= e(site_url('control-de-stock.php')) ?>" class="<?= is_active_page('control-de-stock.php') ? 'active' : '' ?>">
+                <strong>Control de stock</strong>
+                <span>Inventario, movimientos y disponibilidad</span>
+              </a>
+              <a href="<?= e(site_url('facturacion.php')) ?>" class="<?= is_active_page('facturacion.php') ? 'active' : '' ?>">
+                <strong>Facturación</strong>
+                <span>Comprobantes integrados al circuito comercial</span>
+              </a>
+            </div>
+          </div>
+          <a href="<?= e(site_url()) ?>#precios">Precios</a>
           <a href="<?= e(site_url('contacto.php')) ?>" class="<?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Contacto</a>
-          <a href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" class="nav-cta <?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Demo</a>
+          <a href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" class="nav-cta">Demo</a>
         </nav>
       </div>
     </div>

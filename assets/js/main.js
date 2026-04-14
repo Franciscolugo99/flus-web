@@ -49,6 +49,77 @@ if (toggle && navPanel) {
   });
 }
 
+/* ── Nav Dropdown ────────────────────────── */
+(function () {
+  var dropdown = document.querySelector('[data-nav-dropdown]');
+  if (!dropdown) return;
+
+  var trigger = dropdown.querySelector('.nav-dropdown__trigger');
+  var menu = dropdown.querySelector('.nav-dropdown__menu');
+  if (!trigger || !menu) return;
+
+  var isMobile = function () {
+    return window.innerWidth <= 920;
+  };
+
+  function open() {
+    dropdown.classList.add('is-open');
+    trigger.setAttribute('aria-expanded', 'true');
+  }
+
+  function close() {
+    dropdown.classList.remove('is-open');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggle() {
+    if (dropdown.classList.contains('is-open')) {
+      close();
+    } else {
+      open();
+    }
+  }
+
+  // Click always works (mobile + desktop)
+  trigger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    toggle();
+  });
+
+  // Hover on desktop
+  var hoverTimeout;
+  dropdown.addEventListener('mouseenter', function () {
+    if (isMobile()) return;
+    clearTimeout(hoverTimeout);
+    open();
+  });
+
+  dropdown.addEventListener('mouseleave', function () {
+    if (isMobile()) return;
+    hoverTimeout = setTimeout(close, 180);
+  });
+
+  // Close on outside click
+  document.addEventListener('click', function (e) {
+    if (!dropdown.contains(e.target)) {
+      close();
+    }
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+
+  // Close dropdown links on mobile nav
+  menu.querySelectorAll('a').forEach(function (link) {
+    link.addEventListener('click', function () {
+      close();
+      if (isMobile()) closeNav();
+    });
+  });
+})();
+
 /* ── WhatsApp FAB — aparece al bajar 300px ─ */
 const fab = document.getElementById('whatsapp-fab');
 
@@ -602,4 +673,66 @@ moduleMarquees.forEach((marquee) => {
   );
 
   targets.forEach((el) => observer.observe(el));
+})();
+
+/* ── Hero Dashboard animation ──────────────── */
+(function () {
+  var dash = document.querySelector('[data-hero-dash]');
+  if (!dash) return;
+
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animateCount(el) {
+    var target = parseInt(el.getAttribute('data-count-to'), 10);
+    var prefix = el.getAttribute('data-prefix') || '';
+    var isMoney = el.getAttribute('data-format') === 'money';
+    var duration = 1400;
+    var start = performance.now();
+
+    function step(now) {
+      var progress = Math.min((now - start) / duration, 1);
+      var ease = 1 - Math.pow(1 - progress, 3);
+      var current = Math.round(ease * target);
+
+      if (isMoney) {
+        el.textContent = prefix + current.toLocaleString('es-AR');
+      } else {
+        el.textContent = prefix + current;
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    }
+
+    if (prefersReduced) {
+      el.textContent = isMoney ? prefix + target.toLocaleString('es-AR') : prefix + target;
+    } else {
+      requestAnimationFrame(step);
+    }
+  }
+
+  function activate() {
+    dash.classList.add('is-animated');
+    dash.querySelectorAll('[data-count-to]').forEach(animateCount);
+  }
+
+  if (!('IntersectionObserver' in window)) {
+    activate();
+    return;
+  }
+
+  var observer = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          activate();
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.2 }
+  );
+
+  observer.observe(dash);
 })();

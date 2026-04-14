@@ -34,10 +34,26 @@ $pageSchemas = [
             ],
             [
                 '@type' => 'Question',
-                'name' => '¿Qué conviene mirar primero en una demo?',
+                'name' => '¿Todos los planes incluyen los mismos módulos?',
                 'acceptedAnswer' => [
                     '@type' => 'Answer',
-                    'text' => 'Conviene mirar una operación completa: venta, cobro, impacto en stock, historial, cliente y facturación dentro del mismo circuito.',
+                    'text' => 'Sí. Caja, ventas, stock, clientes, cuenta corriente, facturación y reportes están incluidos en los tres planes. La diferencia es la modalidad de pago y el soporte.',
+                ],
+            ],
+            [
+                '@type' => 'Question',
+                'name' => '¿Qué diferencia hay entre el plan anual y el permanente?',
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => 'El anual incluye soporte y actualizaciones continuas con un ahorro de 2 meses. El permanente es un pago único con 3 meses de soporte incluidos; después, soporte y actualizaciones son opcionales.',
+                ],
+            ],
+            [
+                '@type' => 'Question',
+                'name' => '¿Puedo cambiar de plan después?',
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => 'Sí. Podés pasar de mensual a anual o permanente en cualquier momento. Escribinos y te ayudamos a hacer la transición.',
                 ],
             ],
             [
@@ -175,52 +191,94 @@ if (!function_exists('flus_home_module_icon')) {
     </div>
 
     <div class="hero-media hero-media--board">
-      <div class="hero-system-board" aria-label="Resumen operativo de FLUS">
-        <span class="hero-system-board__badge">Operaci&oacute;n conectada</span>
+      <div class="hero-dash" aria-label="Panel operativo de FLUS" data-hero-dash>
+        <div class="hero-dash__bar">
+          <span class="hero-dash__bar-dot"></span>
+          <span class="hero-dash__bar-dot"></span>
+          <span class="hero-dash__bar-dot"></span>
+          <span class="hero-dash__bar-title">FLUS &mdash; Resumen del d&iacute;a</span>
+        </div>
 
-        <div class="hero-system-board__surface">
-          <div class="hero-system-board__topline" aria-hidden="true">
-            <span>Venta registrada</span>
-            <span>Cobro controlado</span>
-            <span>Stock actualizado</span>
+        <div class="hero-dash__body">
+          <div class="hero-dash__kpis">
+            <div class="hero-dash__kpi">
+              <span class="hero-dash__kpi-label">Ventas hoy</span>
+              <span class="hero-dash__kpi-value" data-count-to="47">0</span>
+              <span class="hero-dash__kpi-trend hero-dash__kpi-trend--up">+12%</span>
+            </div>
+            <div class="hero-dash__kpi">
+              <span class="hero-dash__kpi-label">Facturado</span>
+              <span class="hero-dash__kpi-value" data-count-to="385200" data-prefix="$" data-format="money">$0</span>
+              <span class="hero-dash__kpi-trend hero-dash__kpi-trend--up">+8%</span>
+            </div>
+            <div class="hero-dash__kpi">
+              <span class="hero-dash__kpi-label">Productos vendidos</span>
+              <span class="hero-dash__kpi-value" data-count-to="124">0</span>
+            </div>
+            <div class="hero-dash__kpi">
+              <span class="hero-dash__kpi-label">Clientes atendidos</span>
+              <span class="hero-dash__kpi-value" data-count-to="31">0</span>
+            </div>
           </div>
 
-          <div class="hero-system-board__grid">
-            <article class="hero-system-tile">
-              <span class="hero-system-tile__kicker">Caja</span>
-              <h3>Venta y cobro en la misma vista</h3>
-              <p>Ticket claro, medios de pago visibles y total siempre a mano.</p>
-            </article>
+          <div class="hero-dash__row">
+            <div class="hero-dash__chart">
+              <span class="hero-dash__chart-title">Ventas por hora</span>
+              <div class="hero-dash__bars" aria-hidden="true">
+                <div class="hero-dash__bar-col" style="--h:28%" data-hour="8h"></div>
+                <div class="hero-dash__bar-col" style="--h:45%" data-hour="9h"></div>
+                <div class="hero-dash__bar-col" style="--h:62%" data-hour="10h"></div>
+                <div class="hero-dash__bar-col" style="--h:88%" data-hour="11h"></div>
+                <div class="hero-dash__bar-col hero-dash__bar-col--accent" style="--h:100%" data-hour="12h"></div>
+                <div class="hero-dash__bar-col" style="--h:72%" data-hour="13h"></div>
+                <div class="hero-dash__bar-col" style="--h:54%" data-hour="14h"></div>
+                <div class="hero-dash__bar-col" style="--h:40%" data-hour="15h"></div>
+              </div>
+            </div>
 
-            <article class="hero-system-tile">
-              <span class="hero-system-tile__kicker">Stock</span>
-              <h3>Impacto directo en stock</h3>
-              <p>La venta descuenta existencias y deja trazabilidad sin salir de la operación.</p>
-            </article>
-
-            <article class="hero-system-tile">
-              <span class="hero-system-tile__kicker">Clientes</span>
-              <h3>Seguimiento por cliente</h3>
-              <p>Historial, cuenta corriente y contexto comercial dentro del mismo sistema.</p>
-            </article>
-
-            <article class="hero-system-tile">
-              <span class="hero-system-tile__kicker">Fiscal</span>
-              <h3>Facturaci&oacute;n integrada</h3>
-              <p>Comprobantes y control fiscal conectados al trabajo diario.</p>
-            </article>
+            <div class="hero-dash__activity">
+              <span class="hero-dash__chart-title">Actividad reciente</span>
+              <div class="hero-dash__feed">
+                <div class="hero-dash__feed-item" data-feed-delay="0">
+                  <span class="hero-dash__feed-dot hero-dash__feed-dot--sale"></span>
+                  <span>Venta #1047 &mdash; $12.450</span>
+                  <small>hace 2 min</small>
+                </div>
+                <div class="hero-dash__feed-item" data-feed-delay="1">
+                  <span class="hero-dash__feed-dot hero-dash__feed-dot--stock"></span>
+                  <span>Stock actualizado &mdash; 3 productos</span>
+                  <small>hace 5 min</small>
+                </div>
+                <div class="hero-dash__feed-item" data-feed-delay="2">
+                  <span class="hero-dash__feed-dot hero-dash__feed-dot--invoice"></span>
+                  <span>Factura A-0042 emitida</span>
+                  <small>hace 8 min</small>
+                </div>
+                <div class="hero-dash__feed-item" data-feed-delay="3">
+                  <span class="hero-dash__feed-dot hero-dash__feed-dot--client"></span>
+                  <span>Cliente Mar&iacute;a G. &mdash; pago $8.200</span>
+                  <small>hace 12 min</small>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="hero-system-board__summary">
-            <strong>Una operación impacta donde corresponde.</strong>
-            <p>Ventas, caja, stock, clientes y facturación trabajando sobre la misma información.</p>
-          </div>
-
-          <div class="hero-system-board__flow" aria-hidden="true">
-            <span>Venta</span>
-            <span>Cobro</span>
-            <span>Stock</span>
-            <span>Fiscal</span>
+          <div class="hero-dash__methods">
+            <div class="hero-dash__method">
+              <span class="hero-dash__method-bar" style="--w:52%"></span>
+              <span class="hero-dash__method-label">Efectivo</span>
+              <span class="hero-dash__method-pct">52%</span>
+            </div>
+            <div class="hero-dash__method">
+              <span class="hero-dash__method-bar hero-dash__method-bar--alt" style="--w:31%"></span>
+              <span class="hero-dash__method-label">Transferencia</span>
+              <span class="hero-dash__method-pct">31%</span>
+            </div>
+            <div class="hero-dash__method">
+              <span class="hero-dash__method-bar hero-dash__method-bar--alt2" style="--w:17%"></span>
+              <span class="hero-dash__method-label">Tarjeta</span>
+              <span class="hero-dash__method-pct">17%</span>
+            </div>
           </div>
         </div>
       </div>
@@ -471,10 +529,82 @@ if (!function_exists('flus_home_module_icon')) {
 </section>
 
 
+<section class="section section-dark" id="precios" data-reveal>
+  <div class="container">
+    <div class="pricing-intro">
+      <span class="section-kicker">Planes y precios</span>
+      <h2>Elegí el plan que mejor se adapte a tu negocio</h2>
+      <p class="section-lead">Todos los planes incluyen los mismos módulos: caja, ventas, stock, clientes, cuenta corriente, facturación y reportes. La diferencia está en la modalidad de pago.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <article class="pricing-card">
+        <div class="pricing-card__header">
+          <span class="pricing-card__badge">Flexible</span>
+          <h3>Mensual</h3>
+          <p class="pricing-card__tagline">Ideal para empezar sin compromiso</p>
+        </div>
+        <div class="pricing-card__price">
+          <span class="pricing-card__amount">$29.000</span>
+          <span class="pricing-card__period">/ mes</span>
+        </div>
+        <ul class="pricing-card__features">
+          <li>Todos los módulos incluidos</li>
+          <li>Soporte técnico por WhatsApp y email</li>
+          <li>Actualizaciones incluidas</li>
+          <li>Cancelás cuando quieras</li>
+        </ul>
+        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>">Consultar</a>
+      </article>
+
+      <article class="pricing-card pricing-card--featured">
+        <div class="pricing-card__highlight">Ahorrás 2 meses</div>
+        <div class="pricing-card__header">
+          <span class="pricing-card__badge">Recomendado</span>
+          <h3>Anual</h3>
+          <p class="pricing-card__tagline">El plan más elegido por comercios</p>
+        </div>
+        <div class="pricing-card__price">
+          <span class="pricing-card__amount">$290.000</span>
+          <span class="pricing-card__period">/ año</span>
+        </div>
+        <ul class="pricing-card__features">
+          <li>Todos los módulos incluidos</li>
+          <li>Soporte técnico prioritario</li>
+          <li>Actualizaciones incluidas</li>
+          <li>Equivale a $24.166 por mes</li>
+        </ul>
+        <a class="btn btn-primary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>">Consultar</a>
+      </article>
+
+      <article class="pricing-card">
+        <div class="pricing-card__header">
+          <span class="pricing-card__badge">Una vez</span>
+          <h3>Permanente</h3>
+          <p class="pricing-card__tagline">Licencia instalada, sin mensualidad</p>
+        </div>
+        <div class="pricing-card__price">
+          <span class="pricing-card__amount">$590.000</span>
+          <span class="pricing-card__period">pago único</span>
+        </div>
+        <ul class="pricing-card__features">
+          <li>Todos los módulos incluidos</li>
+          <li>3 meses de soporte incluidos</li>
+          <li>Sin mensualidad obligatoria</li>
+          <li>Soporte y actualizaciones opcionales</li>
+        </ul>
+        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>">Consultar</a>
+      </article>
+    </div>
+
+    <p class="pricing-note">Todos los precios son en pesos argentinos e incluyen IVA. ¿Dudas sobre qué plan conviene? <a href="<?= e(site_url('contacto.php')) ?>">Escribinos</a> y te ayudamos a elegir.</p>
+  </div>
+</section>
+
 <section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Preguntas frecuentes</span>
-    <h2>Preguntas que vale la pena resolver antes de pedir una demo</h2>
+    <h2>Preguntas que vale la pena resolver antes de arrancar</h2>
     <div class="faq-grid">
       <article class="faq-item">
         <h3>&iquest;FLUS es solo un sistema de caja?</h3>
@@ -485,8 +615,16 @@ if (!function_exists('flus_home_module_icon')) {
         <p>Para comercios y pymes con ventas diarias, caja, stock y necesidad de seguir clientes, deuda o facturación sin herramientas separadas.</p>
       </article>
       <article class="faq-item">
-        <h3>&iquest;Qué conviene mirar primero en una demo?</h3>
-        <p>Una operación completa: venta, cobro, impacto en stock, historial, cliente y facturación dentro del mismo circuito.</p>
+        <h3>&iquest;Todos los planes incluyen los mismos módulos?</h3>
+        <p>Sí. Caja, ventas, stock, clientes, cuenta corriente, facturación y reportes están incluidos en los tres planes. La diferencia es la modalidad de pago y el soporte.</p>
+      </article>
+      <article class="faq-item">
+        <h3>&iquest;Qué diferencia hay entre el plan anual y el permanente?</h3>
+        <p>El anual incluye soporte y actualizaciones continuas con un ahorro de 2 meses. El permanente es un pago único con 3 meses de soporte incluidos; después, soporte y actualizaciones son opcionales.</p>
+      </article>
+      <article class="faq-item">
+        <h3>&iquest;Puedo cambiar de plan después?</h3>
+        <p>Sí. Podés pasar de mensual a anual o permanente en cualquier momento. Escribinos y te ayudamos a hacer la transición.</p>
       </article>
       <article class="faq-item">
         <h3>&iquest;Se puede coordinar una demo de FLUS?</h3>
@@ -499,13 +637,13 @@ if (!function_exists('flus_home_module_icon')) {
 <section class="section section-dark" data-reveal>
   <div class="container">
     <div class="cta-box">
-      <h2>Si querés evaluar FLUS, miralo sobre una operación real</h2>
+      <h2>Empezá a ordenar tu negocio con FLUS</h2>
       <p>
-        Te conviene ver venta, cobro, stock, clientes y facturación trabajando juntos para saber si encaja en tu negocio.
+        Pedí una demo para ver cómo trabaja FLUS en una operación real, o elegí el plan que mejor se adapte a tu comercio.
       </p>
       <div class="inline-actions">
         <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
+        <a class="btn btn-secondary" href="#precios">Ver planes y precios</a>
       </div>
     </div>
   </div>
