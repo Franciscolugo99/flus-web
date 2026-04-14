@@ -20,34 +20,43 @@ if (request_is_post()) {
     } else {
         try {
             $pdo = admin_db();
+
             $stmt = $pdo->prepare("
                 SELECT id, username, email, full_name, password_hash, is_active
                 FROM admin_users
-                WHERE (username = :login OR email = :login)
+                WHERE (username = :username OR email = :email)
                 LIMIT 1
             ");
-            $stmt->execute(['login' => $login]);
+
+            $stmt->execute([
+                'username' => $login,
+                'email' => $login,
+            ]);
+
             $user = $stmt->fetch();
 
             if (!$user || !(int) $user['is_active']) {
                 $error = 'Credenciales inválidas.';
-            } elseif (!password_verify($password, $user['password_hash'])) {
+            } elseif (!password_verify($password, (string) $user['password_hash'])) {
                 $error = 'Credenciales inválidas.';
             } else {
                 admin_login_user($user);
 
                 $update = $pdo->prepare('UPDATE admin_users SET last_login_at = NOW() WHERE id = :id');
-                $update->execute(['id' => $user['id']]);
+                $update->execute([
+                    'id' => (int) $user['id'],
+                ]);
 
                 set_flash('success', 'Bienvenido al panel.');
                 redirect_to(admin_url('index.php'));
+            }
+        } catch (Throwable $e) {
+            $error = admin_public_error($e, 'No se pudo iniciar sesión. Revisá la configuración del panel.');
         }
-    } catch (Throwable $e) {
-        $error = admin_public_error($e, 'No se pudo iniciar sesión. Revisá la configuración del panel.');
     }
 }
-}
-?><!doctype html>
+?>
+<!doctype html>
 <html lang="es">
 <head>
     <meta charset="utf-8">

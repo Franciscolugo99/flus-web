@@ -27,7 +27,7 @@ if (!function_exists('admin_config')) {
                     'private_key_passphrase' => '',
                 ],
                 'db' => [
-                    'host' => '127.0.0.1',
+                    'host' => 'localhost',
                     'name' => 'flus-licenciadb',
                     'user' => 'root',
                     'pass' => '',
