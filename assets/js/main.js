@@ -642,6 +642,85 @@ moduleMarquees.forEach((marquee) => {
   measure();
   render();
   rafId = window.requestAnimationFrame(tick);
+
+  /* ── Nav arrows ── */
+  const navContainer = marquee.closest('.modules-band')?.querySelector('[data-module-nav]');
+  if (navContainer) {
+    const cardWidth = () => {
+      const card = group.querySelector('.module-card');
+      if (!card) return 294;
+      return card.getBoundingClientRect().width + 18; // card + gap
+    };
+
+    navContainer.querySelectorAll('.modules-nav__btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const dir = btn.getAttribute('data-dir');
+        const jump = cardWidth() * 2;
+        const target = dir === 'next' ? position - jump : position + jump;
+        animateToPosition(target);
+      });
+    });
+  }
+
+  function animateToPosition(target) {
+    const start = position;
+    const diff = target - start;
+    const duration = 420;
+    const startTime = performance.now();
+    isPausedByPointer = true;
+
+    function step(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      position = start + diff * ease;
+      normalizePosition();
+      render();
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        isPausedByPointer = false;
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  /* ── Progress dots ── */
+  const dotsContainer = marquee.closest('.modules-band')?.querySelector('[data-module-dots]');
+  const totalCards = group.querySelectorAll('.module-card').length;
+
+  if (dotsContainer && totalCards > 0) {
+    const dotCount = totalCards;
+    const dots = [];
+
+    for (let i = 0; i < dotCount; i++) {
+      const dot = document.createElement('button');
+      dot.className = 'modules-dots__dot';
+      dot.setAttribute('aria-label', 'Ir al módulo ' + (i + 1));
+      dot.addEventListener('click', () => {
+        const cardW = (group.querySelector('.module-card')?.getBoundingClientRect().width || 276) + 18;
+        animateToPosition(-cardW * i);
+      });
+      dotsContainer.appendChild(dot);
+      dots.push(dot);
+    }
+
+    // Update dots on a separate interval (never touches the animation loop)
+    const refreshDots = () => {
+      if (!groupWidth) return;
+      const cardW = (group.querySelector('.module-card')?.getBoundingClientRect().width || 276) + 18;
+      const normalizedPos = (((-position % groupWidth) + groupWidth) % groupWidth);
+      const activeIndex = Math.round(normalizedPos / cardW) % dotCount;
+      dots.forEach((d, i) => {
+        d.classList.toggle('is-active', i === activeIndex);
+      });
+    };
+
+    setInterval(refreshDots, 250);
+    refreshDots();
+  }
 });
 
 /* ── Scroll reveal (IntersectionObserver) ── */

@@ -1,0 +1,29 @@
+<?php
+/**
+ * config.local.php — Configuración local / de producción
+ *
+ * Copiá este archivo como config.local.php y completá los datos reales.
+ * Este archivo NO debe subirse al repositorio (ya está en .gitignore).
+ *
+ * En Wiroos: subí config.local.php a includes/ después de desplegar.
+ */
+return [
+    // Correo al que llegan las consultas del formulario
+    'mail_to'       => 'tu-correo@tudominio.com.ar',
+
+    // Correo desde el que se envía (debe coincidir con el usuario SMTP)
+    'mail_from'     => 'info@tudominio.com.ar',
+
+    // Servidor SMTP de Wiroos (consultá en el panel de hosting)
+    'mail_host'     => 'mail.tudominio.com.ar',
+    'mail_port'     => 465,          // 465 para SSL, 587 para TLS
+    'mail_secure'   => 'ssl',        // 'ssl' o 'tls'
+    'mail_username' => 'info@tudominio.com.ar',
+    'mail_password' => 'TU_PASSWORD_AQUI',
+    'mail_timeout'  => 15,
+
+    // Datos de contacto públicos
+    'contact_email'   => 'info@tudominio.com.ar',
+    'contact_phone'   => '+54 261-000-0000',
+    'whatsapp_number' => '+54 261-000-0000',
+];

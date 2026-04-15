@@ -89,14 +89,17 @@ require __DIR__ . '/includes/header.php';
     </div>
 
     <figure class="product-shot">
-      <img
-        src="<?= e(asset_url('img/flus-caja-pos.png')) ?>"
-        alt="Interfaz de caja de FLUS con ticket, medios de pago y total a cobrar"
-        width="1608"
-        height="978"
-        loading="lazy"
-        decoding="async"
-      >
+      <picture>
+        <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
+        <img
+          src="<?= e(asset_url('img/flus-caja-pos.png')) ?>"
+          alt="Interfaz de caja de FLUS con ticket, medios de pago y total a cobrar"
+          width="1608"
+          height="978"
+          loading="lazy"
+          decoding="async"
+        >
+      </picture>
     </figure>
   </div>
 </section>

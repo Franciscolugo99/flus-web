@@ -1,10 +1,13 @@
-  </main>
+  </main><!-- #main-content -->
 
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-brand">
         <a class="footer-brand-lockup" href="<?= e(site_url()) ?>">
-          <img src="<?= e(asset_url('img/flus-mark.png')) ?>" alt="" width="30" height="34">
+          <picture>
+            <source srcset="<?= e(asset_url('img/flus-mark.webp')) ?>" type="image/webp">
+            <img src="<?= e(asset_url('img/flus-mark.png')) ?>" alt="" width="30" height="34" loading="lazy">
+          </picture>
           <span>FLUS</span>
         </a>
         <p class="footer-copy">

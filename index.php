@@ -296,16 +296,33 @@ if (!function_exists('flus_home_module_icon')) {
       </p>
     </div>
 
+    <?php
+      // Map tag names to CSS modifier classes
+      $tagColorMap = [
+        'POS' => 'pos',
+        'Comercial' => 'comercial',
+        'Inventario' => 'inventario',
+        'CRM' => 'crm',
+        'Cobranza' => 'cobranza',
+        'Fiscal' => 'fiscal',
+        'Compras' => 'compras',
+        'Análisis' => 'analisis',
+      ];
+    ?>
+
     <div class="modules-ticker" data-module-marquee data-speed="32">
       <div class="modules-ticker__viewport">
         <div class="modules-ticker__track">
           <div class="modules-ticker__group">
-            <?php foreach ($homeModules as $module): ?>
+            <?php foreach ($homeModules as $i => $module):
+              $tagClass = isset($tagColorMap[$module['tag']]) ? ' module-card__tag--' . $tagColorMap[$module['tag']] : '';
+            ?>
               <article class="module-card" tabindex="0" role="group" aria-label="<?= e($module['name'] . ' | categoria ' . $module['tag']) ?>">
+                <span class="module-card__num" aria-hidden="true"><?= str_pad($i + 1, 2, '0', STR_PAD_LEFT) ?></span>
                 <span class="module-card__icon" aria-hidden="true"><?= flus_home_module_icon($module['icon']) ?></span>
                 <h3><?= e($module['name']) ?></h3>
                 <p><?= e($module['description']) ?></p>
-                <span class="module-card__tag"><?= e($module['tag']) ?></span>
+                <span class="module-card__tag<?= $tagClass ?>"><?= e($module['tag']) ?></span>
               </article>
             <?php endforeach; ?>
           </div>
@@ -313,9 +330,22 @@ if (!function_exists('flus_home_module_icon')) {
       </div>
     </div>
 
+    <!-- Progress dots -->
+    <div class="modules-dots" data-module-dots aria-label="Posición del carrusel"></div>
+
     <div class="modules-band__footer">
       <p class="modules-band__hint">Cada módulo comparte información con el resto. Lo que pasa en caja también impacta en stock, clientes, cuenta corriente y facturación.</p>
-      <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="modules-nav" data-module-nav>
+          <button class="modules-nav__btn" data-dir="prev" aria-label="Anterior">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button class="modules-nav__btn" data-dir="next" aria-label="Siguiente">
+            <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
+      </div>
     </div>
   </div>
 </section>
