@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS web_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    event_type VARCHAR(50) NOT NULL,
+    page_url VARCHAR(255) NOT NULL,
+    page_title VARCHAR(190) DEFAULT NULL,
+    referrer VARCHAR(255) DEFAULT NULL,
+    utm_source VARCHAR(100) DEFAULT NULL,
+    utm_medium VARCHAR(100) DEFAULT NULL,
+    utm_campaign VARCHAR(100) DEFAULT NULL,
+    session_id VARCHAR(100) DEFAULT NULL,
+    ip_hash CHAR(64) DEFAULT NULL,
+    user_agent VARCHAR(255) DEFAULT NULL,
+    device_type VARCHAR(20) DEFAULT NULL,
+    extra_json TEXT DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_web_events_event_type (event_type),
+    KEY idx_web_events_created_at (created_at),
+    KEY idx_web_events_page_url (page_url),
+    KEY idx_web_events_session_id (session_id),
+    KEY idx_web_events_device_type (device_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

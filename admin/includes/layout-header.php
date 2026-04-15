@@ -123,6 +123,8 @@ $__total_alerts = $__expiring_soon + $__expired;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($page_title ?? 'Panel Admin') ?> — FLUS Admin</title>
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
   <link rel="stylesheet" href="<?= admin_url('assets/css/admin.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>

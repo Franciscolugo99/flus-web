@@ -26,6 +26,26 @@ if (!function_exists('admin_config')) {
                     'public_key_path' => __DIR__ . '/license-public.pem',
                     'private_key_passphrase' => '',
                 ],
+                'analytics' => [
+                    'exclude_local_requests' => true,
+                    'exclude_admin_sessions' => true,
+                    'excluded_ips' => [
+                        '127.0.0.1',
+                        '::1',
+                    ],
+                    'excluded_user_agents' => [
+                        'bot',
+                        'crawl',
+                        'spider',
+                        'slurp',
+                        'wget',
+                        'curl',
+                        'facebookexternalhit',
+                        'telegrambot',
+                        'preview',
+                        'monitoring',
+                    ],
+                ],
                 'db' => [
                     'host' => 'localhost',
                     'name' => 'flus-licenciadb',

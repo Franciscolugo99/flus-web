@@ -15,9 +15,9 @@
           controlar caja, seguir stock y trabajar la facturación con más orden operativo.
         </p>
         <div class="footer-cta-row">
-          <a href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
+          <a href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo" data-track-label="Footer solicitar demo">Solicitar demo</a>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <a class="footer-whatsapp" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener">Escribinos por WhatsApp</a>
+            <a class="footer-whatsapp" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer WhatsApp">Escribinos por WhatsApp</a>
           <?php endif; ?>
         </div>
       </div>
@@ -46,13 +46,13 @@
         <strong class="footer-title">Contacto</strong>
         <ul class="footer-links">
           <?php if ($site['contact_email'] !== ''): ?>
-            <li><a href="mailto:<?= e($site['contact_email']) ?>"><?= e($site['contact_email']) ?></a></li>
+            <li><a href="mailto:<?= e($site['contact_email']) ?>" data-track-event="click_contact" data-track-label="Footer correo"><?= e($site['contact_email']) ?></a></li>
           <?php endif; ?>
           <?php if ($site['contact_phone'] !== ''): ?>
-            <li><a href="tel:<?= e(phone_href($site['contact_phone'])) ?>"><?= e($site['contact_phone']) ?></a></li>
+            <li><a href="tel:<?= e(phone_href($site['contact_phone'])) ?>" data-track-event="click_contact" data-track-label="Footer telefono"><?= e($site['contact_phone']) ?></a></li>
           <?php endif; ?>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <li><a href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener">Escribinos por WhatsApp</a></li>
+            <li><a href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer contacto WhatsApp">Escribinos por WhatsApp</a></li>
           <?php endif; ?>
         </ul>
       </div>
@@ -72,6 +72,8 @@
     target="_blank"
     rel="noopener"
     aria-label="Escribinos por WhatsApp"
+    data-track-event="click_whatsapp"
+    data-track-label="WhatsApp flotante"
   >
     <span class="whatsapp-fab__icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -89,6 +91,15 @@
       $scriptSrc .= '?v=' . filemtime($scriptPath);
   }
   ?>
+  <script>window.FLUS_ANALYTICS_ENDPOINT = <?= json_encode(site_url('track.php')) ?>;</script>
+  <?php
+  $analyticsScriptPath = __DIR__ . '/../assets/js/site-analytics.js';
+  $analyticsScriptSrc = asset_url('js/site-analytics.js');
+  if (is_file($analyticsScriptPath)) {
+      $analyticsScriptSrc .= '?v=' . filemtime($analyticsScriptPath);
+  }
+  ?>
   <script src="<?= e($scriptSrc) ?>"></script>
+  <script src="<?= e($analyticsScriptSrc) ?>"></script>
 </body>
 </html>

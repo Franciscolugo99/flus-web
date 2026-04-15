@@ -94,10 +94,6 @@ if (request_is_post()) {
 
             <button type="submit" class="button button--block">Ingresar</button>
         </form>
-
-        <p class="small" style="margin-top:16px;">
-            Primer usuario: usá el script CLI <code>php admin/tools/create_admin.php</code>.
-        </p>
     </section>
 </body>
 </html>

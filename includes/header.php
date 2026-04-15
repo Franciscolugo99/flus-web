@@ -141,8 +141,8 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
             </div>
           </div>
           <a href="<?= e(site_url()) ?>#precios">Precios</a>
-          <a href="<?= e(site_url('contacto.php')) ?>" class="<?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?>>Contacto</a>
-          <a href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" class="nav-cta">Demo</a>
+          <a href="<?= e(site_url('contacto.php')) ?>" class="<?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?> data-track-event="click_contact" data-track-label="Header contacto">Contacto</a>
+          <a href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" class="nav-cta" data-track-event="click_demo" data-track-label="Header demo">Demo</a>
         </nav>
       </div>
     </div>
