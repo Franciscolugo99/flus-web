@@ -35,7 +35,7 @@ require __DIR__ . '/includes/header.php';
         stock, caja, clientes y facturación.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Solicitar demo</a>
         <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
       </div>
     </div>
@@ -111,7 +111,7 @@ require __DIR__ . '/includes/header.php';
         Ahí es donde un sistema de gestión comercial suma valor de verdad: cuando ayuda a vender, controlar y seguir mejor el negocio.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir una demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Pedir una demo</a>
         <a class="btn btn-secondary" href="<?= e(site_url()) ?>#precios">Ver planes y precios</a>
       </div>
     </div>

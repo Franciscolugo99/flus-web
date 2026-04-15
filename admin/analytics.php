@@ -6,15 +6,254 @@ $page_title  = 'Analíticas';
 $active_menu = 'analytics';
 
 require_once __DIR__ . '/includes/layout-header.php';
+require_once __DIR__ . '/../includes/web-analytics.php';
 
 // ---- Período seleccionado ----
 $period = (int)($_GET['months'] ?? 12);
 if (!in_array($period, [3, 6, 12])) $period = 12;
 
+$analytics_boot_error = null;
+
+$web_analytics_enabled = false;
+$web = [
+    'visits_today' => 0,
+    'visits_7d' => 0,
+    'unique_7d' => 0,
+    'whatsapp_30d' => 0,
+    'contact_30d' => 0,
+    'demo_30d' => 0,
+    'downloads_30d' => 0,
+    'page_views_30d' => 0,
+    'interactions_30d' => 0,
+    'interaction_rate_30d' => 0.0,
+    'event_breakdown' => [],
+    'top_interaction_pages' => [],
+    'top_referrers' => [],
+    'top_pages' => [],
+    'latest_events' => [],
+];
+$web_chart_labels = [];
+$web_chart_views = [];
+$web_chart_interactions = [];
+$kpi = [
+    'active_clients' => 0,
+    'new_this_month' => 0,
+    'new_last_month' => 0,
+    'mrr' => 0.0,
+    'arr_ytd' => 0.0,
+    'total_revenue' => 0.0,
+    'active_licenses' => 0,
+    'expired_licenses' => 0,
+    'avg_ltv' => 0.0,
+    'avg_ticket' => 0.0,
+    'retention_rate' => 0.0,
+];
+$total_clients = 1;
+$growth_pct = 0;
+$months_map = [];
+$chart_labels = [];
+$chart_revenue = [];
+$chart_payments = [];
+$chart_clients = [];
+$lic_dist = [];
+$lic_labels = [];
+$lic_data = [];
+$lic_bg_colors = [];
+$pay_dist = [];
+$pay_labels = [];
+$pay_data = [];
+$plan_dist = [];
+$plan_labels = [];
+$plan_data = [];
+$top_clients = [];
+$max_revenue = 1;
+$running = [];
+
+try {
+
+// ============================================================
+// WEB ANALYTICS (MVP)
+// ============================================================
+function analytics_table_exists(PDO $pdo, string $table): bool
+{
+    static $cache = [];
+
+    if (array_key_exists($table, $cache)) {
+        return $cache[$table];
+    }
+
+    $dbName = (string)($pdo->query('SELECT DATABASE()')->fetchColumn() ?: '');
+
+    if ($dbName === '') {
+        $cache[$table] = false;
+        return false;
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = ?
+          AND TABLE_NAME = ?
+    ");
+    $stmt->execute([$dbName, $table]);
+
+    $cache[$table] = ((int)$stmt->fetchColumn()) > 0;
+    return $cache[$table];
+}
+
+$web_analytics_enabled = analytics_table_exists($pdo, 'web_events');
+
+if ($web_analytics_enabled) {
+    $web['visits_today'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type = 'page_view'
+          AND created_at >= CURDATE()
+    ")->fetchColumn();
+
+    $web['visits_7d'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type = 'page_view'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ")->fetchColumn();
+
+    $web['unique_7d'] = (int) $pdo->query("
+        SELECT COUNT(DISTINCT COALESCE(NULLIF(session_id, ''), ip_hash))
+        FROM web_events
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ")->fetchColumn();
+
+    $web['whatsapp_30d'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type = 'click_whatsapp'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ")->fetchColumn();
+
+    $web['contact_30d'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type = 'click_contact'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ")->fetchColumn();
+
+    $web['demo_30d'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type = 'click_demo'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ")->fetchColumn();
+
+    $web['downloads_30d'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type = 'click_download'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ")->fetchColumn();
+
+    $web['page_views_30d'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type = 'page_view'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ")->fetchColumn();
+
+    $web['interactions_30d'] = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM web_events
+        WHERE event_type <> 'page_view'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ")->fetchColumn();
+
+    $web['interaction_rate_30d'] = $web['page_views_30d'] > 0
+        ? round(($web['interactions_30d'] / $web['page_views_30d']) * 100, 1)
+        : 0.0;
+
+    $web['event_breakdown'] = $pdo->query("
+        SELECT event_type, COUNT(*) AS total
+        FROM web_events
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY event_type
+        ORDER BY total DESC, event_type ASC
+    ")->fetchAll();
+
+    $web['top_pages'] = $pdo->query("
+        SELECT page_url, COUNT(*) AS total
+        FROM web_events
+        WHERE event_type = 'page_view'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY page_url
+        ORDER BY total DESC, page_url ASC
+        LIMIT 10
+    ")->fetchAll();
+
+    $web['top_interaction_pages'] = $pdo->query("
+        SELECT page_url, COUNT(*) AS total
+        FROM web_events
+        WHERE event_type <> 'page_view'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY page_url
+        ORDER BY total DESC, page_url ASC
+        LIMIT 10
+    ")->fetchAll();
+
+    $web['top_referrers'] = $pdo->query("
+        SELECT referrer, COUNT(*) AS total
+        FROM web_events
+        WHERE referrer IS NOT NULL
+          AND referrer <> ''
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY referrer
+        ORDER BY total DESC, referrer ASC
+        LIMIT 8
+    ")->fetchAll();
+
+    $web['latest_events'] = $pdo->query("
+        SELECT event_type, page_url, created_at
+        FROM web_events
+        ORDER BY id DESC
+        LIMIT 12
+    ")->fetchAll();
+
+    $daily_map = [];
+    for ($i = 29; $i >= 0; $i--) {
+        $dayKey = date('Y-m-d', strtotime("-$i days"));
+        $daily_map[$dayKey] = [
+            'label' => date('d/m', strtotime($dayKey)),
+            'views' => 0,
+            'interactions' => 0,
+        ];
+    }
+
+    $daily_rows = $pdo->query("
+        SELECT DATE(created_at) AS day,
+               SUM(CASE WHEN event_type = 'page_view' THEN 1 ELSE 0 END) AS page_views,
+               SUM(CASE WHEN event_type <> 'page_view' THEN 1 ELSE 0 END) AS interactions
+        FROM web_events
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    ")->fetchAll();
+
+    foreach ($daily_rows as $row) {
+        $day = (string) ($row['day'] ?? '');
+        if (!isset($daily_map[$day])) {
+            continue;
+        }
+
+        $daily_map[$day]['views'] = (int) ($row['page_views'] ?? 0);
+        $daily_map[$day]['interactions'] = (int) ($row['interactions'] ?? 0);
+    }
+
+    $web_chart_labels = array_column($daily_map, 'label');
+    $web_chart_views = array_column($daily_map, 'views');
+    $web_chart_interactions = array_column($daily_map, 'interactions');
+}
+
 // ============================================================
 // KPIs GLOBALES
 // ============================================================
-$kpi = [];
 
 $r = $pdo->query("SELECT COUNT(*) FROM clients WHERE status = 'activo'");
 $kpi['active_clients'] = (int)$r->fetchColumn();
@@ -185,6 +424,10 @@ foreach ($chart_revenue as $v) {
     $sum += $v;
     $running[] = $sum;
 }
+
+} catch (Throwable $e) {
+    $analytics_boot_error = $e->getMessage();
+}
 ?>
 
 <!-- Selector de período -->
@@ -197,6 +440,228 @@ foreach ($chart_revenue as $v) {
   <span style="margin-left:auto;font-size:.78rem;color:var(--text-muted)">
     Datos al <?= date('d/m/Y') ?>
   </span>
+</div>
+
+<?php if ($analytics_boot_error !== null): ?>
+  <div class="alert alert-error" style="margin-bottom:20px">
+    <strong>Error cargando analíticas:</strong> <?= e($analytics_boot_error) ?>
+  </div>
+<?php endif; ?>
+
+<!-- ============================================================
+     WEB E INTERACCIONES
+     ============================================================ -->
+<div class="chart-panel" style="margin-bottom:20px">
+  <div class="chart-panel-header">
+    <div>
+      <div class="chart-panel-title">🌐 Web e interacciones</div>
+      <div class="chart-panel-subtitle">Tráfico público de FLUS y acciones comerciales registradas en la web</div>
+    </div>
+  </div>
+
+  <?php if (!$web_analytics_enabled): ?>
+    <div class="empty-panel" style="text-align:left">
+      <strong>La tabla <code>web_events</code> todavía no está creada.</strong><br>
+      Importá <code>admin/database/web_events.sql</code> en la misma base del admin y recargá esta pantalla.
+    </div>
+  <?php else: ?>
+    <div class="cards-grid" style="margin-bottom:18px">
+      <div class="stat-card accent">
+        <div class="stat-label">Visitas hoy</div>
+        <div class="stat-value"><?= $web['visits_today'] ?></div>
+        <div class="stat-sub">Eventos <code>page_view</code> del día actual</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Visitas 7 días</div>
+        <div class="stat-value"><?= $web['visits_7d'] ?></div>
+        <div class="stat-sub">Últimos 7 días corridos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Únicos aprox. 7 días</div>
+        <div class="stat-value"><?= $web['unique_7d'] ?></div>
+        <div class="stat-sub">Por <code>session_id</code> / <code>ip_hash</code></div>
+      </div>
+      <div class="stat-card accent">
+        <div class="stat-label">WhatsApp 30 días</div>
+        <div class="stat-value"><?= $web['whatsapp_30d'] ?></div>
+        <div class="stat-sub">Clics detectados hacia WhatsApp</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="stat-label">Interacciones 30 días</div>
+        <div class="stat-value"><?= $web['interactions_30d'] ?></div>
+        <div class="stat-sub">Clics comerciales sin contar vistas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Tasa de interacción</div>
+        <div class="stat-value"><?= number_format((float) $web['interaction_rate_30d'], 1, ',', '.') ?>%</div>
+        <div class="stat-sub">Interacciones / page views</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Contacto 30 días</div>
+        <div class="stat-value"><?= $web['contact_30d'] ?></div>
+        <div class="stat-sub">Enlaces a la página de contacto</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Demo 30 días</div>
+        <div class="stat-value"><?= $web['demo_30d'] ?></div>
+        <div class="stat-sub">CTAs marcados como demo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Descargas 30 días</div>
+        <div class="stat-value"><?= $web['downloads_30d'] ?></div>
+        <div class="stat-sub">Clics en enlaces descargables</div>
+      </div>
+    </div>
+
+    <div class="analytics-grid" style="margin-bottom:18px">
+      <div class="chart-panel" style="margin-bottom:0">
+        <div class="chart-panel-header">
+          <div class="chart-panel-title">📈 Tráfico e interacciones · últimos 30 días</div>
+        </div>
+        <div class="chart-panel-body">
+          <div class="chart-container" style="height:240px">
+            <canvas id="webTrafficChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-panel" style="margin-bottom:0">
+        <div class="chart-panel-header">
+          <div class="chart-panel-title">📄 Páginas más vistas · 30 días</div>
+        </div>
+        <div style="padding:8px 0">
+          <?php if (empty($web['top_pages'])): ?>
+            <div class="empty-panel">Todavía no hay vistas registradas.</div>
+          <?php else: ?>
+            <?php $topPageMax = max(1, (int) max(array_column($web['top_pages'], 'total'))); ?>
+            <?php foreach ($web['top_pages'] as $row): ?>
+              <?php $barPct = (int) round((((int) $row['total']) / $topPageMax) * 100); ?>
+              <div class="top-client-row">
+                <span class="top-client-rank rank-other">•</span>
+                <span class="top-client-name" style="color:inherit" title="<?= e($row['page_url']) ?>"><?= e(web_analytics_page_label($row['page_url'])) ?></span>
+                <div class="top-client-bar-wrap">
+                  <div class="top-client-bar-bg">
+                    <div class="top-client-bar-fill" style="width:<?= $barPct ?>%"></div>
+                  </div>
+                </div>
+                <span class="top-client-amount"><?= (int) $row['total'] ?></span>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
+    <div class="analytics-grid thirds" style="margin-bottom:18px">
+      <div class="chart-panel" style="margin-bottom:0">
+        <div class="chart-panel-header">
+          <div class="chart-panel-title">Breakdown por evento</div>
+        </div>
+        <div style="padding:8px 0">
+          <?php if (empty($web['event_breakdown'])): ?>
+            <div class="empty-panel">Todavia no hay eventos suficientes.</div>
+          <?php else: ?>
+            <?php $eventMax = max(1, (int) max(array_column($web['event_breakdown'], 'total'))); ?>
+            <?php foreach ($web['event_breakdown'] as $row): ?>
+              <?php $barPct = (int) round((((int) $row['total']) / $eventMax) * 100); ?>
+              <div class="top-client-row">
+                <span class="top-client-rank rank-other">+</span>
+                <span class="top-client-name" style="color:inherit"><?= e(web_analytics_event_label((string) $row['event_type'])) ?></span>
+                <div class="top-client-bar-wrap">
+                  <div class="top-client-bar-bg">
+                    <div class="top-client-bar-fill" style="width:<?= $barPct ?>%"></div>
+                  </div>
+                </div>
+                <span class="top-client-amount"><?= (int) $row['total'] ?></span>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="chart-panel" style="margin-bottom:0">
+        <div class="chart-panel-header">
+          <div class="chart-panel-title">Paginas con mas interaccion</div>
+        </div>
+        <div style="padding:8px 0">
+          <?php if (empty($web['top_interaction_pages'])): ?>
+            <div class="empty-panel">Todavia no hay clicks comerciales.</div>
+          <?php else: ?>
+            <?php $interactionPageMax = max(1, (int) max(array_column($web['top_interaction_pages'], 'total'))); ?>
+            <?php foreach ($web['top_interaction_pages'] as $row): ?>
+              <?php $barPct = (int) round((((int) $row['total']) / $interactionPageMax) * 100); ?>
+              <div class="top-client-row">
+                <span class="top-client-rank rank-other">#</span>
+                <span class="top-client-name" style="color:inherit" title="<?= e($row['page_url']) ?>"><?= e(web_analytics_page_label($row['page_url'])) ?></span>
+                <div class="top-client-bar-wrap">
+                  <div class="top-client-bar-bg">
+                    <div class="top-client-bar-fill" style="width:<?= $barPct ?>%"></div>
+                  </div>
+                </div>
+                <span class="top-client-amount"><?= (int) $row['total'] ?></span>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="chart-panel" style="margin-bottom:0">
+        <div class="chart-panel-header">
+          <div class="chart-panel-title">Fuentes principales</div>
+        </div>
+        <div style="padding:8px 0">
+          <?php if (empty($web['top_referrers'])): ?>
+            <div class="empty-panel">Sin referrers externos suficientes.</div>
+          <?php else: ?>
+            <?php $referrerMax = max(1, (int) max(array_column($web['top_referrers'], 'total'))); ?>
+            <?php foreach ($web['top_referrers'] as $row): ?>
+              <?php $barPct = (int) round((((int) $row['total']) / $referrerMax) * 100); ?>
+              <div class="top-client-row">
+                <span class="top-client-rank rank-other">-></span>
+                <span class="top-client-name" style="color:inherit" title="<?= e($row['referrer']) ?>"><?= e(web_analytics_referrer_label($row['referrer'])) ?></span>
+                <div class="top-client-bar-wrap">
+                  <div class="top-client-bar-bg">
+                    <div class="top-client-bar-fill" style="width:<?= $barPct ?>%"></div>
+                  </div>
+                </div>
+                <span class="top-client-amount"><?= (int) $row['total'] ?></span>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:20px">
+      <div class="chart-panel-header">
+        <div class="chart-panel-title">🕒 Últimos eventos registrados</div>
+      </div>
+      <?php if (empty($web['latest_events'])): ?>
+        <div class="empty-panel">Todavía no hay interacciones registradas.</div>
+      <?php else: ?>
+        <div style="overflow:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Evento</th>
+                <th>Página</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($web['latest_events'] as $row): ?>
+                <tr>
+                  <td><?= format_datetime($row['created_at']) ?></td>
+                  <td><span class="badge badge-blue"><?= e(web_analytics_event_label((string) $row['event_type'])) ?></span></td>
+                  <td title="<?= e($row['page_url']) ?>"><?= e(web_analytics_page_label($row['page_url'])) ?></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    </div>
+  <?php endif; ?>
 </div>
 
 <!-- ============================================================
@@ -550,6 +1015,52 @@ foreach ($chart_revenue as $v) {
       }
     }
   });
+
+  const webLabels = <?= json_encode(array_values($web_chart_labels)) ?>;
+  const webViews = <?= json_encode(array_values($web_chart_views)) ?>;
+  const webInteractions = <?= json_encode(array_values($web_chart_interactions)) ?>;
+
+  if (document.getElementById('webTrafficChart')) {
+    new Chart(document.getElementById('webTrafficChart'), {
+      type: 'line',
+      data: {
+        labels: webLabels,
+        datasets: [
+          {
+            label: 'Page views',
+            data: webViews,
+            borderColor: BLUE,
+            backgroundColor: 'rgba(59,130,246,.12)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true,
+            pointRadius: 2,
+          },
+          {
+            label: 'Interacciones',
+            data: webInteractions,
+            borderColor: ACCENT,
+            backgroundColor: 'rgba(0,200,150,.10)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true,
+            pointRadius: 2,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { labels: { color: '#8993ad' } },
+          tooltip: { ...tooltipDefaults }
+        },
+        scales: scaleDefaults((value) => Number(value).toLocaleString('es-AR'))
+      }
+    });
+  }
+
 })();
 </script>
 

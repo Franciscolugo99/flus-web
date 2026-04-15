@@ -35,7 +35,7 @@ require __DIR__ . '/includes/header.php';
         qué se vendió, qué se movió, qué queda disponible y dónde conviene revisar.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Solicitar demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Solicitar demo</a>
         <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
       </div>
     </div>
@@ -110,7 +110,7 @@ require __DIR__ . '/includes/header.php';
         FLUS busca que la disponibilidad y los movimientos formen parte de una operación más conectada y más revisable.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir una demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Pedir una demo</a>
         <a class="btn btn-secondary" href="<?= e(site_url()) ?>#precios">Ver planes y precios</a>
       </div>
     </div>

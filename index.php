@@ -179,7 +179,7 @@ if (!function_exists('flus_home_module_icon')) {
       </p>
 
       <div class="hero-actions hero-stagger hero-stagger--4">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Pedir demo</a>
         <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
       </div>
 
@@ -584,7 +584,7 @@ if (!function_exists('flus_home_module_icon')) {
           <li>Actualizaciones incluidas</li>
           <li>Cancelás cuando quieras</li>
         </ul>
-        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>">Consultar</a>
+        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Consultar plan mensual">Consultar</a>
       </article>
 
       <article class="pricing-card pricing-card--featured">
@@ -604,7 +604,7 @@ if (!function_exists('flus_home_module_icon')) {
           <li>Actualizaciones incluidas</li>
           <li>Equivale a $24.166 por mes</li>
         </ul>
-        <a class="btn btn-primary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>">Consultar</a>
+        <a class="btn btn-primary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Consultar plan anual">Consultar</a>
       </article>
 
       <article class="pricing-card">
@@ -623,11 +623,11 @@ if (!function_exists('flus_home_module_icon')) {
           <li>Sin mensualidad obligatoria</li>
           <li>Soporte y actualizaciones opcionales</li>
         </ul>
-        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>">Consultar</a>
+        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Consultar licencia permanente">Consultar</a>
       </article>
     </div>
 
-    <p class="pricing-note">Todos los precios son en pesos argentinos e incluyen IVA. ¿Dudas sobre qué plan conviene? <a href="<?= e(site_url('contacto.php')) ?>">Escribinos</a> y te ayudamos a elegir.</p>
+    <p class="pricing-note">Todos los precios son en pesos argentinos e incluyen IVA. ¿Dudas sobre qué plan conviene? <a href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Escribinos desde precios">Escribinos</a> y te ayudamos a elegir.</p>
   </div>
 </section>
 
@@ -672,7 +672,7 @@ if (!function_exists('flus_home_module_icon')) {
         Pedí una demo para ver cómo trabaja FLUS en una operación real, o elegí el plan que mejor se adapte a tu comercio.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>">Pedir demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Pedir demo</a>
         <a class="btn btn-secondary" href="#precios">Ver planes y precios</a>
       </div>
     </div>

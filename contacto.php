@@ -135,10 +135,10 @@ require __DIR__ . '/includes/header.php';
       </p>
       <div class="hero-actions">
         <?php if ($site['whatsapp_number'] !== ''): ?>
-          <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener">Hablar por WhatsApp</a>
+          <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Hero contacto WhatsApp">Hablar por WhatsApp</a>
         <?php endif; ?>
         <?php if ($site['contact_email'] !== ''): ?>
-          <a class="btn btn-secondary" href="mailto:<?= e($site['contact_email']) ?>">Enviar correo</a>
+          <a class="btn btn-secondary" href="mailto:<?= e($site['contact_email']) ?>" data-track-event="click_contact" data-track-label="Hero contacto correo">Enviar correo</a>
         <?php endif; ?>
       </div>
     </div>
@@ -181,14 +181,14 @@ require __DIR__ . '/includes/header.php';
           <h3 class="form-success-title">¡Consulta enviada!</h3>
           <p class="form-success-text"><?= e($contactNotice) ?></p>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener">
+            <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Post formulario WhatsApp">
               También podés escribir por WhatsApp
             </a>
           <?php endif; ?>
         </div>
       <?php else: ?>
 
-      <form class="contact-form" data-contact-form action="<?= e(site_url('contacto.php')) ?>#formulario-contacto" method="post" novalidate>
+      <form class="contact-form" data-contact-form data-track-event="click_contact" action="<?= e(site_url('contacto.php')) ?>#formulario-contacto" method="post" novalidate>
         <div class="form-grid">
 
           <div class="form-field form-field--float<?= $contactForm['name'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['name']) ? ' has-error' : '' ?>">
@@ -288,7 +288,7 @@ require __DIR__ . '/includes/header.php';
       <?php if ($site['whatsapp_number'] !== ''): ?>
         <article class="contact-card">
           <h3>WhatsApp</h3>
-          <p><a class="contact-link" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener">Iniciar conversación</a></p>
+          <p><a class="contact-link" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Tarjeta contacto WhatsApp">Iniciar conversación</a></p>
           <p class="muted">La vía más rápida para una primera charla comercial.</p>
         </article>
       <?php endif; ?>
@@ -296,7 +296,7 @@ require __DIR__ . '/includes/header.php';
       <?php if ($site['contact_email'] !== ''): ?>
         <article class="contact-card">
           <h3>Correo</h3>
-          <p><a class="contact-link" href="mailto:<?= e($site['contact_email']) ?>"><?= e($site['contact_email']) ?></a></p>
+          <p><a class="contact-link" href="mailto:<?= e($site['contact_email']) ?>" data-track-event="click_contact" data-track-label="Tarjeta contacto correo"><?= e($site['contact_email']) ?></a></p>
           <p class="muted">Útil para consultas, seguimiento y coordinación de demo.</p>
         </article>
       <?php endif; ?>
@@ -304,7 +304,7 @@ require __DIR__ . '/includes/header.php';
       <?php if ($site['contact_phone'] !== ''): ?>
         <article class="contact-card">
           <h3>Teléfono</h3>
-          <p><a class="contact-link" href="tel:<?= e(phone_href($site['contact_phone'])) ?>"><?= e($site['contact_phone']) ?></a></p>
+          <p><a class="contact-link" href="tel:<?= e(phone_href($site['contact_phone'])) ?>" data-track-event="click_contact" data-track-label="Tarjeta contacto telefono"><?= e($site['contact_phone']) ?></a></p>
           <p class="muted">Si preferís una primera conversación directa.</p>
         </article>
       <?php endif; ?>
