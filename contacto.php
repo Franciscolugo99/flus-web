@@ -26,6 +26,7 @@ $contactForm = [
 $contactErrors = [];
 $contactNotice = null;
 $contactNoticeType = 'success';
+$turnstileEnabled = turnstile_enabled();
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $contactForm = [
@@ -36,6 +37,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         'message' => trim((string) ($_POST['message'] ?? '')),
     ];
     $websiteField = trim((string) ($_POST['website'] ?? ''));
+    $turnstileToken = trim((string) ($_POST['cf-turnstile-response'] ?? ''));
 
     if ($contactForm['name'] === '') {
         $contactErrors['name'] = 'Ingresá tu nombre.';
@@ -69,6 +71,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     if (mb_strlen($contactForm['message']) > 3000) {
         $contactErrors['message'] = 'El mensaje es demasiado largo.';
+    }
+
+    if ($turnstileEnabled) {
+        if ($turnstileToken === '') {
+            $contactErrors['turnstile'] = 'Completá la verificación antes de enviar la consulta.';
+        } else {
+            $turnstileValidation = turnstile_validate_token($turnstileToken);
+            if (empty($turnstileValidation['success'])) {
+                $contactErrors['turnstile'] = 'No pudimos validar la verificación. Probá de nuevo.';
+            }
+        }
     }
 
     if ($websiteField !== '') {
@@ -262,6 +275,20 @@ require __DIR__ . '/includes/header.php';
           <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
         </div>
 
+        <?php if ($turnstileEnabled): ?>
+          <div class="turnstile-shell<?= isset($contactErrors['turnstile']) ? ' has-error' : '' ?>">
+            <div
+              class="cf-turnstile"
+              data-sitekey="<?= e(turnstile_site_key()) ?>"
+              data-theme="light"
+              data-language="es"
+            ></div>
+            <?php if (isset($contactErrors['turnstile'])): ?>
+              <p class="form-error" aria-live="polite"><?= e($contactErrors['turnstile']) ?></p>
+            <?php endif; ?>
+          </div>
+        <?php endif; ?>
+
         <div class="form-actions">
           <button class="btn btn-primary contact-submit" type="submit" data-contact-submit>
             <span class="contact-submit__spinner" aria-hidden="true"></span>
@@ -344,5 +371,9 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </section>
+
+<?php if ($turnstileEnabled): ?>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<?php endif; ?>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

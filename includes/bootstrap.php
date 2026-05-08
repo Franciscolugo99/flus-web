@@ -12,6 +12,8 @@ $site = [
     'mail_username' => 'info@flus.com.ar',
     'mail_password' => '',
     'mail_timeout' => 15,
+    'turnstile_site_key' => '',
+    'turnstile_secret_key' => '',
     'contact_phone' => '+54 261-273-1742',
     'whatsapp_number' => '+54 261-273-1742',
 ];
@@ -253,4 +255,104 @@ function smtp_send_mail(array $message): bool
     fclose($socket);
 
     return $success;
+}
+
+function turnstile_enabled(): bool
+{
+    global $site;
+
+    return trim((string) ($site['turnstile_site_key'] ?? '')) !== ''
+        && trim((string) ($site['turnstile_secret_key'] ?? '')) !== '';
+}
+
+function turnstile_site_key(): string
+{
+    global $site;
+
+    return trim((string) ($site['turnstile_site_key'] ?? ''));
+}
+
+function turnstile_remote_ip(): ?string
+{
+    $candidates = [
+        $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null,
+        $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+        $_SERVER['REMOTE_ADDR'] ?? null,
+    ];
+
+    foreach ($candidates as $candidate) {
+        $candidate = trim((string) $candidate);
+        if ($candidate === '') {
+            continue;
+        }
+
+        if (strpos($candidate, ',') !== false) {
+            $parts = array_map('trim', explode(',', $candidate));
+            $candidate = (string) ($parts[0] ?? '');
+        }
+
+        if ($candidate !== '') {
+            return $candidate;
+        }
+    }
+
+    return null;
+}
+
+function turnstile_validate_token(string $token): array
+{
+    global $site;
+
+    $secret = trim((string) ($site['turnstile_secret_key'] ?? ''));
+    $token = trim($token);
+
+    if ($secret === '' || $token === '') {
+        return [
+            'success' => false,
+            'error-codes' => ['missing-input'],
+        ];
+    }
+
+    $payload = [
+        'secret' => $secret,
+        'response' => $token,
+    ];
+
+    $remoteIp = turnstile_remote_ip();
+    if ($remoteIp !== null) {
+        $payload['remoteip'] = $remoteIp;
+    }
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+            'content' => http_build_query($payload),
+            'timeout' => 10,
+            'ignore_errors' => true,
+        ],
+    ]);
+
+    $response = @file_get_contents(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        false,
+        $context
+    );
+
+    if (!is_string($response) || trim($response) === '') {
+        return [
+            'success' => false,
+            'error-codes' => ['internal-error'],
+        ];
+    }
+
+    $decoded = json_decode($response, true);
+    if (!is_array($decoded)) {
+        return [
+            'success' => false,
+            'error-codes' => ['invalid-json'],
+        ];
+    }
+
+    return $decoded;
 }

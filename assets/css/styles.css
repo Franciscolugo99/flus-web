@@ -1561,6 +1561,17 @@ body.nav-open .nav-toggle span:nth-child(4) {
   overflow: hidden;
 }
 
+.turnstile-shell {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.turnstile-shell.has-error .cf-turnstile {
+  outline: 2px solid rgba(216, 77, 77, 0.18);
+  border-radius: 12px;
+}
+
 .contact-submit {
   position: relative;
   min-width: 210px;
