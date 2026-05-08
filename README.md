@@ -1,48 +1,50 @@
 # FLUS Web
 
-Sitio institucional de FLUS — sistema de gestión comercial.
+Sitio institucional de FLUS - sistema de gestion comercial.
 
-## Cómo usarlo en local
+## Como usarlo en local
 
-1. Extraé el contenido dentro de `C:\xampp\htdocs\flus-web`
-2. Abrí `http://localhost/flus-web/`
+1. Extrae el contenido dentro de `C:\xampp\htdocs\flus-web`
+2. Abri `http://localhost/flus-web/`
 
 ## Antes de publicar en Wiroos
 
-### 1. Configurar correo y contacto
+### 1. Configurar correo, contacto y captcha
 
-Copiá `includes/config.local.php.example` como `includes/config.local.php` y completá los datos reales:
+Copia `includes/config.local.php.example` como `includes/config.local.php` y completa los datos reales:
 
-- `mail_host` — servidor SMTP de Wiroos (ej: `mail.flus.com.ar`)
-- `mail_username` y `mail_password` — credenciales del correo
+- `mail_host` - servidor SMTP de Wiroos (ej: `mail.flus.com.ar`)
+- `mail_username` y `mail_password` - credenciales del correo
 - `contact_email`, `contact_phone`, `whatsapp_number`
+- `turnstile_site_key` y `turnstile_secret_key` si queres activar Cloudflare Turnstile
 
-> ⚠️ `config.local.php` está en `.gitignore` y no se sube al repo. Solo existe en el servidor.
+`config.local.php` esta en `.gitignore` y no se sube al repo. Solo existe en el servidor.
 
 ### 2. Subir a Wiroos
 
-- Subí todo el contenido a `public_html/`
-- Verificá que `.htaccess` esté subido (algunos clientes FTP lo ocultan)
-- Activá el certificado SSL en el panel de Wiroos
-- Cuando SSL esté activo, descomentá el bloque de redirect HTTPS en `.htaccess`
+- Subi todo el contenido a `public_html/`
+- Verifica que `.htaccess` este subido (algunos clientes FTP lo ocultan)
+- Activa el certificado SSL en el panel de Wiroos
+- Cuando SSL este activo, descomenta el bloque de redirect HTTPS en `.htaccess`
 
-### 3. Verificar después de publicar
+### 3. Verificar despues de publicar
 
-- `https://flus.com.ar/robots.txt` — debe responder
-- `https://flus.com.ar/sitemap.xml` — debe responder
-- Enviá un mensaje de prueba desde el formulario de contacto
+- `https://flus.com.ar/robots.txt` debe responder
+- `https://flus.com.ar/sitemap.xml` debe responder
+- Envia un mensaje de prueba desde el formulario de contacto
+- Si Turnstile esta configurado, comproba que el captcha aparezca y que el formulario no envie sin validarlo
 
 ## Archivos principales
 
-| Archivo | Función |
+| Archivo | Funcion |
 |---|---|
 | `index.php` | Home principal |
-| `sistema-de-gestion.php` | Página SEO — sistema de gestión |
-| `sistema-pos.php` | Página SEO — POS |
-| `control-de-stock.php` | Página SEO — control de stock |
-| `facturacion.php` | Página SEO — facturación |
+| `sistema-de-gestion.php` | Pagina SEO - sistema de gestion |
+| `sistema-pos.php` | Pagina SEO - POS |
+| `control-de-stock.php` | Pagina SEO - control de stock |
+| `facturacion.php` | Pagina SEO - facturacion |
 | `contacto.php` | Contacto y formulario demo |
-| `includes/bootstrap.php` | Configuración base (sin credenciales) |
+| `includes/bootstrap.php` | Configuracion base (sin credenciales) |
 | `includes/config.local.php` | Credenciales reales (no en repo) |
 | `assets/css/styles.css` | Estilos |
 | `assets/js/main.js` | Scripts |
