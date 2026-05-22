@@ -23,6 +23,20 @@ if (!function_exists('license_file_name')) {
     }
 }
 
+if (!function_exists('license_public_key_sha256')) {
+    function license_public_key_sha256(): string
+    {
+        $config = admin_config('license', []);
+        $publicKeyPath = (string) ($config['public_key_path'] ?? '');
+        if ($publicKeyPath === '' || !is_file($publicKeyPath)) {
+            return '';
+        }
+
+        $hash = hash_file('sha256', $publicKeyPath);
+        return is_string($hash) ? strtoupper($hash) : '';
+    }
+}
+
 if (!function_exists('build_license_payload')) {
     function build_license_payload(array $license): array
     {
@@ -85,9 +99,12 @@ if (!function_exists('build_signed_license_document')) {
         $canonicalPayload = license_canonical_json($payload);
 
         return [
+            'format' => 'FLUS-RSA-LICENSE-1',
+            'issuer' => (string) (admin_config('license', [])['issuer'] ?? 'FLUS'),
             'alg' => 'RSA-SHA256',
             'payload_b64' => base64_encode($canonicalPayload),
             'sig_b64' => sign_license_payload($canonicalPayload),
+            'pubkey_sha256' => license_public_key_sha256(),
         ];
     }
 }

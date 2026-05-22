@@ -23,7 +23,9 @@ Antes de descargar archivos de licencia firmados, crear el par de claves RSA:
 & "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\create_license_keys.php"
 ```
 
-El admin genera un archivo `.license.json` desde cada licencia registrada. La clave privada queda en `admin/config/license-private.pem` y no debe subirse al repositorio. La clave pública `admin/config/license-public.pem` es la que después debería usar la app de escritorio para validar la firma.
+El admin genera un archivo `.license.json` desde cada licencia registrada. La clave privada queda en `admin/config/license-private.pem` y no debe subirse al repositorio. La clave pública `admin/config/license-public.pem` debe coincidir con la clave pública incluida en FLUS para validar la firma.
+
+Los archivos descargados incluyen metadatos no secretos (`format`, `issuer`, `pubkey_sha256`) para diagnosticar compatibilidad. FLUS 4.0.0 valida el contrato `FLUS-RSA-LICENSE-1` con RSA-SHA256.
 
 ## Seguridad
 
