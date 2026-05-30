@@ -83,7 +83,7 @@ $bodyClass = 'page-' . preg_replace('/[^a-z0-9\-]+/i', '-', pathinfo($currentFil
   <meta name="twitter:description" content="<?= e($pageDescription) ?>">
   <meta name="twitter:image" content="<?= e($ogImage) ?>">
 <?php if (is_active_page('index.php')): ?>
-  <link rel="preload" as="image" href="<?= e(asset_url('img/flus-caja-pos.png')) ?>" fetchpriority="high">
+  <link rel="preload" as="image" href="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" fetchpriority="high">
 <?php endif; ?>
 <?php foreach ($schemas as $schema): ?>
   <script type="application/ld+json"><?= json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?></script>

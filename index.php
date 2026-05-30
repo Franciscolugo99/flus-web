@@ -179,8 +179,8 @@ if (!function_exists('flus_home_module_icon')) {
       </p>
 
       <div class="hero-actions hero-stagger hero-stagger--4">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Pedir demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo" data-track-label="Hero solicitar demo">Solicitar demo</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
       </div>
 
       <ul class="hero-points hero-stagger hero-stagger--5">
@@ -188,100 +188,56 @@ if (!function_exists('flus_home_module_icon')) {
         <li>Stock, caja y cliente actualizados dentro del mismo circuito.</li>
         <li>Historial, cuenta corriente y reportes para seguir el día a día.</li>
       </ul>
+
+      <div class="hero-proof hero-stagger hero-stagger--5" aria-label="Señales operativas de FLUS">
+        <span>POS</span>
+        <span>Stock</span>
+        <span>Caja</span>
+        <span>Facturación</span>
+      </div>
     </div>
 
-    <div class="hero-media hero-media--board">
-      <div class="hero-dash" aria-label="Panel operativo de FLUS" data-hero-dash>
-        <div class="hero-dash__bar">
-          <span class="hero-dash__bar-dot"></span>
-          <span class="hero-dash__bar-dot"></span>
-          <span class="hero-dash__bar-dot"></span>
-          <span class="hero-dash__bar-title">FLUS &mdash; Resumen del d&iacute;a</span>
-        </div>
-
-        <div class="hero-dash__body">
-          <div class="hero-dash__kpis">
-            <div class="hero-dash__kpi">
-              <span class="hero-dash__kpi-label">Ventas hoy</span>
-              <span class="hero-dash__kpi-value" data-count-to="47">0</span>
-              <span class="hero-dash__kpi-trend hero-dash__kpi-trend--up">+12%</span>
-            </div>
-            <div class="hero-dash__kpi">
-              <span class="hero-dash__kpi-label">Facturado</span>
-              <span class="hero-dash__kpi-value" data-count-to="385200" data-prefix="$" data-format="money">$0</span>
-              <span class="hero-dash__kpi-trend hero-dash__kpi-trend--up">+8%</span>
-            </div>
-            <div class="hero-dash__kpi">
-              <span class="hero-dash__kpi-label">Productos vendidos</span>
-              <span class="hero-dash__kpi-value" data-count-to="124">0</span>
-            </div>
-            <div class="hero-dash__kpi">
-              <span class="hero-dash__kpi-label">Clientes atendidos</span>
-              <span class="hero-dash__kpi-value" data-count-to="31">0</span>
-            </div>
-          </div>
-
-          <div class="hero-dash__row">
-            <div class="hero-dash__chart">
-              <span class="hero-dash__chart-title">Ventas por hora</span>
-              <div class="hero-dash__bars" aria-hidden="true">
-                <div class="hero-dash__bar-col" style="--h:28%" data-hour="8h"></div>
-                <div class="hero-dash__bar-col" style="--h:45%" data-hour="9h"></div>
-                <div class="hero-dash__bar-col" style="--h:62%" data-hour="10h"></div>
-                <div class="hero-dash__bar-col" style="--h:88%" data-hour="11h"></div>
-                <div class="hero-dash__bar-col hero-dash__bar-col--accent" style="--h:100%" data-hour="12h"></div>
-                <div class="hero-dash__bar-col" style="--h:72%" data-hour="13h"></div>
-                <div class="hero-dash__bar-col" style="--h:54%" data-hour="14h"></div>
-                <div class="hero-dash__bar-col" style="--h:40%" data-hour="15h"></div>
-              </div>
-            </div>
-
-            <div class="hero-dash__activity">
-              <span class="hero-dash__chart-title">Actividad reciente</span>
-              <div class="hero-dash__feed">
-                <div class="hero-dash__feed-item" data-feed-delay="0">
-                  <span class="hero-dash__feed-dot hero-dash__feed-dot--sale"></span>
-                  <span>Venta #1047 &mdash; $12.450</span>
-                  <small>hace 2 min</small>
-                </div>
-                <div class="hero-dash__feed-item" data-feed-delay="1">
-                  <span class="hero-dash__feed-dot hero-dash__feed-dot--stock"></span>
-                  <span>Stock actualizado &mdash; 3 productos</span>
-                  <small>hace 5 min</small>
-                </div>
-                <div class="hero-dash__feed-item" data-feed-delay="2">
-                  <span class="hero-dash__feed-dot hero-dash__feed-dot--invoice"></span>
-                  <span>Factura A-0042 emitida</span>
-                  <small>hace 8 min</small>
-                </div>
-                <div class="hero-dash__feed-item" data-feed-delay="3">
-                  <span class="hero-dash__feed-dot hero-dash__feed-dot--client"></span>
-                  <span>Cliente Mar&iacute;a G. &mdash; pago $8.200</span>
-                  <small>hace 12 min</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="hero-dash__methods">
-            <div class="hero-dash__method">
-              <span class="hero-dash__method-bar" style="--w:52%"></span>
-              <span class="hero-dash__method-label">Efectivo</span>
-              <span class="hero-dash__method-pct">52%</span>
-            </div>
-            <div class="hero-dash__method">
-              <span class="hero-dash__method-bar hero-dash__method-bar--alt" style="--w:31%"></span>
-              <span class="hero-dash__method-label">Transferencia</span>
-              <span class="hero-dash__method-pct">31%</span>
-            </div>
-            <div class="hero-dash__method">
-              <span class="hero-dash__method-bar hero-dash__method-bar--alt2" style="--w:17%"></span>
-              <span class="hero-dash__method-label">Tarjeta</span>
-              <span class="hero-dash__method-pct">17%</span>
-            </div>
-          </div>
-        </div>
+    <div class="hero-media hero-media--product hero-stagger hero-stagger--5">
+      <figure class="product-shot product-shot--hero">
+        <picture>
+          <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
+          <img
+            src="<?= e(asset_url('img/flus-caja-pos.png')) ?>"
+            alt="Pantalla de caja POS de FLUS con ticket, medios de pago y total a cobrar"
+            width="1384"
+            height="825"
+            fetchpriority="high"
+            decoding="async"
+          >
+        </picture>
+      </figure>
+      <div class="hero-media-caption" aria-hidden="true">
+        <strong>Caja conectada</strong>
+        <span>Ticket, cobro, stock y cliente dentro del mismo flujo.</span>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="operation-proof" data-reveal aria-labelledby="operation-proof-title">
+  <div class="container operation-proof__grid">
+    <div>
+      <span class="section-kicker">Operación real</span>
+      <h2 id="operation-proof-title">FLUS no suma pantallas aisladas: conecta el trabajo diario</h2>
+    </div>
+    <div class="operation-proof__items">
+      <article>
+        <strong>Mostrador</strong>
+        <span>La venta deja ticket, medio de pago y movimiento registrado.</span>
+      </article>
+      <article>
+        <strong>Inventario</strong>
+        <span>El stock se actualiza con trazabilidad y menos planillas paralelas.</span>
+      </article>
+      <article>
+        <strong>Seguimiento</strong>
+        <span>Clientes, cuenta corriente y comprobantes quedan disponibles para revisar.</span>
+      </article>
     </div>
   </div>
 </section>
@@ -672,7 +628,7 @@ if (!function_exists('flus_home_module_icon')) {
         Pedí una demo para ver cómo trabaja FLUS en una operación real, o elegí el plan que mejor se adapte a tu comercio.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Pedir demo</a>
+        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo" data-track-label="CTA final solicitar demo">Solicitar demo</a>
         <a class="btn btn-secondary" href="#precios">Ver planes y precios</a>
       </div>
     </div>
