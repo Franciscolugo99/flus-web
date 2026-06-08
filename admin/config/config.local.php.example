@@ -1,0 +1,18 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'db' => [
+        'host' => 'localhost',
+        'name' => 'flus-licenciadb',
+        'user' => 'flus_web',
+        'pass' => 'GENERAR_UNA_CLAVE_LARGA_Y_UNICA',
+        'charset' => 'utf8mb4',
+    ],
+    'license' => [
+        'private_key_passphrase' => 'GENERAR_OTRA_CLAVE_LARGA_Y_UNICA',
+    ],
+    'security' => [
+        'rate_limit_salt' => 'GENERAR_UN_VALOR_ALEATORIO_DE_32_BYTES',
+    ],
+];

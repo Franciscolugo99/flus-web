@@ -10,14 +10,15 @@ if (!function_exists('admin_start_session')) {
 
         $isHttps = (
             (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
-            (($_SERVER['SERVER_PORT'] ?? null) === '443')
+            (($_SERVER['SERVER_PORT'] ?? null) === '443') ||
+            (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https')
         );
 
         session_name((string) admin_config('session_name', 'flus_admin_session'));
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
-            'secure' => $isHttps,
+            'secure' => admin_config('env', 'production') === 'production' ? true : $isHttps,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);

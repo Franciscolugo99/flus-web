@@ -337,7 +337,12 @@ if (!function_exists('web_analytics_clean_referrer')) {
             }
         }
 
-        return $referrer;
+        $scheme = strtolower((string) parse_url($referrer, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true) || !is_string($referrerHost) || $referrerHost === '') {
+            return null;
+        }
+
+        return $scheme . '://' . strtolower($referrerHost);
     }
 }
 
@@ -359,7 +364,7 @@ if (!function_exists('web_analytics_normalize_payload')) {
 
         return [
             'event_type' => $eventType,
-            'page_url' => web_analytics_limit_string($payload['page_url'] ?? '', 255) ?? '/',
+            'page_url' => web_analytics_normalize_page_path((string) ($payload['page_url'] ?? '/')),
             'page_title' => web_analytics_limit_string($payload['page_title'] ?? '', 190),
             'referrer' => web_analytics_clean_referrer($payload['referrer'] ?? ''),
             'utm_source' => web_analytics_limit_string($payload['utm_source'] ?? '', 100),

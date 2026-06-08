@@ -16,7 +16,7 @@ if (!function_exists('admin_config')) {
 
             $config = [
                 'app_name' => 'FLUS Admin',
-                'env' => 'production', // production | development
+                'env' => getenv('FLUS_ADMIN_ENV') ?: 'production',
                 'base_path' => $basePath,
                 'timezone' => 'America/Argentina/Mendoza',
                 'session_name' => 'flus_admin_session',
@@ -24,7 +24,10 @@ if (!function_exists('admin_config')) {
                     'issuer' => 'FLUS',
                     'private_key_path' => __DIR__ . '/license-private.pem',
                     'public_key_path' => __DIR__ . '/license-public.pem',
-                    'private_key_passphrase' => '',
+                    'private_key_passphrase' => getenv('FLUS_LICENSE_PASSPHRASE') ?: '',
+                ],
+                'security' => [
+                    'rate_limit_salt' => getenv('FLUS_RATE_LIMIT_SALT') ?: '',
                 ],
                 'analytics' => [
                     'exclude_local_requests' => true,
@@ -47,13 +50,21 @@ if (!function_exists('admin_config')) {
                     ],
                 ],
                 'db' => [
-                    'host' => 'localhost',
-                    'name' => 'flus-licenciadb',
-                    'user' => 'root',
-                    'pass' => '',
-                    'charset' => 'utf8mb4',
+                    'host' => getenv('FLUS_DB_HOST') ?: 'DB_HOST',
+                    'name' => getenv('FLUS_DB_NAME') ?: 'DB_NAME',
+                    'user' => getenv('FLUS_DB_USER') ?: 'DB_USER',
+                    'pass' => getenv('FLUS_DB_PASS') ?: '',
+                    'charset' => getenv('FLUS_DB_CHARSET') ?: 'utf8mb4',
                 ],
             ];
+
+            $localConfigPath = __DIR__ . '/config.local.php';
+            if (is_file($localConfigPath)) {
+                $localConfig = require $localConfigPath;
+                if (is_array($localConfig)) {
+                    $config = array_replace_recursive($config, $localConfig);
+                }
+            }
 
             date_default_timezone_set($config['timezone']);
 

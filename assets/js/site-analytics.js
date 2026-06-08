@@ -26,13 +26,13 @@
     const storageKey = 'flus_analytics_session_id';
 
     try {
-      const existing = window.localStorage.getItem(storageKey);
+      const existing = window.sessionStorage.getItem(storageKey);
       if (existing) {
         return existing;
       }
 
       const generated = buildSessionId();
-      window.localStorage.setItem(storageKey, generated);
+      window.sessionStorage.setItem(storageKey, generated);
       return generated;
     } catch (error) {
       if (!window.__flusAnalyticsMemoryId) {

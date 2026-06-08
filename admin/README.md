@@ -2,31 +2,39 @@
 
 Panel privado para gestionar clientes, licencias, pagos, vencimientos y descargas de FLUS.
 
-## Instalación local
+## Instalacion local
 
 1. Crear una base MySQL para el panel.
 2. Importar `admin/database/schema.sql`.
-3. Configurar la conexión en `admin/config/config.php`.
-4. Crear el primer usuario administrador desde consola:
+3. Copiar `admin/config/config.local.php.example` como
+   `admin/config/config.local.php`.
+4. Configurar un usuario MySQL exclusivo, con permisos solo sobre la base del panel.
+5. Crear el primer usuario administrador desde consola:
 
 ```powershell
 & "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\create_admin.php" martin martin@flus.com.ar "ClaveSegura123" "Martin"
 ```
 
-5. Entrar a `http://localhost/flus-web/admin/login.php`.
+6. Entrar a `http://localhost/flus-web/admin/login.php`.
 
 ## Generador de licencias
 
-Antes de descargar archivos de licencia firmados, crear el par de claves RSA:
+Antes de descargar archivos de licencia firmados, configurar una passphrase
+en `admin/config/config.local.php` y crear el par RSA:
 
 ```powershell
 & "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\create_license_keys.php"
 ```
 
-El admin genera un archivo `.license.json` desde cada licencia registrada. La clave privada queda en `admin/config/license-private.pem` y no debe subirse al repositorio. La clave pública `admin/config/license-public.pem` debe coincidir con la clave pública incluida en FLUS para validar la firma.
+La clave privada queda en `admin/config/license-private.pem` y nunca debe
+subirse al repositorio ni incluirse en paquetes publicos. La clave publica
+debe coincidir con la incorporada en FLUS para validar la firma.
 
-Los archivos descargados incluyen metadatos no secretos (`format`, `issuer`, `pubkey_sha256`) para diagnosticar compatibilidad. FLUS 4.0.0 valida el contrato `FLUS-RSA-LICENSE-1` con RSA-SHA256.
+Los archivos descargados usan el contrato `FLUS-RSA-LICENSE-1` con RSA-SHA256.
 
 ## Seguridad
 
-`admin/config`, `admin/database` y `admin/tools` tienen `.htaccess` para bloquear acceso web directo. Los scripts de `admin/tools` también validan ejecución por CLI.
+- `admin/config`, `admin/database` y `admin/tools` bloquean acceso web directo.
+- Los secretos viven en archivos `config.local.php` ignorados por Git.
+- Login, contacto y analitica tienen limites de frecuencia.
+- Produccion debe forzar HTTPS y conservar HSTS activo.

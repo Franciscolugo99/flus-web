@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/security.php';
 
 if (admin_is_logged_in()) {
     redirect_to(admin_url('index.php'));
@@ -14,8 +15,29 @@ if (request_is_post()) {
 
     $login = trim((string) ($_POST['login'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
+    $clientIp = security_client_ip();
+    $loginIdentifier = strtolower($login);
+    $rateLimited = false;
 
-    if ($login === '' || $password === '') {
+    if ($login !== '' && $password !== '') {
+        try {
+            $ipLimit = security_rate_limit('admin_login_ip', $clientIp, 10, 900);
+            $loginLimit = security_rate_limit('admin_login_identifier', $loginIdentifier, 5, 900);
+            if (!$ipLimit['allowed'] || !$loginLimit['allowed']) {
+                $rateLimited = true;
+                http_response_code(429);
+                header('Retry-After: ' . max($ipLimit['retry_after'], $loginLimit['retry_after']));
+                $error = 'Demasiados intentos. Esperá unos minutos antes de volver a probar.';
+            }
+        } catch (Throwable $e) {
+            $rateLimited = true;
+            $error = admin_public_error($e, 'No se pudo validar el acceso en este momento.');
+        }
+    }
+
+    if ($rateLimited) {
+        // The public error was set above.
+    } elseif ($login === '' || $password === '') {
         $error = 'Ingresá usuario o email y contraseña.';
     } else {
         try {
@@ -40,6 +62,8 @@ if (request_is_post()) {
             } elseif (!password_verify($password, (string) $user['password_hash'])) {
                 $error = 'Credenciales inválidas.';
             } else {
+                security_rate_limit_reset('admin_login_ip', $clientIp);
+                security_rate_limit_reset('admin_login_identifier', $loginIdentifier);
                 admin_login_user($user);
 
                 $update = $pdo->prepare('UPDATE admin_users SET last_login_at = NOW() WHERE id = :id');

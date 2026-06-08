@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/includes/security.php';
 $pageTitle = 'Contacto y demo de FLUS | Sistema de gestión comercial';
 $pageDescription = 'Solicitá una demo de FLUS y conocé cómo puede ayudarte a ordenar ventas, stock, caja, clientes y facturación con una operación más profesional.';
 $pageBreadcrumbs = [
@@ -38,6 +39,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     ];
     $websiteField = trim((string) ($_POST['website'] ?? ''));
     $turnstileToken = trim((string) ($_POST['cf-turnstile-response'] ?? ''));
+
+    try {
+        $contactLimit = security_rate_limit('contact_form_ip', security_client_ip(), 5, 900);
+        if (!$contactLimit['allowed']) {
+            http_response_code(429);
+            header('Retry-After: ' . $contactLimit['retry_after']);
+            $contactErrors['rate_limit'] = 'Esperá unos minutos antes de volver a enviar.';
+        }
+    } catch (Throwable $e) {
+        error_log('[FLUS Web] contact rate limit: ' . $e->getMessage());
+        $contactErrors['rate_limit'] = 'No pudimos validar el envío en este momento.';
+    }
 
     if ($contactForm['name'] === '') {
         $contactErrors['name'] = 'Ingresá tu nombre.';
