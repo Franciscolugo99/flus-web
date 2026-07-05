@@ -32,6 +32,21 @@ debe coincidir con la incorporada en FLUS para validar la firma.
 
 Los archivos descargados usan el contrato `FLUS-RSA-LICENSE-1` con RSA-SHA256.
 
+## Validacion cloud
+
+El endpoint `admin/api/license-check.php` recibe consultas POST de FLUS y
+devuelve un documento `FLUS-CLOUD-LICENSE-1` firmado con RSA-SHA256. El estado
+se toma de la tabla `licenses`:
+
+- `activa`, `por_vencer` y `demo` responden `active`.
+- `suspendida` responde `suspended`.
+- licencias vencidas responden `expired`.
+- una clave no registrada responde `revoked`.
+
+Para exigir token compartido, configurar `license.cloud_api_token` en
+`admin/config/config.local.php` y el mismo valor como `FLUS_LICENSE_CLOUD_TOKEN`
+en la instalacion FLUS.
+
 ## Seguridad
 
 - `admin/config`, `admin/database` y `admin/tools` bloquean acceso web directo.

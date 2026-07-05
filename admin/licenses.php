@@ -13,26 +13,51 @@ $clientId = (int) ($_GET['client_id'] ?? 0);
 try {
     $pdo = admin_db();
 
-    if (request_is_post() && ($_POST['action'] ?? '') === 'delete') {
+    if (request_is_post()) {
         verify_csrf();
+        $action = (string) ($_POST['action'] ?? '');
         $id = (int) ($_POST['id'] ?? 0);
 
-        $checkStmt = $pdo->prepare("
-            SELECT
-                (SELECT COUNT(*) FROM payments WHERE license_id = :id) AS payments_count,
-                (SELECT COUNT(*) FROM license_notifications WHERE license_id = :id) AS notifications_count
-        ");
-        $checkStmt->execute(['id' => $id]);
-        $counts = $checkStmt->fetch();
+        if ($action === 'set_status') {
+            $status = trim((string) ($_POST['status'] ?? ''));
+            $allowedStatusActions = [
+                'activa' => 'Licencia reactivada correctamente.',
+                'suspendida' => 'Licencia suspendida correctamente.',
+                'vencida' => 'Licencia marcada como vencida.',
+            ];
 
-        if (!$counts) {
-            set_flash('error', 'Licencia no encontrada.');
-        } elseif ((int) $counts['payments_count'] > 0 || (int) $counts['notifications_count'] > 0) {
-            set_flash('warning', 'No se puede eliminar la licencia porque tiene pagos o notificaciones asociadas.');
+            if ($id <= 0 || !array_key_exists($status, $allowedStatusActions)) {
+                set_flash('error', 'Accion de licencia invalida.');
+            } else {
+                $update = $pdo->prepare('UPDATE licenses SET status = :status, updated_at = NOW() WHERE id = :id');
+                $update->execute(['status' => $status, 'id' => $id]);
+
+                if ($update->rowCount() > 0) {
+                    set_flash('success', $allowedStatusActions[$status]);
+                } else {
+                    set_flash('warning', 'No se encontro la licencia o ya tenia ese estado.');
+                }
+            }
+        } elseif ($action === 'delete') {
+            $checkStmt = $pdo->prepare("
+                SELECT
+                    (SELECT COUNT(*) FROM payments WHERE license_id = :id) AS payments_count,
+                    (SELECT COUNT(*) FROM license_notifications WHERE license_id = :id) AS notifications_count
+            ");
+            $checkStmt->execute(['id' => $id]);
+            $counts = $checkStmt->fetch();
+
+            if (!$counts) {
+                set_flash('error', 'Licencia no encontrada.');
+            } elseif ((int) $counts['payments_count'] > 0 || (int) $counts['notifications_count'] > 0) {
+                set_flash('warning', 'No se puede eliminar la licencia porque tiene pagos o notificaciones asociadas.');
+            } else {
+                $delete = $pdo->prepare('DELETE FROM licenses WHERE id = :id');
+                $delete->execute(['id' => $id]);
+                set_flash('success', 'Licencia eliminada correctamente.');
+            }
         } else {
-            $delete = $pdo->prepare('DELETE FROM licenses WHERE id = :id');
-            $delete->execute(['id' => $id]);
-            set_flash('success', 'Licencia eliminada correctamente.');
+            set_flash('error', 'Accion no registrada.');
         }
 
         redirect_to(admin_url('licenses.php' . ($clientId ? '?client_id=' . $clientId : '')));
@@ -108,6 +133,18 @@ require __DIR__ . '/includes/layout-header.php';
                             <div class="actions">
                                 <a class="button button--ghost" href="<?= e(admin_url('license-edit.php?id=' . (int) $license['id'])) ?>">Editar / renovar</a>
                                 <a class="button button--ghost" href="<?= e(admin_url('license-download.php?id=' . (int) $license['id'])) ?>">Descargar licencia</a>
+                                <form method="post" style="display:inline;">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="action" value="set_status">
+                                    <input type="hidden" name="id" value="<?= (int) $license['id'] ?>">
+                                    <?php if ($license['status'] === 'suspendida'): ?>
+                                        <input type="hidden" name="status" value="activa">
+                                        <button type="submit" class="button button--ghost">Reactivar</button>
+                                    <?php else: ?>
+                                        <input type="hidden" name="status" value="suspendida">
+                                        <button type="submit" class="button button--danger" data-confirm="Â¿Suspender esta licencia? FLUS quedara limitado cuando sincronice.">Suspender</button>
+                                    <?php endif; ?>
+                                </form>
                                 <form method="post" style="display:inline;">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="action" value="delete">

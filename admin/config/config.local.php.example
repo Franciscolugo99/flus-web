@@ -11,6 +11,8 @@ return [
     ],
     'license' => [
         'private_key_passphrase' => 'GENERAR_OTRA_CLAVE_LARGA_Y_UNICA',
+        'cloud_api_token' => 'GENERAR_TOKEN_PARA_FLUS_CLIENTES',
+        'cloud_check_interval_sec' => 300,
     ],
     'security' => [
         'rate_limit_salt' => 'GENERAR_UN_VALOR_ALEATORIO_DE_32_BYTES',

@@ -4,5 +4,6 @@ includes/config.local.php
 admin/config/config.local.php
 admin/config/license-private.pem
 admin/config/license-public.pem
+admin/config/license.passphrase.local
 .codex_tmp/
 .rnd

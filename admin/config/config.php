@@ -25,6 +25,8 @@ if (!function_exists('admin_config')) {
                     'private_key_path' => __DIR__ . '/license-private.pem',
                     'public_key_path' => __DIR__ . '/license-public.pem',
                     'private_key_passphrase' => getenv('FLUS_LICENSE_PASSPHRASE') ?: '',
+                    'cloud_api_token' => getenv('FLUS_LICENSE_CLOUD_API_TOKEN') ?: '',
+                    'cloud_check_interval_sec' => 300,
                 ],
                 'security' => [
                     'rate_limit_salt' => getenv('FLUS_RATE_LIMIT_SALT') ?: '',
