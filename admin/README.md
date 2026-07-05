@@ -47,6 +47,17 @@ Para exigir token compartido, configurar `license.cloud_api_token` en
 `admin/config/config.local.php` y el mismo valor como `FLUS_LICENSE_CLOUD_TOKEN`
 en la instalacion FLUS.
 
+## Control operativo
+
+El listado de licencias muestra el estado que va a recibir FLUS desde la API
+cloud y permite suspender o reactivar con motivo administrativo. Cada cambio
+queda registrado en `license_events` con usuario, motivo, estado anterior,
+estado nuevo y fecha.
+
+La tabla `license_events` esta incluida en `admin/database/schema.sql` para
+instalaciones limpias. En instalaciones existentes, el panel la crea de forma
+idempotente la primera vez que se abre el dashboard o se cambia una licencia.
+
 ## Seguridad
 
 - `admin/config`, `admin/database` y `admin/tools` bloquean acceso web directo.

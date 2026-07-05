@@ -523,7 +523,7 @@ textarea { resize: vertical; min-height: 90px; }
 /* ============================================================
    DASHBOARD SECTIONS
    ============================================================ */
-.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
 .dash-panel {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -841,11 +841,104 @@ body.login-page {
   gap: 8px;
 }
 
+.toolbar--stack {
+  align-items: flex-start;
+}
+
 .actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.license-ops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ops-card {
+  background: var(--bg-surface);
+  border: 1px solid rgba(0,200,150,.22);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: grid;
+  gap: 2px;
+  min-height: 100px;
+}
+
+.ops-card strong {
+  color: var(--accent);
+  font-size: 1.75rem;
+  line-height: 1.05;
+}
+
+.ops-card span {
+  color: var(--text-muted);
+  font-size: .76rem;
+}
+
+.ops-card__label {
+  color: var(--text-secondary) !important;
+  font-size: .68rem !important;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.ops-card--warn {
+  border-color: rgba(245,158,11,.24);
+}
+
+.ops-card--warn strong {
+  color: var(--yellow);
+}
+
+.ops-card--danger {
+  border-color: rgba(239,68,68,.24);
+}
+
+.ops-card--danger strong {
+  color: var(--red);
+}
+
+.ops-card--muted {
+  border-color: var(--border);
+}
+
+.ops-card--muted strong {
+  color: var(--text-secondary);
+}
+
+.licenses-table table {
+  min-width: 1120px;
+}
+
+.license-actions {
+  min-width: 360px;
+  align-items: flex-start;
+}
+
+.license-status-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(130px, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.license-status-form select,
+.license-status-form input[type=text] {
+  padding: 7px 9px;
+  font-size: .78rem;
+}
+
+.button--compact {
+  padding: 4px 8px;
+  font-size: .72rem;
+  margin-top: 4px;
 }
 
 .button,
@@ -1022,6 +1115,8 @@ button.button--danger:hover {
   .revenue-summary { grid-template-columns: 1fr; }
   .revenue-summary-item { border-right: none; border-bottom: 1px solid var(--border); }
   .revenue-summary-item:last-child { border-bottom: none; }
+  .license-status-form { grid-template-columns: 1fr; }
+  .license-actions { min-width: 260px; }
 }
 @media (max-width: 600px) {
   .content-body { padding: 13px; }

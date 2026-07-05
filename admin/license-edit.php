@@ -17,6 +17,7 @@ $clients = [];
 $license = [
     'client_id' => $preselectedClientId ?: '',
     'license_key' => '',
+    'license_key_mode' => 'auto',
     'status' => 'activa',
     'starts_at' => date('Y-m-d'),
     'expires_at' => date('Y-m-d', strtotime('+30 days')),
@@ -48,6 +49,8 @@ try {
 
         $data = [
             'client_id' => (int) ($_POST['client_id'] ?? 0),
+            'license_key_mode' => $isEdit ? 'existing' : trim((string) ($_POST['license_key_mode'] ?? 'auto')),
+            'manual_license_key' => strtoupper(trim((string) ($_POST['manual_license_key'] ?? ''))),
             'status' => trim((string) ($_POST['status'] ?? 'activa')),
             'starts_at' => trim((string) ($_POST['starts_at'] ?? '')),
             'expires_at' => trim((string) ($_POST['expires_at'] ?? '')),
@@ -58,6 +61,22 @@ try {
 
         if ($data['client_id'] <= 0) {
             $errors[] = 'Debés seleccionar un cliente.';
+        }
+
+        if (!$isEdit && !in_array($data['license_key_mode'], ['auto', 'manual'], true)) {
+            $errors[] = 'El modo de clave de licencia no es valido.';
+        }
+
+        if (!$isEdit && $data['license_key_mode'] === 'manual') {
+            if (preg_match('/^FLUS-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/', $data['manual_license_key']) !== 1) {
+                $errors[] = 'La clave existente debe tener el formato FLUS-XXXX-XXXX-XXXX.';
+            } else {
+                $stmt = $pdo->prepare('SELECT id FROM licenses WHERE license_key = :license_key LIMIT 1');
+                $stmt->execute(['license_key' => $data['manual_license_key']]);
+                if ($stmt->fetchColumn()) {
+                    $errors[] = 'Esa clave ya esta registrada en el panel.';
+                }
+            }
         }
 
         if (!array_key_exists($data['status'], admin_license_statuses())) {
@@ -104,7 +123,9 @@ try {
 
                 set_flash('success', 'Licencia actualizada correctamente.');
             } else {
-                $licenseKey = generate_license_key($pdo);
+                $licenseKey = $data['license_key_mode'] === 'manual'
+                    ? $data['manual_license_key']
+                    : generate_license_key($pdo);
                 $sql = "
                     INSERT INTO licenses (
                         client_id, license_key, status, starts_at, expires_at, plan_type, seats, internal_notes
@@ -171,6 +192,29 @@ require __DIR__ . '/includes/layout-header.php';
             Clave de licencia
             <input type="text" value="<?= e($license['license_key']) ?>" readonly>
         </label>
+
+        <?php if (!$isEdit): ?>
+            <label>
+                Origen de clave
+                <select name="license_key_mode">
+                    <option value="auto" <?= ($license['license_key_mode'] ?? 'auto') === 'auto' ? 'selected' : '' ?>>Generar clave nueva</option>
+                    <option value="manual" <?= ($license['license_key_mode'] ?? 'auto') === 'manual' ? 'selected' : '' ?>>Usar clave existente</option>
+                </select>
+            </label>
+
+            <label>
+                Clave existente
+                <input
+                    type="text"
+                    name="manual_license_key"
+                    value="<?= e((string) ($_POST['manual_license_key'] ?? '')) ?>"
+                    placeholder="FLUS-XXXX-XXXX-XXXX"
+                    pattern="FLUS-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}"
+                    autocomplete="off"
+                    style="text-transform:uppercase;"
+                >
+            </label>
+        <?php endif; ?>
 
         <label>
             Estado

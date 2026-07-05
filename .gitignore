@@ -7,3 +7,4 @@ admin/config/license-public.pem
 admin/config/license.passphrase.local
 .codex_tmp/
 .rnd
+admin.zip

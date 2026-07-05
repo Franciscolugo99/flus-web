@@ -7,9 +7,12 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/license-cloud.php';
+require_once __DIR__ . '/includes/license-events.php';
 admin_start_session();
 require_admin_login();
 $pdo = admin_db();
+admin_license_events_ensure_schema($pdo);
 
 // Compat helpers (se redefinen en layout-header, aqui para el bloque pre-header)
 if (!function_exists('redirect_with_flash')) {
@@ -41,6 +44,8 @@ $payments_stmt = $pdo->prepare('
 $payments_stmt->execute([$id]);
 $payments = $payments_stmt->fetchAll();
 
+$license_events = admin_license_events_for_client($pdo, $id, 10);
+
 // Métricas financieras
 $r = $pdo->prepare('SELECT COALESCE(SUM(amount),0) FROM payments WHERE client_id = ?');
 $r->execute([$id]); $total_paid = (float)$r->fetchColumn();
@@ -62,6 +67,33 @@ foreach ($licenses as $lic) {
     if ($lic['status'] === 'activa') { $active_license = $lic; break; }
 }
 if (!$active_license && !empty($licenses)) $active_license = $licenses[0];
+
+$client_activity = [];
+foreach (array_slice($payments, 0, 8) as $payment) {
+    $client_activity[] = [
+        'date' => (string) ($payment['paid_at'] ?? ''),
+        'type' => 'payment',
+        'title' => 'Pago registrado',
+        'meta' => (($payment['period_from'] && $payment['period_to'])
+            ? format_date($payment['period_from']) . ' a ' . format_date($payment['period_to'])
+            : 'Sin periodo asociado'),
+        'amount' => format_money($payment['amount'] ?? 0),
+    ];
+}
+foreach ($license_events as $event) {
+    $statusChange = trim(status_label((string) ($event['from_status'] ?? '')) . ' -> ' . status_label((string) ($event['to_status'] ?? '')));
+    $client_activity[] = [
+        'date' => (string) ($event['created_at'] ?? ''),
+        'type' => (($event['to_status'] ?? '') === 'suspendida') ? 'alert' : 'license',
+        'title' => admin_license_event_label((string) $event['event_type']),
+        'meta' => trim($statusChange . (($event['reason'] ?? '') ? ' - ' . (string) $event['reason'] : '')),
+        'amount' => '',
+    ];
+}
+usort($client_activity, static function (array $a, array $b): int {
+    return strtotime($b['date'] ?: '1970-01-01') <=> strtotime($a['date'] ?: '1970-01-01');
+});
+$client_activity = array_slice($client_activity, 0, 12);
 
 // Mini chart — ingresos últimos 6 meses
 $mini_months = [];
@@ -222,6 +254,28 @@ require_once __DIR__ . '/includes/layout-header.php';
 
 </div>
 
+<div class="detail-card">
+  <div class="detail-card-header">Actividad del cliente</div>
+  <?php if (empty($client_activity)): ?>
+    <div class="empty-panel">Sin actividad operativa todavia.</div>
+  <?php else: ?>
+    <div class="timeline">
+      <?php foreach ($client_activity as $item): ?>
+        <div class="timeline-item">
+          <span class="timeline-dot <?= e($item['type']) ?>"><?= $item['type'] === 'payment' ? '$' : 'L' ?></span>
+          <div class="timeline-content">
+            <div class="timeline-title"><?= e($item['title']) ?></div>
+            <div class="timeline-meta"><?= e($item['meta']) ?> - <?= e(format_datetime($item['date'])) ?></div>
+          </div>
+          <?php if ($item['amount'] !== ''): ?>
+            <div class="timeline-amount"><?= e($item['amount']) ?></div>
+          <?php endif; ?>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+</div>
+
 <!-- Licencias -->
 <div class="section-header">
   <div class="section-title">🔑 Licencias</div>
@@ -232,14 +286,28 @@ require_once __DIR__ . '/includes/layout-header.php';
   <table>
     <thead>
       <tr>
-        <th>Clave</th><th>Plan</th><th>Estado</th><th>Inicio</th><th>Vencimiento</th><th>Puestos</th><th></th>
+        <th>Clave</th><th>Plan</th><th>Estado</th><th>Cloud</th><th>Inicio</th><th>Vencimiento</th><th>Puestos</th><th></th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($licenses)): ?>
-        <tr class="empty-row"><td colspan="7">Sin licencias.</td></tr>
+        <tr class="empty-row"><td colspan="8">Sin licencias.</td></tr>
       <?php else: ?>
         <?php foreach ($licenses as $lic): ?>
+          <?php
+            $cloudStatus = admin_cloud_status_from_license((string)$lic['status'], $lic['expires_at'] ?? null);
+            $cloudClass = match ($cloudStatus) {
+                'suspended' => 'badge-gray',
+                'expired', 'revoked' => 'badge-red',
+                default => 'badge-green',
+            };
+            $cloudLabel = match ($cloudStatus) {
+                'suspended' => 'Suspendida',
+                'expired' => 'Vencida',
+                'revoked' => 'Revocada',
+                default => 'Activa',
+            };
+          ?>
           <tr>
             <td>
               <span class="td-mono"><?= e($lic['license_key']) ?></span>
@@ -247,6 +315,7 @@ require_once __DIR__ . '/includes/layout-header.php';
             </td>
             <td><?= plan_type_label($lic['plan_type']) ?></td>
             <td><?= license_status_badge($lic['status']) ?></td>
+            <td><span class="badge <?= e($cloudClass) ?>"><?= e($cloudLabel) ?></span></td>
             <td><?= format_date($lic['starts_at']) ?></td>
             <td <?= strtotime($lic['expires_at']) < time() ? 'style="color:var(--red)"' : '' ?>><?= format_date($lic['expires_at']) ?></td>
             <td><?= $lic['seats'] ?? '—' ?></td>

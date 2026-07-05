@@ -7,6 +7,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/license-generator.php';
 require_once __DIR__ . '/license-cloud.php';
+require_once __DIR__ . '/license-events.php';
 require_once __DIR__ . '/license-notifications.php';
 
 admin_start_session();

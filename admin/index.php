@@ -4,10 +4,13 @@ $page_title  = 'Dashboard';
 $active_menu = 'dashboard';
 require_once __DIR__ . '/includes/layout-header.php';
 
+admin_license_events_ensure_schema($pdo);
+
 $total_clients     = (int)$pdo->query('SELECT COUNT(*) FROM clients')->fetchColumn();
 $active_clients    = (int)$pdo->query("SELECT COUNT(*) FROM clients WHERE status = 'activo'")->fetchColumn();
 $new_clients_month = (int)$pdo->query("SELECT COUNT(*) FROM clients WHERE DATE_FORMAT(created_at,'%Y-%m') = DATE_FORMAT(NOW(),'%Y-%m')")->fetchColumn();
 $active_licenses   = (int)$pdo->query("SELECT COUNT(*) FROM licenses WHERE status = 'activa'")->fetchColumn();
+$suspended_count   = (int)$pdo->query("SELECT COUNT(*) FROM licenses WHERE status = 'suspendida'")->fetchColumn();
 $expiring_7d       = (int)$pdo->query("SELECT COUNT(*) FROM licenses WHERE expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND status NOT IN ('vencida','suspendida')")->fetchColumn();
 $expiring_soon     = (int)$pdo->query("SELECT COUNT(*) FROM licenses WHERE expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND status NOT IN ('vencida','suspendida')")->fetchColumn();
 $expired_count     = (int)$pdo->query("SELECT COUNT(*) FROM licenses WHERE expires_at < CURDATE() AND status != 'suspendida'")->fetchColumn();
@@ -35,6 +38,7 @@ $chart_clients = array_values(array_column($chart_months, 'clients'));
 $recent_payments = $pdo->query("SELECT p.*, c.legal_name, c.trade_name FROM payments p JOIN clients c ON c.id = p.client_id ORDER BY p.paid_at DESC, p.id DESC LIMIT 8")->fetchAll();
 $upcoming        = $pdo->query("SELECT l.*, c.legal_name, c.trade_name, DATEDIFF(l.expires_at, CURDATE()) AS days_left FROM licenses l JOIN clients c ON c.id = l.client_id WHERE l.expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND l.status NOT IN ('vencida','suspendida') ORDER BY l.expires_at ASC LIMIT 8")->fetchAll();
 $expired_recent  = $pdo->query("SELECT l.*, c.legal_name, c.trade_name FROM licenses l JOIN clients c ON c.id = l.client_id WHERE l.expires_at < CURDATE() AND l.status NOT IN ('suspendida') ORDER BY l.expires_at DESC LIMIT 5")->fetchAll();
+$recent_license_events = admin_license_events_recent($pdo, 8);
 ?>
 <div class="cards-grid">
   <div class="stat-card accent">
@@ -47,6 +51,11 @@ $expired_recent  = $pdo->query("SELECT l.*, c.legal_name, c.trade_name FROM lice
     <div class="stat-label">Licencias activas</div>
     <div class="stat-value"><?= $active_licenses ?></div>
     <div class="stat-sub">en producción</div>
+  </div>
+  <div class="stat-card <?= $suspended_count > 0 ? 'danger' : '' ?>">
+    <div class="stat-label">Suspendidas</div>
+    <div class="stat-value"><?= $suspended_count ?></div>
+    <div class="stat-sub"><a href="<?= admin_url('licenses.php') ?>">Controlar cortes</a></div>
   </div>
   <div class="stat-card <?= $expiring_7d > 0 ? 'danger' : 'warn' ?>">
     <div class="stat-label">Por vencer (15 días)</div>
@@ -127,6 +136,27 @@ $expired_recent  = $pdo->query("SELECT l.*, c.legal_name, c.trade_name FROM lice
           <span class="dash-row-label"><a href="<?= admin_url('client-view.php?id='.$lic['client_id']) ?>" style="color:inherit"><?= e($lic['trade_name']?:$lic['legal_name']) ?></a></span>
           <span class="badge <?= $days<=3?'badge-red':($days<=7?'badge-yellow':'badge-blue') ?>" style="font-size:.63rem"><?= $days ?>d</span>
           <span class="dash-row-meta"><?= format_date($lic['expires_at']) ?></span>
+        </div>
+      <?php endforeach; endif; ?>
+    </div>
+  </div>
+  <div class="dash-panel">
+    <div class="dash-panel-header">Actividad de licencias <a href="<?= admin_url('licenses.php') ?>" style="margin-left:auto;font-weight:400;font-size:.76rem">Gestionar</a></div>
+    <div class="dash-panel-body">
+      <?php if (empty($recent_license_events)): ?>
+        <div class="empty-panel">Sin cambios de licencia auditados.</div>
+      <?php else: foreach($recent_license_events as $event): ?>
+        <div class="dash-row">
+          <span class="dash-row-label">
+            <a href="<?= admin_url('client-view.php?id=' . (int)$event['client_id']) ?>" style="color:inherit">
+              <?= e($event['trade_name'] ?: $event['legal_name']) ?>
+            </a>
+            <br><span class="dash-row-meta"><?= e(admin_license_event_label((string)$event['event_type'])) ?><?= $event['reason'] ? ': ' . e($event['reason']) : '' ?></span>
+          </span>
+          <span class="badge <?= $event['to_status'] === 'suspendida' ? 'badge-red' : 'badge-green' ?>" style="font-size:.63rem">
+            <?= e(status_label((string)($event['to_status'] ?: 'activa'))) ?>
+          </span>
+          <span class="dash-row-meta"><?= format_datetime($event['created_at']) ?></span>
         </div>
       <?php endforeach; endif; ?>
     </div>

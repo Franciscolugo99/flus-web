@@ -8,6 +8,10 @@ if (!function_exists('admin_cloud_status_from_license')) {
             return 'suspended';
         }
 
+        if ($storedStatus === 'vencida') {
+            return 'expired';
+        }
+
         $currentStatus = license_current_status($storedStatus, $expiresAt);
         if ($currentStatus === 'vencida') {
             return 'expired';
