@@ -9,6 +9,12 @@ $activeNav = 'licenses';
 $error = null;
 $licenses = [];
 $clientId = (int) ($_GET['client_id'] ?? 0);
+$q = trim((string) ($_GET['q'] ?? ''));
+$filter = trim((string) ($_GET['filter'] ?? 'all'));
+$allowedFilters = ['all', 'active', 'expiring', 'expired', 'suspended', 'perpetual'];
+if (!in_array($filter, $allowedFilters, true)) {
+    $filter = 'all';
+}
 $cloudIntervalMinutes = max(1, (int) ceil(max(30, (int) (admin_config('license', [])['cloud_check_interval_sec'] ?? 300)) / 60));
 $eventsAvailable = false;
 $summary = [
@@ -16,6 +22,7 @@ $summary = [
     'suspended' => 0,
     'expired' => 0,
     'expiring' => 0,
+    'perpetual' => 0,
 ];
 
 if (!function_exists('admin_table_exists')) {
@@ -209,6 +216,27 @@ try {
         ) le_last ON le_last.license_id = l.id
     " : '';
 
+    $summarySql = "
+        SELECT
+            SUM(CASE WHEN l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() THEN 1 ELSE 0 END) AS active,
+            SUM(CASE WHEN l.status = 'suspendida' THEN 1 ELSE 0 END) AS suspended,
+            SUM(CASE WHEN l.expires_at < CURDATE() AND l.status != 'suspendida' THEN 1 ELSE 0 END) AS expired,
+            SUM(CASE WHEN l.expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND l.status NOT IN ('vencida','suspendida') THEN 1 ELSE 0 END) AS expiring,
+            SUM(CASE WHEN LOWER(l.plan_type) LIKE '%perpet%' OR l.expires_at >= '2099-01-01' THEN 1 ELSE 0 END) AS perpetual
+        FROM licenses l
+    ";
+    $summaryParams = [];
+    if ($clientId > 0) {
+        $summarySql .= ' WHERE l.client_id = :client_id';
+        $summaryParams['client_id'] = $clientId;
+    }
+    $summaryStmt = $pdo->prepare($summarySql);
+    $summaryStmt->execute($summaryParams);
+    $summaryRow = $summaryStmt->fetch() ?: [];
+    foreach (array_keys($summary) as $key) {
+        $summary[$key] = (int) ($summaryRow[$key] ?? 0);
+    }
+
     $sql = "
         SELECT
             l.*,
@@ -221,9 +249,34 @@ try {
         " . $eventJoin . "
     ";
     $params = [];
+    $where = [];
     if ($clientId > 0) {
-        $sql .= " WHERE l.client_id = :client_id ";
+        $where[] = 'l.client_id = :client_id';
         $params['client_id'] = $clientId;
+    }
+    if ($q !== '') {
+        $where[] = '(c.legal_name LIKE :q_legal_name OR c.trade_name LIKE :q_trade_name OR c.email LIKE :q_email OR l.license_key LIKE :q_license_key)';
+        $likeQ = '%' . $q . '%';
+        $params['q_legal_name'] = $likeQ;
+        $params['q_trade_name'] = $likeQ;
+        $params['q_email'] = $likeQ;
+        $params['q_license_key'] = $likeQ;
+    }
+
+    $filterWhere = match ($filter) {
+        'active' => "l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE()",
+        'expiring' => "l.expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND l.status NOT IN ('vencida','suspendida')",
+        'expired' => "l.expires_at < CURDATE() AND l.status != 'suspendida'",
+        'suspended' => "l.status = 'suspendida'",
+        'perpetual' => "(LOWER(l.plan_type) LIKE '%perpet%' OR l.expires_at >= '2099-01-01')",
+        default => '',
+    };
+    if ($filterWhere !== '') {
+        $where[] = $filterWhere;
+    }
+
+    if ($where !== []) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
     }
     $sql .= " ORDER BY l.expires_at ASC, l.id DESC";
 
@@ -241,23 +294,31 @@ try {
         $license['_current_status'] = $currentStatus;
         $license['_cloud_status'] = $cloudStatus;
         $license['_days_left'] = $daysLeft;
-
-        if ($cloudStatus === 'suspended') {
-            $summary['suspended']++;
-        } elseif ($cloudStatus === 'expired') {
-            $summary['expired']++;
-        } else {
-            $summary['active']++;
-        }
-
-        if ($daysLeft !== null && $daysLeft >= 0 && $daysLeft <= 15 && $cloudStatus === 'active') {
-            $summary['expiring']++;
-        }
     }
     unset($license);
 } catch (Throwable $e) {
     $error = admin_public_error($e, 'No se pudo cargar el listado de licencias.');
 }
+
+$filterLabels = [
+    'all' => 'Todas',
+    'active' => 'Activas',
+    'expiring' => 'Por vencer',
+    'expired' => 'Vencidas',
+    'suspended' => 'Suspendidas',
+    'perpetual' => 'Perpetuas',
+];
+$licenseFilterUrl = static function (string $targetFilter) use ($clientId, $q): string {
+    $params = ['filter' => $targetFilter];
+    if ($clientId > 0) {
+        $params['client_id'] = $clientId;
+    }
+    if ($q !== '') {
+        $params['q'] = $q;
+    }
+
+    return admin_url('licenses.php?' . http_build_query($params));
+};
 
 require __DIR__ . '/includes/layout-header.php';
 ?>
@@ -267,38 +328,59 @@ require __DIR__ . '/includes/layout-header.php';
         <div class="meta">
             <?= $clientId > 0 ? 'Mostrando licencias del cliente seleccionado.' : 'Listado general de licencias.' ?>
         </div>
-        <div class="small">FLUS vuelve a consultar el cloud cada <?= e((string) $cloudIntervalMinutes) ?> min aprox. cuando la instalacion esta online.</div>
+        <div class="small">
+            Filtro: <?= e($filterLabels[$filter] ?? 'Todas') ?>.
+            FLUS vuelve a consultar el cloud cada <?= e((string) $cloudIntervalMinutes) ?> min aprox. cuando la instalacion esta online.
+        </div>
     </div>
+    <form method="get" class="license-search" role="search">
+        <?php if ($clientId > 0): ?>
+            <input type="hidden" name="client_id" value="<?= e((string) $clientId) ?>">
+        <?php endif; ?>
+        <input type="hidden" name="filter" value="<?= e($filter) ?>">
+        <input type="search" name="q" value="<?= e($q) ?>" placeholder="Cliente, email o licencia">
+        <button class="button button--ghost" type="submit">Buscar</button>
+        <?php if ($q !== '' || $filter !== 'all'): ?>
+            <a class="button button--ghost" href="<?= e(admin_url('licenses.php' . ($clientId ? '?client_id=' . $clientId : ''))) ?>">Limpiar</a>
+        <?php endif; ?>
+    </form>
     <a class="button" href="<?= e(admin_url('license-edit.php' . ($clientId ? '?client_id=' . $clientId : ''))) ?>">Nueva licencia</a>
 </div>
 
 <div class="license-ops-grid">
-    <article class="ops-card">
+    <a class="ops-card <?= $filter === 'active' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('active')) ?>">
         <span class="ops-card__label">Cloud activo</span>
         <strong><?= e((string) $summary['active']) ?></strong>
         <span>Responde active a FLUS</span>
-    </article>
-    <article class="ops-card ops-card--warn">
+    </a>
+    <a class="ops-card ops-card--warn <?= $filter === 'expiring' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('expiring')) ?>">
         <span class="ops-card__label">Por vencer</span>
         <strong><?= e((string) $summary['expiring']) ?></strong>
         <span>Dentro de 15 dias</span>
-    </article>
-    <article class="ops-card ops-card--danger">
+    </a>
+    <a class="ops-card ops-card--danger <?= $filter === 'expired' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('expired')) ?>">
         <span class="ops-card__label">Vencidas</span>
         <strong><?= e((string) $summary['expired']) ?></strong>
         <span>Cloud responde expired</span>
-    </article>
-    <article class="ops-card ops-card--muted">
+    </a>
+    <a class="ops-card ops-card--muted <?= $filter === 'suspended' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('suspended')) ?>">
         <span class="ops-card__label">Suspendidas</span>
         <strong><?= e((string) $summary['suspended']) ?></strong>
         <span>Cloud responde suspended</span>
-    </article>
+    </a>
+    <a class="ops-card ops-card--info <?= $filter === 'perpetual' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('perpetual')) ?>">
+        <span class="ops-card__label">Perpetuas</span>
+        <strong><?= e((string) $summary['perpetual']) ?></strong>
+        <span>Sin corte automatico</span>
+    </a>
 </div>
 
 <?php if ($error): ?>
     <div class="alert alert--error"><?= e($error) ?></div>
 <?php elseif (!$licenses): ?>
-    <div class="empty-state">No hay licencias registradas todavia.</div>
+    <div class="empty-state">
+        <?= ($q !== '' || $filter !== 'all') ? 'No hay licencias para la busqueda o filtro seleccionado.' : 'No hay licencias registradas todavia.' ?>
+    </div>
 <?php else: ?>
     <div class="table-wrap licenses-table">
         <table>

@@ -448,6 +448,7 @@ input[type=tel],
 input[type=number],
 input[type=date],
 input[type=password],
+input[type=search],
 select,
 textarea {
   background: var(--bg-elevated);
@@ -845,6 +846,14 @@ body.login-page {
   align-items: flex-start;
 }
 
+.license-search {
+  margin-left: auto;
+}
+
+.license-search input[type=search] {
+  min-width: 240px;
+}
+
 .actions {
   display: flex;
   align-items: center;
@@ -854,7 +863,7 @@ body.login-page {
 
 .license-ops-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -867,6 +876,15 @@ body.login-page {
   display: grid;
   gap: 2px;
   min-height: 100px;
+  text-decoration: none;
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+
+.ops-card:hover,
+.ops-card.is-active {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .ops-card strong {
@@ -912,8 +930,35 @@ body.login-page {
   color: var(--text-secondary);
 }
 
+.ops-card--info {
+  border-color: rgba(59,130,246,.24);
+}
+
+.ops-card--info strong {
+  color: var(--blue);
+}
+
 .licenses-table table {
   min-width: 1120px;
+}
+
+.expirations-table table {
+  min-width: 980px;
+}
+
+.expiration-actions {
+  min-width: 220px;
+}
+
+.expiration-notice-form {
+  display: inline-flex;
+}
+
+.notice-status {
+  color: var(--text-secondary);
+  font-size: .74rem;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .license-actions {
@@ -999,6 +1044,45 @@ button.button--danger:hover {
 
 .button--block {
   width: 100%;
+}
+
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 7, 13, .72);
+}
+
+.confirm-dialog__panel {
+  width: min(420px, 100%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.confirm-dialog__title {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.confirm-dialog__text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
 }
 
 .table-wrap {

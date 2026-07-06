@@ -14,6 +14,18 @@ return [
         'cloud_api_token' => 'GENERAR_TOKEN_PARA_FLUS_CLIENTES',
         'cloud_check_interval_sec' => 300,
     ],
+    'mail' => [
+        'host' => 'mail.flus.com.ar',
+        'port' => 465,
+        'secure' => 'ssl',
+        'username' => 'soporte@flus.com.ar',
+        'password' => 'CLAVE_DEL_CORREO',
+        'from_email' => 'soporte@flus.com.ar',
+        'from_name' => 'FLUS Soporte',
+        'reply_to' => 'soporte@flus.com.ar',
+        'public_base_url' => 'https://flus.com.ar',
+        'timeout' => 15,
+    ],
     'security' => [
         'rate_limit_salt' => 'GENERAR_UN_VALOR_ALEATORIO_DE_32_BYTES',
     ],

@@ -58,6 +58,30 @@ La tabla `license_events` esta incluida en `admin/database/schema.sql` para
 instalaciones limpias. En instalaciones existentes, el panel la crea de forma
 idempotente la primera vez que se abre el dashboard o se cambia una licencia.
 
+## Avisos por email
+
+Configurar SMTP en `admin/config/config.local.php`, dentro de la clave `mail`.
+Para probar sin enviar:
+
+```powershell
+& "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\send_license_notifications.php" --mode=due --dry-run
+```
+
+Para enviar un correo de prueba a una licencia concreta:
+
+```powershell
+& "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\send_license_notifications.php" --mode=test --license-key=FLUS-XXXX-XXXX-XXXX
+```
+
+Para enviar avisos reales de vencimientos:
+
+```powershell
+& "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\send_license_notifications.php" --mode=due --days=15,7,3,1,0
+```
+
+Cada envio queda registrado en `license_notifications` para evitar duplicados
+del mismo vencimiento.
+
 ## Seguridad
 
 - `admin/config`, `admin/database` y `admin/tools` bloquean acceso web directo.
