@@ -22,6 +22,44 @@ if (!function_exists('admin_notification_smtp_expect')) {
     }
 }
 
+if (!function_exists('admin_license_notifications_ensure_schema')) {
+    function admin_license_notifications_ensure_schema(PDO $pdo): bool
+    {
+        static $ready = null;
+        if ($ready !== null) {
+            return $ready;
+        }
+
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS license_notifications (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    license_id INT UNSIGNED NOT NULL,
+                    client_id INT UNSIGNED NOT NULL,
+                    notification_type VARCHAR(50) NOT NULL,
+                    sent_to VARCHAR(190) DEFAULT NULL,
+                    sent_at DATETIME DEFAULT NULL,
+                    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+                    error_message TEXT DEFAULT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    KEY idx_license_notifications_license_id (license_id),
+                    KEY idx_license_notifications_client_id (client_id),
+                    KEY idx_license_notifications_sent_at (sent_at),
+                    KEY idx_license_notifications_status (status),
+                    CONSTRAINT fk_notifications_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    CONSTRAINT fk_notifications_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            $ready = true;
+        } catch (Throwable $e) {
+            error_log('[FLUS Admin] license_notifications schema: ' . $e->getMessage());
+            $ready = false;
+        }
+
+        return $ready;
+    }
+}
+
 if (!function_exists('admin_notification_smtp_write')) {
     function admin_notification_smtp_write($socket, string $command): bool
     {
@@ -333,6 +371,10 @@ if (!function_exists('license_notification_type_for')) {
 if (!function_exists('license_notification_already_sent')) {
     function license_notification_already_sent(PDO $pdo, int $licenseId, string $type): bool
     {
+        if (!admin_license_notifications_ensure_schema($pdo)) {
+            return false;
+        }
+
         $stmt = $pdo->prepare("
             SELECT COUNT(*)
             FROM license_notifications
@@ -352,6 +394,10 @@ if (!function_exists('license_notification_already_sent')) {
 if (!function_exists('license_notification_last_sent_at')) {
     function license_notification_last_sent_at(PDO $pdo, int $licenseId, string $type): ?string
     {
+        if (!admin_license_notifications_ensure_schema($pdo)) {
+            return null;
+        }
+
         $stmt = $pdo->prepare("
             SELECT sent_at
             FROM license_notifications
@@ -536,6 +582,10 @@ if (!function_exists('build_license_notification_html')) {
 if (!function_exists('log_license_notification')) {
     function log_license_notification(PDO $pdo, int $licenseId, int $clientId, string $type, ?string $sentTo, string $status, ?string $errorMessage = null): void
     {
+        if (!admin_license_notifications_ensure_schema($pdo)) {
+            return;
+        }
+
         $stmt = $pdo->prepare("
             INSERT INTO license_notifications (
                 license_id,
