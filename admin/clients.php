@@ -74,7 +74,7 @@ require __DIR__ . '/includes/layout-header.php';
 <?php elseif (!$clients): ?>
     <div class="empty-state">No hay clientes cargados todavía.</div>
 <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap table-wrap--mobile-cards">
         <table>
             <thead>
                 <tr>
@@ -90,21 +90,21 @@ require __DIR__ . '/includes/layout-header.php';
             <tbody>
                 <?php foreach ($clients as $client): ?>
                     <tr>
-                        <td>
+                        <td data-label="Cliente">
                             <strong><?= e($client['legal_name']) ?></strong><br>
                             <span class="meta"><?= e($client['trade_name'] ?: 'Sin nombre comercial') ?></span>
                         </td>
-                        <td>
+                        <td data-label="Contacto">
                             <?= e($client['email'] ?: 'Sin email') ?><br>
                             <span class="meta"><?= e($client['phone'] ?: 'Sin teléfono') ?></span>
                         </td>
-                        <td>
+                        <td data-label="Estado">
                             <span class="badge <?= e(badge_class($client['status'])) ?>"><?= e(status_label($client['status'])) ?></span>
                         </td>
-                        <td><?= e((string) $client['licenses_count']) ?></td>
-                        <td><?= e((string) $client['payments_count']) ?></td>
-                        <td><?= e(format_datetime($client['updated_at'])) ?></td>
-                        <td>
+                        <td data-label="Licencias"><?= e((string) $client['licenses_count']) ?></td>
+                        <td data-label="Pagos"><?= e((string) $client['payments_count']) ?></td>
+                        <td data-label="Actualización"><?= e(format_datetime($client['updated_at'])) ?></td>
+                        <td data-label="Acciones">
                             <div class="actions">
                                 <a class="button button--ghost" href="<?= e(admin_url('client-view.php?id=' . (int) $client['id'])) ?>">Ver</a>
                                 <a class="button button--ghost" href="<?= e(admin_url('client-edit.php?id=' . (int) $client['id'])) ?>">Editar</a>

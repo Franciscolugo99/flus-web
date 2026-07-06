@@ -130,15 +130,15 @@ require_once __DIR__ . '/includes/layout-header.php';
 ?>
 
 <!-- Barra de acciones -->
-<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
-  <a href="<?= admin_url('clients.php') ?>" class="btn btn-secondary btn-sm">← Clientes</a>
-  <a href="<?= admin_url('client-edit.php?id=' . $id) ?>" class="btn btn-primary btn-sm">✎ Editar</a>
-  <a href="<?= admin_url('license-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">+ Licencia</a>
-  <a href="<?= admin_url('payment-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">+ Pago</a>
-  <form method="POST" action="" style="margin-left:auto">
+<div class="action-bar">
+  <a href="<?= admin_url('clients.php') ?>" class="btn btn-secondary btn-sm">Clientes</a>
+  <a href="<?= admin_url('client-edit.php?id=' . $id) ?>" class="btn btn-primary btn-sm">Editar</a>
+  <a href="<?= admin_url('license-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">Nueva licencia</a>
+  <a href="<?= admin_url('payment-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">Nuevo pago</a>
+  <form method="POST" action="" class="action-bar__end">
     <?= csrf_field() ?>
     <button type="submit" name="delete_client" value="1" class="btn btn-ghost btn-sm"
-            data-confirm="¿Eliminar este cliente? Esta acción no se puede deshacer.">🗑 Eliminar</button>
+            data-confirm="¿Eliminar este cliente? Esta acción no se puede deshacer.">Eliminar</button>
   </form>
 </div>
 

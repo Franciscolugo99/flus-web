@@ -323,66 +323,70 @@ $licenseFilterUrl = static function (string $targetFilter) use ($clientId, $q): 
 require __DIR__ . '/includes/layout-header.php';
 ?>
 
-<div class="toolbar toolbar--stack">
-    <div>
-        <div class="meta">
-            <?= $clientId > 0 ? 'Mostrando licencias del cliente seleccionado.' : 'Listado general de licencias.' ?>
+<section class="admin-license-panel">
+    <div class="admin-license-head">
+        <div>
+            <span class="section-eyebrow">Licencias</span>
+            <h1>Control de licencias FLUS</h1>
+            <p>
+                <?= $clientId > 0 ? 'Licencias del cliente seleccionado.' : 'Estado cloud, vencimientos y acciones administrativas.' ?>
+                Sincroniza cada <?= e((string) $cloudIntervalMinutes) ?> min cuando la instalacion esta online.
+            </p>
         </div>
-        <div class="small">
-            Filtro: <?= e($filterLabels[$filter] ?? 'Todas') ?>.
-            FLUS vuelve a consultar el cloud cada <?= e((string) $cloudIntervalMinutes) ?> min aprox. cuando la instalacion esta online.
-        </div>
+        <a class="button" href="<?= e(admin_url('license-edit.php' . ($clientId ? '?client_id=' . $clientId : ''))) ?>">Nueva licencia</a>
     </div>
-    <form method="get" class="license-search" role="search">
+
+    <form method="get" class="license-search license-search--panel" role="search">
         <?php if ($clientId > 0): ?>
             <input type="hidden" name="client_id" value="<?= e((string) $clientId) ?>">
         <?php endif; ?>
         <input type="hidden" name="filter" value="<?= e($filter) ?>">
-        <input type="search" name="q" value="<?= e($q) ?>" placeholder="Cliente, email o licencia">
+        <label>
+            <span>Buscar licencia</span>
+            <input type="search" name="q" value="<?= e($q) ?>" placeholder="Cliente, email o clave">
+        </label>
         <button class="button button--ghost" type="submit">Buscar</button>
         <?php if ($q !== '' || $filter !== 'all'): ?>
             <a class="button button--ghost" href="<?= e(admin_url('licenses.php' . ($clientId ? '?client_id=' . $clientId : ''))) ?>">Limpiar</a>
         <?php endif; ?>
     </form>
-    <a class="button" href="<?= e(admin_url('license-edit.php' . ($clientId ? '?client_id=' . $clientId : ''))) ?>">Nueva licencia</a>
-</div>
 
-<div class="license-ops-grid">
-    <a class="ops-card <?= $filter === 'active' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('active')) ?>">
-        <span class="ops-card__label">Cloud activo</span>
-        <strong><?= e((string) $summary['active']) ?></strong>
-        <span>Responde active a FLUS</span>
-    </a>
-    <a class="ops-card ops-card--warn <?= $filter === 'expiring' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('expiring')) ?>">
-        <span class="ops-card__label">Por vencer</span>
-        <strong><?= e((string) $summary['expiring']) ?></strong>
-        <span>Dentro de 15 dias</span>
-    </a>
-    <a class="ops-card ops-card--danger <?= $filter === 'expired' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('expired')) ?>">
-        <span class="ops-card__label">Vencidas</span>
-        <strong><?= e((string) $summary['expired']) ?></strong>
-        <span>Cloud responde expired</span>
-    </a>
-    <a class="ops-card ops-card--muted <?= $filter === 'suspended' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('suspended')) ?>">
-        <span class="ops-card__label">Suspendidas</span>
-        <strong><?= e((string) $summary['suspended']) ?></strong>
-        <span>Cloud responde suspended</span>
-    </a>
-    <a class="ops-card ops-card--info <?= $filter === 'perpetual' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('perpetual')) ?>">
-        <span class="ops-card__label">Perpetuas</span>
-        <strong><?= e((string) $summary['perpetual']) ?></strong>
-        <span>Sin corte automatico</span>
-    </a>
-</div>
-
-<?php if ($error): ?>
-    <div class="alert alert--error"><?= e($error) ?></div>
-<?php elseif (!$licenses): ?>
-    <div class="empty-state">
-        <?= ($q !== '' || $filter !== 'all') ? 'No hay licencias para la busqueda o filtro seleccionado.' : 'No hay licencias registradas todavia.' ?>
+    <div class="license-ops-grid">
+        <a class="ops-card <?= $filter === 'active' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('active')) ?>">
+            <span class="ops-card__label">Cloud activo</span>
+            <strong><?= e((string) $summary['active']) ?></strong>
+            <span>Responde active a FLUS</span>
+        </a>
+        <a class="ops-card ops-card--warn <?= $filter === 'expiring' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('expiring')) ?>">
+            <span class="ops-card__label">Por vencer</span>
+            <strong><?= e((string) $summary['expiring']) ?></strong>
+            <span>Dentro de 15 dias</span>
+        </a>
+        <a class="ops-card ops-card--danger <?= $filter === 'expired' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('expired')) ?>">
+            <span class="ops-card__label">Vencidas</span>
+            <strong><?= e((string) $summary['expired']) ?></strong>
+            <span>Cloud responde expired</span>
+        </a>
+        <a class="ops-card ops-card--muted <?= $filter === 'suspended' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('suspended')) ?>">
+            <span class="ops-card__label">Suspendidas</span>
+            <strong><?= e((string) $summary['suspended']) ?></strong>
+            <span>Cloud responde suspended</span>
+        </a>
+        <a class="ops-card ops-card--info <?= $filter === 'perpetual' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('perpetual')) ?>">
+            <span class="ops-card__label">Perpetuas</span>
+            <strong><?= e((string) $summary['perpetual']) ?></strong>
+            <span>Sin corte automatico</span>
+        </a>
     </div>
-<?php else: ?>
-    <div class="table-wrap licenses-table">
+
+    <?php if ($error): ?>
+        <div class="alert alert--error"><?= e($error) ?></div>
+    <?php elseif (!$licenses): ?>
+        <div class="empty-state">
+            <?= ($q !== '' || $filter !== 'all') ? 'No hay licencias para la busqueda o filtro seleccionado.' : 'No hay licencias registradas todavia.' ?>
+        </div>
+    <?php else: ?>
+    <div class="table-wrap licenses-table admin-license-table">
         <table>
             <thead>
                 <tr>
@@ -489,6 +493,7 @@ require __DIR__ . '/includes/layout-header.php';
             </tbody>
         </table>
     </div>
-<?php endif; ?>
+    <?php endif; ?>
+</section>
 
 <?php require __DIR__ . '/includes/layout-footer.php'; ?>

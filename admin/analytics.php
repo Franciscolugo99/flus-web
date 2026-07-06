@@ -431,15 +431,13 @@ foreach ($chart_revenue as $v) {
 ?>
 
 <!-- Selector de período -->
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-  <span style="font-size:.82rem;color:var(--text-muted)">Período:</span>
+<div class="analytics-period-bar">
+  <span class="analytics-period-label">Período</span>
   <?php foreach ([3=>'3 meses', 6=>'6 meses', 12=>'12 meses'] as $m => $label): ?>
     <a href="?months=<?= $m ?>"
        class="btn btn-sm <?= $period === $m ? 'btn-primary' : 'btn-secondary' ?>"><?= $label ?></a>
   <?php endforeach; ?>
-  <span style="margin-left:auto;font-size:.78rem;color:var(--text-muted)">
-    Datos al <?= date('d/m/Y') ?>
-  </span>
+  <span class="analytics-period-date">Datos al <?= date('d/m/Y') ?></span>
 </div>
 
 <?php if ($analytics_boot_error !== null): ?>
@@ -454,7 +452,7 @@ foreach ($chart_revenue as $v) {
 <div class="chart-panel" style="margin-bottom:20px">
   <div class="chart-panel-header">
     <div>
-      <div class="chart-panel-title">🌐 Web e interacciones</div>
+      <div class="chart-panel-title">Web e interacciones</div>
       <div class="chart-panel-subtitle">Tráfico público de FLUS y acciones comerciales registradas en la web</div>
     </div>
   </div>
@@ -516,7 +514,7 @@ foreach ($chart_revenue as $v) {
     <div class="analytics-grid" style="margin-bottom:18px">
       <div class="chart-panel" style="margin-bottom:0">
         <div class="chart-panel-header">
-          <div class="chart-panel-title">📈 Tráfico e interacciones · últimos 30 días</div>
+          <div class="chart-panel-title">Tráfico e interacciones · últimos 30 días</div>
         </div>
         <div class="chart-panel-body">
           <div class="chart-container" style="height:240px">
@@ -527,9 +525,9 @@ foreach ($chart_revenue as $v) {
 
       <div class="chart-panel" style="margin-bottom:0">
         <div class="chart-panel-header">
-          <div class="chart-panel-title">📄 Páginas más vistas · 30 días</div>
+          <div class="chart-panel-title">Páginas más vistas · 30 días</div>
         </div>
-        <div style="padding:8px 0">
+        <div class="chart-list">
           <?php if (empty($web['top_pages'])): ?>
             <div class="empty-panel">Todavía no hay vistas registradas.</div>
           <?php else: ?>
@@ -557,7 +555,7 @@ foreach ($chart_revenue as $v) {
         <div class="chart-panel-header">
           <div class="chart-panel-title">Breakdown por evento</div>
         </div>
-        <div style="padding:8px 0">
+        <div class="chart-list">
           <?php if (empty($web['event_breakdown'])): ?>
             <div class="empty-panel">Todavia no hay eventos suficientes.</div>
           <?php else: ?>
@@ -583,7 +581,7 @@ foreach ($chart_revenue as $v) {
         <div class="chart-panel-header">
           <div class="chart-panel-title">Paginas con mas interaccion</div>
         </div>
-        <div style="padding:8px 0">
+        <div class="chart-list">
           <?php if (empty($web['top_interaction_pages'])): ?>
             <div class="empty-panel">Todavia no hay clicks comerciales.</div>
           <?php else: ?>
@@ -609,7 +607,7 @@ foreach ($chart_revenue as $v) {
         <div class="chart-panel-header">
           <div class="chart-panel-title">Fuentes principales</div>
         </div>
-        <div style="padding:8px 0">
+        <div class="chart-list">
           <?php if (empty($web['top_referrers'])): ?>
             <div class="empty-panel">Sin referrers externos suficientes.</div>
           <?php else: ?>
@@ -634,12 +632,12 @@ foreach ($chart_revenue as $v) {
 
     <div class="chart-panel" style="margin-bottom:20px">
       <div class="chart-panel-header">
-        <div class="chart-panel-title">🕒 Últimos eventos registrados</div>
+        <div class="chart-panel-title">Últimos eventos registrados</div>
       </div>
       <?php if (empty($web['latest_events'])): ?>
         <div class="empty-panel">Todavía no hay interacciones registradas.</div>
       <?php else: ?>
-        <div style="overflow:auto">
+        <div class="table-wrap table-wrap--embedded">
           <table class="data-table">
             <thead>
               <tr>
@@ -707,7 +705,7 @@ foreach ($chart_revenue as $v) {
 <div class="chart-panel" style="margin-bottom:18px">
   <div class="chart-panel-header">
     <div>
-      <div class="chart-panel-title">📊 Ingresos mensuales</div>
+      <div class="chart-panel-title">Ingresos mensuales</div>
       <div class="chart-panel-subtitle">Últimos <?= $period ?> meses · barras = mensual · línea = acumulado</div>
     </div>
   </div>
@@ -730,7 +728,7 @@ foreach ($chart_revenue as $v) {
   <!-- Clientes nuevos por mes -->
   <div class="chart-panel" style="margin-bottom:0">
     <div class="chart-panel-header">
-      <div class="chart-panel-title">👥 Clientes nuevos por mes</div>
+      <div class="chart-panel-title">Clientes nuevos por mes</div>
     </div>
     <div class="chart-panel-body">
       <div class="chart-container" style="height:200px">
@@ -742,18 +740,18 @@ foreach ($chart_revenue as $v) {
   <!-- Distribución de licencias -->
   <div class="chart-panel" style="margin-bottom:0">
     <div class="chart-panel-header">
-      <div class="chart-panel-title">🥧 Estado de licencias</div>
+      <div class="chart-panel-title">Estado de licencias</div>
     </div>
-    <div class="chart-panel-body" style="display:flex;align-items:center;gap:20px">
-      <div class="chart-container" style="height:200px;flex:1">
+    <div class="chart-panel-body chart-panel-body--split">
+      <div class="chart-container chart-container--medium">
         <canvas id="licStatusChart"></canvas>
       </div>
-      <div style="flex-shrink:0">
+      <div class="chart-side-legend">
         <?php foreach ($lic_dist as $i => $row): ?>
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:.78rem;color:var(--text-secondary)">
-            <span style="width:10px;height:10px;border-radius:50%;background:<?= $lic_bg_colors[$i] ?>;flex-shrink:0"></span>
+          <div class="chart-side-legend__row">
+            <span class="chart-side-legend__dot" style="background:<?= $lic_bg_colors[$i] ?>"></span>
             <?= $lic_label_map[$row['status']] ?? $row['status'] ?>
-            <strong style="color:var(--text-primary);margin-left:auto;padding-left:8px"><?= $row['cnt'] ?></strong>
+            <strong class="chart-side-legend__value"><?= $row['cnt'] ?></strong>
           </div>
         <?php endforeach; ?>
       </div>
@@ -769,18 +767,18 @@ foreach ($chart_revenue as $v) {
 
   <div class="chart-panel" style="margin-bottom:0">
     <div class="chart-panel-header">
-      <div class="chart-panel-title">💳 Ingresos por método de pago</div>
+      <div class="chart-panel-title">Ingresos por método de pago</div>
     </div>
-    <div class="chart-panel-body" style="display:flex;align-items:center;gap:20px">
-      <div class="chart-container" style="height:190px;flex:1">
+    <div class="chart-panel-body chart-panel-body--split">
+      <div class="chart-container chart-container--small">
         <canvas id="payMethodChart"></canvas>
       </div>
-      <div style="flex-shrink:0">
+      <div class="chart-side-legend">
         <?php foreach ($pay_dist as $i => $row): ?>
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:.78rem;color:var(--text-secondary)">
-            <span style="width:10px;height:10px;border-radius:50%;background:<?= $pay_colors[$i] ?? '#888' ?>;flex-shrink:0"></span>
+          <div class="chart-side-legend__row">
+            <span class="chart-side-legend__dot" style="background:<?= $pay_colors[$i] ?? '#888' ?>"></span>
             <?= $pay_label_map[$row['method']] ?? $row['method'] ?>
-            <strong style="color:var(--accent);margin-left:auto;padding-left:8px"><?= format_money($row['total']) ?></strong>
+            <strong class="chart-side-legend__value chart-side-legend__value--accent"><?= format_money($row['total']) ?></strong>
           </div>
         <?php endforeach; ?>
       </div>
@@ -789,18 +787,18 @@ foreach ($chart_revenue as $v) {
 
   <div class="chart-panel" style="margin-bottom:0">
     <div class="chart-panel-header">
-      <div class="chart-panel-title">📦 Ingresos por tipo de plan</div>
+      <div class="chart-panel-title">Ingresos por tipo de plan</div>
     </div>
-    <div class="chart-panel-body" style="display:flex;align-items:center;gap:20px">
-      <div class="chart-container" style="height:190px;flex:1">
+    <div class="chart-panel-body chart-panel-body--split">
+      <div class="chart-container chart-container--small">
         <canvas id="planTypeChart"></canvas>
       </div>
-      <div style="flex-shrink:0">
+      <div class="chart-side-legend">
         <?php foreach ($plan_dist as $i => $row): ?>
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:.78rem;color:var(--text-secondary)">
-            <span style="width:10px;height:10px;border-radius:50%;background:<?= $plan_colors[$i] ?? '#888' ?>;flex-shrink:0"></span>
+          <div class="chart-side-legend__row">
+            <span class="chart-side-legend__dot" style="background:<?= $plan_colors[$i] ?? '#888' ?>"></span>
             <?= $plan_label_map[$row['plan_type']] ?? $row['plan_type'] ?>
-            <strong style="color:var(--accent);margin-left:auto;padding-left:8px"><?= format_money($row['total']) ?></strong>
+            <strong class="chart-side-legend__value chart-side-legend__value--accent"><?= format_money($row['total']) ?></strong>
           </div>
         <?php endforeach; ?>
       </div>
@@ -814,9 +812,9 @@ foreach ($chart_revenue as $v) {
      ============================================================ -->
 <div class="chart-panel">
   <div class="chart-panel-header">
-    <div class="chart-panel-title">🏆 Top clientes por ingresos generados</div>
+    <div class="chart-panel-title">Top clientes por ingresos generados</div>
   </div>
-  <div style="padding:4px 0">
+  <div class="chart-list">
     <?php if (empty($top_clients)): ?>
       <div class="empty-panel">Sin datos de pagos aún.</div>
     <?php else: ?>
@@ -836,7 +834,7 @@ foreach ($chart_revenue as $v) {
             </div>
           </div>
           <span class="top-client-amount"><?= format_money($c['total_paid']) ?></span>
-          <span style="font-size:.74rem;color:var(--text-muted);flex-shrink:0;margin-left:8px">
+          <span class="top-client-meta">
             <?= $c['pay_count'] ?> pago<?= $c['pay_count'] !== 1 ? 's' : '' ?>
             <?php if ($c['last_payment']): ?>
               · último: <?= format_date($c['last_payment']) ?>

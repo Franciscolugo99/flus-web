@@ -5,6 +5,38 @@
 
 'use strict';
 
+// ============================================================
+// MOBILE NAVIGATION
+// ============================================================
+document.addEventListener('DOMContentLoaded', function () {
+  const toggle = document.querySelector('[data-mobile-nav-toggle]');
+  const closeTargets = document.querySelectorAll('[data-mobile-nav-close]');
+  const sidebar = document.getElementById('adminSidebar');
+  if (!toggle || !sidebar) return;
+
+  const setOpen = function (open) {
+    document.body.classList.toggle('admin-nav-open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.setAttribute('aria-label', open ? 'Cerrar menu' : 'Abrir menu');
+  };
+
+  toggle.addEventListener('click', function () {
+    setOpen(!document.body.classList.contains('admin-nav-open'));
+  });
+
+  closeTargets.forEach(function (target) {
+    target.addEventListener('click', function () { setOpen(false); });
+  });
+
+  sidebar.querySelectorAll('a').forEach(function (link) {
+    link.addEventListener('click', function () { setOpen(false); });
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') setOpen(false);
+  });
+});
+
 document.addEventListener('click', function (e) {
   const btn = e.target.closest('[data-copy][data-copy-label]');
   if (!btn) return;

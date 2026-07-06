@@ -97,7 +97,7 @@ $recent_license_events = admin_license_events_recent($pdo, 8);
 <div class="chart-panel">
   <div class="chart-panel-header">
     <div>
-      <div class="chart-panel-title">📈 Evolución de ingresos — últimos 6 meses</div>
+      <div class="chart-panel-title">Evolución de ingresos, últimos 6 meses</div>
       <div class="chart-panel-subtitle">Barras = ingresos · Línea = nuevos clientes</div>
     </div>
     <a href="<?= admin_url('analytics.php') ?>" class="btn btn-secondary btn-sm">Analíticas completas →</a>
@@ -113,7 +113,7 @@ $recent_license_events = admin_license_events_recent($pdo, 8);
 
 <div class="dash-grid">
   <div class="dash-panel">
-    <div class="dash-panel-header">💰 Últimos pagos <a href="<?= admin_url('payments.php') ?>" style="margin-left:auto;font-weight:400;font-size:.76rem">Ver todos →</a></div>
+    <div class="dash-panel-header">Últimos pagos <a href="<?= admin_url('payments.php') ?>" class="panel-link">Ver todos</a></div>
     <div class="dash-panel-body">
       <?php if (empty($recent_payments)): ?>
         <div class="empty-panel">Sin pagos registrados.</div>
@@ -127,10 +127,10 @@ $recent_license_events = admin_license_events_recent($pdo, 8);
     </div>
   </div>
   <div class="dash-panel">
-    <div class="dash-panel-header">⏰ Próximos vencimientos <a href="<?= admin_url('expirations.php') ?>" style="margin-left:auto;font-weight:400;font-size:.76rem">Ver todos →</a></div>
+    <div class="dash-panel-header">Próximos vencimientos <a href="<?= admin_url('expirations.php') ?>" class="panel-link">Ver todos</a></div>
     <div class="dash-panel-body">
       <?php if (empty($upcoming)): ?>
-        <div class="empty-panel">Sin vencimientos próximos. 🎉</div>
+        <div class="empty-panel">Sin vencimientos próximos.</div>
       <?php else: foreach($upcoming as $lic): $days=(int)$lic['days_left']; ?>
         <div class="dash-row">
           <span class="dash-row-label"><a href="<?= admin_url('client-view.php?id='.$lic['client_id']) ?>" style="color:inherit"><?= e($lic['trade_name']?:$lic['legal_name']) ?></a></span>
@@ -141,7 +141,7 @@ $recent_license_events = admin_license_events_recent($pdo, 8);
     </div>
   </div>
   <div class="dash-panel">
-    <div class="dash-panel-header">Actividad de licencias <a href="<?= admin_url('licenses.php') ?>" style="margin-left:auto;font-weight:400;font-size:.76rem">Gestionar</a></div>
+    <div class="dash-panel-header">Actividad de licencias <a href="<?= admin_url('licenses.php') ?>" class="panel-link">Gestionar</a></div>
     <div class="dash-panel-body">
       <?php if (empty($recent_license_events)): ?>
         <div class="empty-panel">Sin cambios de licencia auditados.</div>

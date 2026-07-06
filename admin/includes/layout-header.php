@@ -135,7 +135,9 @@ $__total_alerts = $__expiring_soon + $__expired;
 <div class="layout">
 
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <div class="mobile-nav-backdrop" data-mobile-nav-close aria-hidden="true"></div>
+
+  <aside class="sidebar" id="adminSidebar">
     <div class="sidebar-brand">
       <span class="brand-logo">
         <img src="../assets/img/flus-mark.webp" alt="" aria-hidden="true">
@@ -205,6 +207,16 @@ $__total_alerts = $__expiring_soon + $__expired;
   <!-- Main content -->
   <main class="main-content">
     <div class="topbar">
+      <button type="button"
+              class="mobile-nav-toggle"
+              data-mobile-nav-toggle
+              aria-controls="adminSidebar"
+              aria-expanded="false"
+              aria-label="Abrir menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <h1 class="page-title"><?= e($page_title ?? 'Panel') ?></h1>
 
       <div class="topbar-actions">

@@ -168,14 +168,18 @@ if (!function_exists('flus_home_module_icon')) {
     }
 }
 ?>
-<section class="hero">
+<section class="hero hero-home">
   <div class="container hero-grid">
     <div class="hero-copy">
+      <div class="hero-index hero-stagger hero-stagger--1" aria-hidden="true">
+        <span>FLUS / 01</span>
+        <span>OPERACIÓN COMERCIAL</span>
+      </div>
       <span class="eyebrow hero-stagger hero-stagger--1">Sistema de gestión comercial para comercios y pymes</span>
-      <h1 class="hero-stagger hero-stagger--2">Ventas, caja, stock, clientes y facturación en un solo sistema</h1>
+      <h1 class="hero-stagger hero-stagger--2">Tu negocio, <em>conectado</em> de punta a punta.</h1>
       <p class="hero-stagger hero-stagger--3">
-        FLUS está pensado para comercios y pymes que necesitan trabajar con menos planillas y más control.
-        Desde la venta y el cobro hasta el stock, la caja, los clientes y la facturación, todo queda conectado en una misma base.
+        Vendé, cobrá, controlá stock y seguí cada movimiento desde una sola base.
+        FLUS reemplaza planillas y pantallas aisladas por un circuito comercial claro, rápido y trazable.
       </p>
 
       <div class="hero-actions hero-stagger hero-stagger--4">
@@ -183,21 +187,19 @@ if (!function_exists('flus_home_module_icon')) {
         <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
       </div>
 
-      <ul class="hero-points hero-stagger hero-stagger--5">
-        <li>Venta, ticket y cobro en la misma pantalla.</li>
-        <li>Stock, caja y cliente actualizados dentro del mismo circuito.</li>
-        <li>Historial, cuenta corriente y reportes para seguir el día a día.</li>
-      </ul>
-
-      <div class="hero-proof hero-stagger hero-stagger--5" aria-label="Señales operativas de FLUS">
-        <span>POS</span>
-        <span>Stock</span>
-        <span>Caja</span>
-        <span>Facturación</span>
+      <div class="hero-proof hero-stagger hero-stagger--5" aria-label="Áreas conectadas por FLUS">
+        <span><b>01</b> Caja POS</span>
+        <span><b>02</b> Stock</span>
+        <span><b>03</b> Clientes</span>
+        <span><b>04</b> Facturación</span>
       </div>
     </div>
 
     <div class="hero-media hero-media--product hero-stagger hero-stagger--5">
+      <div class="hero-product-label" aria-hidden="true">
+        <span>PRODUCTO REAL</span>
+        <span>FLUS POS</span>
+      </div>
       <figure class="product-shot product-shot--hero">
         <picture>
           <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
@@ -212,29 +214,46 @@ if (!function_exists('flus_home_module_icon')) {
         </picture>
       </figure>
       <div class="hero-media-caption" aria-hidden="true">
-        <strong>Caja conectada</strong>
+        <strong>Una venta. Todo actualizado.</strong>
         <span>Ticket, cobro, stock y cliente dentro del mismo flujo.</span>
       </div>
+      <div class="hero-status-card hero-status-card--top" aria-hidden="true">
+        <span class="status-pulse"></span>
+        <strong>Caja activa</strong>
+        <small>Operación en tiempo real</small>
+      </div>
+      <div class="hero-status-card hero-status-card--bottom" aria-hidden="true">
+        <strong>8 módulos</strong>
+        <small>Una misma base operativa</small>
+      </div>
     </div>
+  </div>
+  <div class="container hero-bottom-line" aria-hidden="true">
+    <span>MENDOZA · ARGENTINA</span>
+    <span>SOFTWARE PARA COMERCIOS Y PYMES</span>
   </div>
 </section>
 
 <section class="operation-proof" data-reveal aria-labelledby="operation-proof-title">
   <div class="container operation-proof__grid">
     <div>
-      <span class="section-kicker">Operación real</span>
-      <h2 id="operation-proof-title">FLUS no suma pantallas aisladas: conecta el trabajo diario</h2>
+      <span class="section-kicker">Una sola operación</span>
+      <h2 id="operation-proof-title">Lo que pasa en caja no termina en caja.</h2>
+      <p>FLUS convierte cada venta en información útil para el resto del negocio.</p>
     </div>
     <div class="operation-proof__items">
       <article>
+        <span>01</span>
         <strong>Mostrador</strong>
         <span>La venta deja ticket, medio de pago y movimiento registrado.</span>
       </article>
       <article>
+        <span>02</span>
         <strong>Inventario</strong>
         <span>El stock se actualiza con trazabilidad y menos planillas paralelas.</span>
       </article>
       <article>
+        <span>03</span>
         <strong>Seguimiento</strong>
         <span>Clientes, cuenta corriente y comprobantes quedan disponibles para revisar.</span>
       </article>

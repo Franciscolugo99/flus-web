@@ -61,7 +61,7 @@ require __DIR__ . '/includes/layout-header.php';
 <?php elseif (!$payments): ?>
     <div class="empty-state">No hay pagos cargados todavía.</div>
 <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap table-wrap--mobile-cards">
         <table>
             <thead>
                 <tr>
@@ -78,18 +78,18 @@ require __DIR__ . '/includes/layout-header.php';
             <tbody>
                 <?php foreach ($payments as $payment): ?>
                     <tr>
-                        <td><?= e(format_date($payment['paid_at'])) ?></td>
-                        <td><?= e($payment['legal_name']) ?></td>
-                        <td><?= e($payment['license_key'] ?: '—') ?></td>
-                        <td>
+                        <td data-label="Fecha"><?= e(format_date($payment['paid_at'])) ?></td>
+                        <td data-label="Cliente"><?= e($payment['legal_name']) ?></td>
+                        <td data-label="Licencia"><?= e($payment['license_key'] ?: '—') ?></td>
+                        <td data-label="Período">
                             <?= e(format_date($payment['period_from'])) ?>
                             a
                             <?= e(format_date($payment['period_to'])) ?>
                         </td>
-                        <td><?= e(status_label($payment['method'])) ?></td>
-                        <td><?= e(format_money($payment['amount'])) ?></td>
-                        <td><?= e($payment['reference'] ?: '—') ?></td>
-                        <td>
+                        <td data-label="Método"><?= e(status_label($payment['method'])) ?></td>
+                        <td data-label="Monto"><?= e(format_money($payment['amount'])) ?></td>
+                        <td data-label="Referencia"><?= e($payment['reference'] ?: '—') ?></td>
+                        <td data-label="Acciones">
                             <div class="actions">
                                 <a class="button button--ghost" href="<?= e(admin_url('payment-edit.php?id=' . (int) $payment['id'])) ?>">Editar</a>
                                 <form method="post" style="display:inline;">
