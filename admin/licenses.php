@@ -386,7 +386,7 @@ require __DIR__ . '/includes/layout-header.php';
             <?= ($q !== '' || $filter !== 'all') ? 'No hay licencias para la busqueda o filtro seleccionado.' : 'No hay licencias registradas todavia.' ?>
         </div>
     <?php else: ?>
-    <div class="table-wrap licenses-table admin-license-table">
+    <div class="table-wrap table-wrap--mobile-cards licenses-table admin-license-table">
         <table>
             <thead>
                 <tr>
@@ -419,16 +419,16 @@ require __DIR__ . '/includes/layout-header.php';
                         };
                     ?>
                     <tr>
-                        <td>
+                        <td data-label="Cliente">
                             <strong><?= e($license['legal_name']) ?></strong><br>
                             <span class="meta"><?= e($license['email'] ?: 'Sin email') ?></span>
                         </td>
-                        <td>
+                        <td data-label="Clave">
                             <span class="td-mono"><?= e($license['license_key']) ?></span>
                             <button type="button" class="button button--ghost button--compact" data-copy="<?= e($license['license_key']) ?>">Copiar</button>
                         </td>
-                        <td><?= e(status_label((string) $license['plan_type'])) ?></td>
-                        <td>
+                        <td data-label="Plan"><?= e(status_label((string) $license['plan_type'])) ?></td>
+                        <td data-label="Vence">
                             <?= e(format_date($license['expires_at'])) ?><br>
                             <span class="meta">
                                 <?php if ($daysLeft === null): ?>
@@ -442,16 +442,16 @@ require __DIR__ . '/includes/layout-header.php';
                                 <?php endif; ?>
                             </span>
                         </td>
-                        <td><span class="badge <?= e(badge_class($currentStatus)) ?>"><?= e(status_label($currentStatus)) ?></span></td>
-                        <td>
+                        <td data-label="Estado"><span class="badge <?= e(badge_class($currentStatus)) ?>"><?= e(status_label($currentStatus)) ?></span></td>
+                        <td data-label="Cloud">
                             <span class="badge <?= e($cloudBadge) ?>"><?= e($cloudLabel) ?></span><br>
                             <span class="meta"><?= e(admin_cloud_status_message($cloudStatus) ?: 'Operacion habilitada') ?></span>
                         </td>
-                        <td>
+                        <td data-label="Ultimo cambio">
                             <?= e(format_datetime($license['last_event_at'] ?? null)) ?><br>
                             <span class="meta"><?= e($license['last_event_reason'] ?: 'Sin auditoria reciente') ?></span>
                         </td>
-                        <td>
+                        <td data-label="Acciones">
                             <div class="actions license-actions">
                                 <a class="button button--ghost" href="<?= e(admin_url('license-edit.php?id=' . (int) $license['id'])) ?>">Editar / renovar</a>
                                 <a class="button button--ghost" href="<?= e(admin_url('license-download.php?id=' . (int) $license['id'])) ?>">Descargar</a>

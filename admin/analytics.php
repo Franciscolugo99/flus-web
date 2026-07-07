@@ -637,7 +637,7 @@ foreach ($chart_revenue as $v) {
       <?php if (empty($web['latest_events'])): ?>
         <div class="empty-panel">Todavía no hay interacciones registradas.</div>
       <?php else: ?>
-        <div class="table-wrap table-wrap--embedded">
+        <div class="table-wrap table-wrap--embedded table-wrap--mobile-cards">
           <table class="data-table">
             <thead>
               <tr>
@@ -649,9 +649,9 @@ foreach ($chart_revenue as $v) {
             <tbody>
               <?php foreach ($web['latest_events'] as $row): ?>
                 <tr>
-                  <td><?= format_datetime($row['created_at']) ?></td>
-                  <td><span class="badge badge-blue"><?= e(web_analytics_event_label((string) $row['event_type'])) ?></span></td>
-                  <td title="<?= e($row['page_url']) ?>"><?= e(web_analytics_page_label($row['page_url'])) ?></td>
+                  <td data-label="Fecha"><?= format_datetime($row['created_at']) ?></td>
+                  <td data-label="Evento"><span class="badge badge-blue"><?= e(web_analytics_event_label((string) $row['event_type'])) ?></span></td>
+                  <td data-label="Pagina" title="<?= e($row['page_url']) ?>"><?= e(web_analytics_page_label($row['page_url'])) ?></td>
                 </tr>
               <?php endforeach; ?>
             </tbody>

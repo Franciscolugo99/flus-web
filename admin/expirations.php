@@ -117,16 +117,16 @@ function render_expiration_table_legacy(array $rows): void
         echo '<div class="empty-state">Sin registros para este rango.</div>';
         return;
     }
-    echo '<div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Licencia</th><th>Vence</th><th>Estado</th></tr></thead><tbody>';
+    echo '<div class="table-wrap table-wrap--mobile-cards"><table><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Licencia</th><th>Vence</th><th>Estado</th></tr></thead><tbody>';
     foreach ($rows as $row) {
         $currentStatus = license_current_status($row['status'], $row['expires_at']);
         echo '<tr>';
-        echo '<td><strong>' . e($row['legal_name']) . '</strong></td>';
-        echo '<td>' . e($row['email'] ?: '—') . '</td>';
-        echo '<td>' . e($row['phone'] ?: '—') . '</td>';
-        echo '<td>' . e($row['license_key']) . '</td>';
-        echo '<td>' . e(format_date($row['expires_at'])) . '</td>';
-        echo '<td><span class="badge ' . e(badge_class($currentStatus)) . '">' . e(status_label($currentStatus)) . '</span></td>';
+        echo '<td data-label="Cliente"><strong>' . e($row['legal_name']) . '</strong></td>';
+        echo '<td data-label="Email">' . e($row['email'] ?: '—') . '</td>';
+        echo '<td data-label="Teléfono">' . e($row['phone'] ?: '—') . '</td>';
+        echo '<td data-label="Licencia">' . e($row['license_key']) . '</td>';
+        echo '<td data-label="Vence">' . e(format_date($row['expires_at'])) . '</td>';
+        echo '<td data-label="Estado"><span class="badge ' . e(badge_class($currentStatus)) . '">' . e(status_label($currentStatus)) . '</span></td>';
         echo '</tr>';
     }
     echo '</tbody></table></div>';
@@ -139,7 +139,7 @@ function render_expiration_table(array $rows): void
         return;
     }
 
-    echo '<div class="table-wrap expirations-table"><table><thead><tr><th>Cliente</th><th>Email</th><th>Telefono</th><th>Licencia</th><th>Vence</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+    echo '<div class="table-wrap table-wrap--mobile-cards expirations-table"><table><thead><tr><th>Cliente</th><th>Email</th><th>Telefono</th><th>Licencia</th><th>Vence</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
     foreach ($rows as $row) {
         $currentStatus = license_current_status($row['status'], $row['expires_at']);
         $message = expiration_message($row);
@@ -148,13 +148,13 @@ function render_expiration_table(array $rows): void
         $noticeSentAt = $row['_notice_sent_at'] ?? null;
 
         echo '<tr>';
-        echo '<td><strong>' . e($row['legal_name']) . '</strong></td>';
-        echo '<td>' . e($row['email'] ?: '-') . '</td>';
-        echo '<td>' . e($row['phone'] ?: '-') . '</td>';
-        echo '<td>' . e($row['license_key']) . '</td>';
-        echo '<td>' . e(format_date($row['expires_at'])) . '</td>';
-        echo '<td><span class="badge ' . e(badge_class($currentStatus)) . '">' . e(status_label($currentStatus)) . '</span></td>';
-        echo '<td><div class="actions expiration-actions">';
+        echo '<td data-label="Cliente"><strong>' . e($row['legal_name']) . '</strong></td>';
+        echo '<td data-label="Email">' . e($row['email'] ?: '-') . '</td>';
+        echo '<td data-label="Teléfono">' . e($row['phone'] ?: '-') . '</td>';
+        echo '<td data-label="Licencia">' . e($row['license_key']) . '</td>';
+        echo '<td data-label="Vence">' . e(format_date($row['expires_at'])) . '</td>';
+        echo '<td data-label="Estado"><span class="badge ' . e(badge_class($currentStatus)) . '">' . e(status_label($currentStatus)) . '</span></td>';
+        echo '<td data-label="Acciones"><div class="actions expiration-actions">';
         if ($whatsapp) {
             echo '<a class="button button--ghost button--compact" href="' . e($whatsapp) . '" target="_blank" rel="noopener">WhatsApp</a>';
         }

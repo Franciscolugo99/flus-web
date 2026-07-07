@@ -143,10 +143,10 @@ require_once __DIR__ . '/includes/layout-header.php';
 </div>
 
 <!-- Grid: datos + finanzas -->
-<div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:20px" class="client-view-grid">
+<div class="client-view-grid">
 
   <!-- Datos del cliente -->
-  <div class="detail-card" style="margin-bottom:0">
+  <div class="detail-card client-view-grid__card">
     <div class="detail-card-header">
       Datos del cliente
       <?= client_status_badge($client['status']) ?>
@@ -192,17 +192,17 @@ require_once __DIR__ . '/includes/layout-header.php';
         <div class="detail-field-value"><?= format_datetime($client['created_at']) ?></div>
       </div>
       <?php if ($client['internal_notes']): ?>
-      <div class="detail-field" style="grid-column:1/-1;border-right:none">
+      <div class="detail-field detail-field--full">
         <div class="detail-field-label">Notas internas</div>
-        <div class="detail-field-value" style="white-space:pre-line"><?= e($client['internal_notes']) ?></div>
+        <div class="detail-field-value detail-field-value--preline"><?= e($client['internal_notes']) ?></div>
       </div>
       <?php endif; ?>
     </div>
   </div>
 
   <!-- Resumen financiero -->
-  <div class="detail-card" style="margin-bottom:0">
-    <div class="detail-card-header">💰 Resumen financiero</div>
+  <div class="detail-card client-view-grid__card">
+    <div class="detail-card-header">Resumen financiero</div>
 
     <div class="revenue-summary">
       <div class="revenue-summary-item">
@@ -222,29 +222,29 @@ require_once __DIR__ . '/includes/layout-header.php';
       </div>
     </div>
 
-    <div style="padding:14px 16px 10px">
-      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:700">
+    <div class="client-chart-card">
+      <div class="client-chart-label">
         Ingresos últimos 6 meses
       </div>
-      <div style="height:75px">
+      <div class="client-chart-canvas">
         <canvas id="clientMiniChart"></canvas>
       </div>
     </div>
 
     <?php if ($last_payment_date): ?>
-    <div class="detail-field" style="border-right:none">
+    <div class="detail-field detail-field--full">
       <div class="detail-field-label">Último pago</div>
       <div class="detail-field-value"><?= format_date($last_payment_date) ?></div>
     </div>
     <?php endif; ?>
 
     <?php if ($active_license): ?>
-    <div class="detail-field" style="border-right:none">
+    <div class="detail-field detail-field--full">
       <div class="detail-field-label">Licencia vigente</div>
       <div class="detail-field-value">
         <span class="td-mono"><?= e($active_license['license_key']) ?></span>
-        <button class="btn btn-secondary btn-xs" style="margin-left:5px" data-copy="<?= e($active_license['license_key']) ?>">Copiar</button>
-        <br><span style="font-size:.75rem;color:var(--text-muted)">
+        <button class="btn btn-secondary btn-xs license-inline-copy" data-copy="<?= e($active_license['license_key']) ?>">Copiar</button>
+        <br><span class="detail-field-note">
           <?= plan_type_label($active_license['plan_type']) ?> · vence: <?= format_date($active_license['expires_at']) ?>
         </span>
       </div>
@@ -257,7 +257,7 @@ require_once __DIR__ . '/includes/layout-header.php';
 <div class="detail-card">
   <div class="detail-card-header">Actividad del cliente</div>
   <?php if (empty($client_activity)): ?>
-    <div class="empty-panel">Sin actividad operativa todavia.</div>
+    <div class="empty-panel">Sin actividad operativa todavía.</div>
   <?php else: ?>
     <div class="timeline">
       <?php foreach ($client_activity as $item): ?>
@@ -278,11 +278,11 @@ require_once __DIR__ . '/includes/layout-header.php';
 
 <!-- Licencias -->
 <div class="section-header">
-  <div class="section-title">🔑 Licencias</div>
-  <a href="<?= admin_url('license-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">+ Agregar</a>
+  <div class="section-title">Licencias</div>
+  <a href="<?= admin_url('license-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">Agregar</a>
 </div>
 
-<div class="table-wrapper" style="margin-bottom:20px">
+<div class="table-wrapper table-wrap--mobile-cards section-table">
   <table>
     <thead>
       <tr>
@@ -309,17 +309,17 @@ require_once __DIR__ . '/includes/layout-header.php';
             };
           ?>
           <tr>
-            <td>
+            <td data-label="Clave">
               <span class="td-mono"><?= e($lic['license_key']) ?></span>
-              <button class="btn btn-secondary btn-xs" style="margin-left:4px" data-copy="<?= e($lic['license_key']) ?>">Copiar</button>
+              <button class="btn btn-secondary btn-xs license-inline-copy" data-copy="<?= e($lic['license_key']) ?>">Copiar</button>
             </td>
-            <td><?= plan_type_label($lic['plan_type']) ?></td>
-            <td><?= license_status_badge($lic['status']) ?></td>
-            <td><span class="badge <?= e($cloudClass) ?>"><?= e($cloudLabel) ?></span></td>
-            <td><?= format_date($lic['starts_at']) ?></td>
-            <td <?= strtotime($lic['expires_at']) < time() ? 'style="color:var(--red)"' : '' ?>><?= format_date($lic['expires_at']) ?></td>
-            <td><?= $lic['seats'] ?? '—' ?></td>
-            <td><a href="<?= admin_url('license-edit.php?id=' . $lic['id']) ?>" class="btn btn-secondary btn-xs">Editar</a></td>
+            <td data-label="Plan"><?= plan_type_label($lic['plan_type']) ?></td>
+            <td data-label="Estado"><?= license_status_badge($lic['status']) ?></td>
+            <td data-label="Cloud"><span class="badge <?= e($cloudClass) ?>"><?= e($cloudLabel) ?></span></td>
+            <td data-label="Inicio"><?= format_date($lic['starts_at']) ?></td>
+            <td data-label="Vencimiento" class="<?= strtotime($lic['expires_at']) < time() ? 'is-danger-text' : '' ?>"><?= format_date($lic['expires_at']) ?></td>
+            <td data-label="Puestos"><?= $lic['seats'] ?? '—' ?></td>
+            <td data-label="Acciones"><a href="<?= admin_url('license-edit.php?id=' . $lic['id']) ?>" class="btn btn-secondary btn-xs">Editar</a></td>
           </tr>
         <?php endforeach; ?>
       <?php endif; ?>
@@ -329,14 +329,14 @@ require_once __DIR__ . '/includes/layout-header.php';
 
 <!-- Historial de pagos -->
 <div class="section-header">
-  <div class="section-title">📋 Historial de pagos</div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:.78rem;color:var(--text-muted)"><?= $total_payments ?> registros · total: <?= format_money($total_paid) ?></span>
-    <a href="<?= admin_url('payment-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">+ Cargar pago</a>
+  <div class="section-title">Historial de pagos</div>
+  <div class="section-actions">
+    <span class="section-meta"><?= $total_payments ?> registros · total: <?= format_money($total_paid) ?></span>
+    <a href="<?= admin_url('payment-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">Cargar pago</a>
   </div>
 </div>
 
-<div class="table-wrapper">
+<div class="table-wrapper table-wrap--mobile-cards">
   <table>
     <thead>
       <tr>
@@ -349,17 +349,17 @@ require_once __DIR__ . '/includes/layout-header.php';
       <?php else: ?>
         <?php foreach ($payments as $pay): ?>
           <tr>
-            <td><?= format_date($pay['paid_at']) ?></td>
-            <td class="td-secondary">
+            <td data-label="Fecha"><?= format_date($pay['paid_at']) ?></td>
+            <td data-label="Período" class="td-secondary">
               <?= ($pay['period_from'] && $pay['period_to'])
                   ? format_date($pay['period_from']) . ' – ' . format_date($pay['period_to'])
                   : '—' ?>
             </td>
-            <td><strong><?= format_money($pay['amount']) ?></strong></td>
-            <td><?= payment_method_label($pay['method']) ?></td>
-            <td class="td-mono" style="font-size:.76rem"><?= e($pay['license_key'] ?? '—') ?></td>
-            <td class="td-secondary"><?= e($pay['reference'] ?? '—') ?></td>
-            <td><a href="<?= admin_url('payment-edit.php?id=' . $pay['id']) ?>" class="btn btn-secondary btn-xs">Editar</a></td>
+            <td data-label="Monto"><strong><?= format_money($pay['amount']) ?></strong></td>
+            <td data-label="Método"><?= payment_method_label($pay['method']) ?></td>
+            <td data-label="Licencia" class="td-mono td-mono--compact"><?= e($pay['license_key'] ?? '—') ?></td>
+            <td data-label="Referencia" class="td-secondary"><?= e($pay['reference'] ?? '—') ?></td>
+            <td data-label="Acciones"><a href="<?= admin_url('payment-edit.php?id=' . $pay['id']) ?>" class="btn btn-secondary btn-xs">Editar</a></td>
           </tr>
         <?php endforeach; ?>
       <?php endif; ?>
@@ -397,9 +397,5 @@ require_once __DIR__ . '/includes/layout-header.php';
   });
 })();
 </script>
-
-<style>
-@media (max-width: 900px) { .client-view-grid { grid-template-columns: 1fr !important; } }
-</style>
 
 <?php require_once __DIR__ . '/includes/layout-footer.php'; ?>

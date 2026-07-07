@@ -20,18 +20,17 @@ require __DIR__ . '/includes/layout-header.php';
 ?>
 
 <section class="card">
-    <h2>Sección preparada para futuras descargas</h2>
+    <h2>Archivos internos</h2>
     <p class="meta">
-        Esta vista deja lista la estructura para administrar instaladores, actualizaciones u otros archivos internos
-        sin exponerlos públicamente. En esta fase se muestra el listado administrativo.
+        Instaladores, actualizaciones y archivos administrativos disponibles para el equipo FLUS.
     </p>
 
     <?php if ($error): ?>
         <div class="alert alert--error"><?= e($error) ?></div>
     <?php elseif (!$downloads): ?>
-        <div class="empty-state">Todavía no hay archivos cargados en la tabla <code>downloads</code>.</div>
+        <div class="empty-state">Todavía no hay archivos cargados.</div>
     <?php else: ?>
-        <div class="table-wrap">
+        <div class="table-wrap table-wrap--mobile-cards">
             <table>
                 <thead>
                     <tr>
@@ -45,11 +44,11 @@ require __DIR__ . '/includes/layout-header.php';
                 <tbody>
                     <?php foreach ($downloads as $download): ?>
                         <tr>
-                            <td><?= e($download['file_name']) ?></td>
-                            <td><?= e($download['file_path']) ?></td>
-                            <td><?= e($download['version'] ?: '—') ?></td>
-                            <td><?= e(format_datetime($download['uploaded_at'])) ?></td>
-                            <td><span class="badge <?= e(badge_class($download['status'] === 'activo' ? 'activa' : 'inactivo')) ?>"><?= e(ucfirst($download['status'])) ?></span></td>
+                            <td data-label="Archivo"><?= e($download['file_name']) ?></td>
+                            <td data-label="Ruta"><?= e($download['file_path']) ?></td>
+                            <td data-label="Versión"><?= e($download['version'] ?: '—') ?></td>
+                            <td data-label="Subido"><?= e(format_datetime($download['uploaded_at'])) ?></td>
+                            <td data-label="Estado"><span class="badge <?= e(badge_class($download['status'] === 'activo' ? 'activa' : 'inactivo')) ?>"><?= e(ucfirst($download['status'])) ?></span></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
