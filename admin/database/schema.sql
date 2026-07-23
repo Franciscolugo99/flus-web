@@ -106,6 +106,97 @@ CREATE TABLE IF NOT EXISTS license_events (
     CONSTRAINT fk_license_events_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS client_portal_users (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(190) NOT NULL,
+    full_name VARCHAR(150) DEFAULT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    last_login_at DATETIME DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_client_portal_users_email (email),
+    KEY idx_client_portal_users_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS client_portal_memberships (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    client_id INT UNSIGNED NOT NULL,
+    role VARCHAR(30) NOT NULL DEFAULT 'owner',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_client_portal_membership (user_id, client_id),
+    KEY idx_client_portal_memberships_client_id (client_id),
+    KEY idx_client_portal_memberships_active (is_active),
+    CONSTRAINT fk_client_portal_memberships_user FOREIGN KEY (user_id) REFERENCES client_portal_users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_client_portal_memberships_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS client_branches (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id INT UNSIGNED NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    code VARCHAR(60) NOT NULL,
+    address VARCHAR(255) DEFAULT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_client_branches_code (client_id, code),
+    KEY idx_client_branches_client_id (client_id),
+    KEY idx_client_branches_status (status),
+    CONSTRAINT fk_client_branches_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS client_installations (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id INT UNSIGNED NOT NULL,
+    branch_id INT UNSIGNED DEFAULT NULL,
+    license_id INT UNSIGNED NOT NULL,
+    installation_uid VARCHAR(120) NOT NULL,
+    display_name VARCHAR(150) DEFAULT NULL,
+    app_version VARCHAR(40) DEFAULT NULL,
+    device_label VARCHAR(150) DEFAULT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'online',
+    last_seen_at DATETIME DEFAULT NULL,
+    last_payload_at DATETIME DEFAULT NULL,
+    last_ip_hash CHAR(64) DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_client_installations_uid (client_id, installation_uid),
+    KEY idx_client_installations_client_id (client_id),
+    KEY idx_client_installations_branch_id (branch_id),
+    KEY idx_client_installations_license_id (license_id),
+    KEY idx_client_installations_last_seen (last_seen_at),
+    CONSTRAINT fk_client_installations_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_client_installations_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_client_installations_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cloud_sync_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id INT UNSIGNED NOT NULL,
+    branch_id INT UNSIGNED DEFAULT NULL,
+    installation_id BIGINT UNSIGNED NOT NULL,
+    license_id INT UNSIGNED NOT NULL,
+    event_uid VARCHAR(120) NOT NULL,
+    event_type VARCHAR(60) NOT NULL,
+    occurred_at DATETIME NOT NULL,
+    received_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    payload_json LONGTEXT DEFAULT NULL,
+    summary_json LONGTEXT DEFAULT NULL,
+    UNIQUE KEY uq_cloud_sync_events_installation_event (installation_id, event_uid),
+    KEY idx_cloud_sync_events_client_date (client_id, occurred_at),
+    KEY idx_cloud_sync_events_branch_date (branch_id, occurred_at),
+    KEY idx_cloud_sync_events_type (event_type),
+    KEY idx_cloud_sync_events_license_id (license_id),
+    CONSTRAINT fk_cloud_sync_events_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_sync_events_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_sync_events_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_sync_events_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS downloads (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     file_name VARCHAR(190) NOT NULL,

@@ -58,6 +58,57 @@ La tabla `license_events` esta incluida en `admin/database/schema.sql` para
 instalaciones limpias. En instalaciones existentes, el panel la crea de forma
 idempotente la primera vez que se abre el dashboard o se cambia una licencia.
 
+## Sincronizacion cloud de sucursales
+
+El primer contrato para conectar sucursales vive en
+`admin/api/sync-ingest.php`. FLUS local debe enviar eventos resumidos por POST,
+usando el mismo token configurado en `license.cloud_api_token`:
+
+```json
+{
+  "license_key": "FLUS-XXXX-XXXX-XXXX",
+  "installation_id": "pc-caja-01",
+  "app_version": "4.2.4",
+  "device_label": "Caja principal",
+  "branch": {
+    "code": "casa-central",
+    "name": "Casa central"
+  },
+  "events": [
+    {
+      "event_uid": "venta-123",
+      "event_type": "sale_created",
+      "occurred_at": "2026-07-23T12:00:00-03:00",
+      "summary": {
+        "total": 15600,
+        "payment_method": "efectivo"
+      }
+    }
+  ]
+}
+```
+
+El endpoint:
+
+- exige token cloud; si no esta configurado responde `CLOUD_TOKEN_NOT_CONFIGURED`;
+- valida que la licencia exista y este operativa;
+- asocia cada evento al `client_id` real de la licencia, nunca al navegador;
+- registra sucursal e instalacion en forma idempotente;
+- evita duplicados por `installation_id + event_uid`;
+- guarda solo eventos recibidos, sin ejecutar acciones sobre la caja local.
+
+Las tablas estan incluidas en `admin/database/schema.sql` y tambien en
+`admin/database/cloud_sync.sql` para actualizar instalaciones existentes. La
+base de usuarios de clientes queda separada en usuarios y membresias, para que
+una cuenta pueda administrar uno o mas negocios sin mezclar datos. La pantalla
+`admin/cloud-sync.php` permite ver instalaciones, sucursales, ultimo contacto y
+eventos recientes desde el panel interno.
+
+Para actualizar una instalacion existente, importar `admin/database/cloud_sync.sql`
+con un usuario MySQL con permisos de esquema. Despues de eso, el usuario normal
+de la aplicacion puede seguir limitado a operar datos; el panel solo verifica
+que las tablas existan y no necesita crear tablas en cada request.
+
 ## Avisos por email
 
 Configurar SMTP en `admin/config/config.local.php`, dentro de la clave `mail`.

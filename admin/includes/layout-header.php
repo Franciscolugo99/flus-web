@@ -9,6 +9,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/license-cloud.php';
 require_once __DIR__ . '/license-events.php';
+require_once __DIR__ . '/cloud-sync.php';
 
 admin_start_session();
 require_admin_login();
@@ -182,6 +183,10 @@ $__total_alerts = $__expiring_soon + $__expired;
       <a href="<?= admin_url('analytics.php') ?>"
          class="nav-item <?= ($active_menu ?? '') === 'analytics' ? 'active' : '' ?>">
         <span class="nav-icon">◱</span> Analíticas
+      </a>
+      <a href="<?= admin_url('cloud-sync.php') ?>"
+         class="nav-item <?= ($active_menu ?? '') === 'cloud-sync' ? 'active' : '' ?>">
+        <span class="nav-icon">◇</span> Sucursales cloud
       </a>
 
       <div class="nav-group-label">Recursos</div>
