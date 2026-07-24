@@ -104,10 +104,50 @@ una cuenta pueda administrar uno o mas negocios sin mezclar datos. La pantalla
 `admin/cloud-sync.php` permite ver instalaciones, sucursales, ultimo contacto y
 eventos recientes desde el panel interno.
 
+## Portal de clientes
+
+El portal de clientes vive en `portal/` y permite que cada comercio vea solo
+sus datos sincronizados:
+
+- ventas e importe de las ultimas 24 hs;
+- medios de pago;
+- estado de instalaciones;
+- licencia vigente;
+- ultimas ventas recibidas.
+
+El aislamiento se hace por `client_portal_memberships.client_id`. El admin ve
+todos los clientes desde `admin/cloud-sync.php`, pero un cliente del portal solo
+consulta el negocio asociado a su membresia activa.
+
+Para crear o actualizar un acceso de cliente desde consola:
+
+```powershell
+& "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\create_client_portal_user.php" 1 cliente@negocio.com "ClaveSegura123" "Nombre Cliente"
+```
+
+Luego entrar a:
+
+```text
+http://localhost/flus-web/portal/login.php
+```
+
 Para actualizar una instalacion existente, importar `admin/database/cloud_sync.sql`
 con un usuario MySQL con permisos de esquema. Despues de eso, el usuario normal
 de la aplicacion puede seguir limitado a operar datos; el panel solo verifica
 que las tablas existan y no necesita crear tablas en cada request.
+
+Checklist para conectar una instalacion FLUS nueva:
+
+1. Crear cliente y licencia en este panel.
+2. Dejar configurado `license.cloud_api_token` en `admin/config/config.local.php`.
+3. Cargar la licencia en la PC local de FLUS.
+4. En el `src/config.php` local, configurar `FLUS_LICENSE_CLOUD_URL`,
+   `FLUS_LICENSE_CLOUD_TOKEN`, `FLUS_CLOUD_SYNC_ENABLED` y
+   `FLUS_CLOUD_SYNC_URL`.
+5. Ejecutar migraciones locales de FLUS.
+6. Hacer una venta de prueba y enviar pendientes desde el panel tecnico local.
+7. Confirmar aca, en `admin/cloud-sync.php`, que aparezcan la instalacion y la
+   venta recibida.
 
 ## Avisos por email
 

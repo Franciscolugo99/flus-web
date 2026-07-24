@@ -462,14 +462,21 @@ if (!function_exists('admin_cloud_sync_decode_json')) {
 }
 
 if (!function_exists('admin_cloud_sync_recent_sales')) {
-    function admin_cloud_sync_recent_sales(PDO $pdo, int $limit = 12): array
+    function admin_cloud_sync_recent_sales(PDO $pdo, int $limit = 12, ?int $clientId = null): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
             return [];
         }
 
         $limit = max(1, min(50, $limit));
-        $stmt = $pdo->query("
+        $where = "WHERE e.event_type IN ('sale.created', 'sale_created')";
+        $params = [];
+        if ($clientId !== null && $clientId > 0) {
+            $where .= ' AND e.client_id = :client_id';
+            $params['client_id'] = $clientId;
+        }
+
+        $stmt = $pdo->prepare("
             SELECT
                 e.*,
                 c.legal_name,
@@ -484,10 +491,11 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
             INNER JOIN client_installations i ON i.id = e.installation_id
             INNER JOIN licenses l ON l.id = e.license_id
             LEFT JOIN client_branches b ON b.id = e.branch_id
-            WHERE e.event_type = 'sale.created'
+            {$where}
             ORDER BY e.occurred_at DESC, e.id DESC
             LIMIT " . $limit
         );
+        $stmt->execute($params);
 
         $rows = [];
         foreach ($stmt->fetchAll() as $row) {
@@ -500,7 +508,7 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
 }
 
 if (!function_exists('admin_cloud_sync_sales_overview')) {
-    function admin_cloud_sync_sales_overview(PDO $pdo): array
+    function admin_cloud_sync_sales_overview(PDO $pdo, ?int $clientId = null): array
     {
         $overview = [
             'sales_24h' => 0,
@@ -514,12 +522,22 @@ if (!function_exists('admin_cloud_sync_sales_overview')) {
             return $overview;
         }
 
-        $stmt = $pdo->query("
+        $where = "
+            WHERE event_type IN ('sale.created', 'sale_created')
+              AND received_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY)
+        ";
+        $params = [];
+        if ($clientId !== null && $clientId > 0) {
+            $where .= ' AND client_id = :client_id';
+            $params['client_id'] = $clientId;
+        }
+
+        $stmt = $pdo->prepare("
             SELECT summary_json
             FROM cloud_sync_events
-            WHERE event_type = 'sale.created'
-              AND received_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY)
+            {$where}
         ");
+        $stmt->execute($params);
 
         foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $summaryJson) {
             $summary = admin_cloud_sync_decode_json($summaryJson);
