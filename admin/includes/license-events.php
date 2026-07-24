@@ -10,6 +10,18 @@ if (!function_exists('admin_license_events_ensure_schema')) {
         }
 
         try {
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*)
+                FROM information_schema.TABLES
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'license_events'
+            ");
+            $stmt->execute();
+            if ((int) $stmt->fetchColumn() > 0) {
+                $ready = true;
+                return true;
+            }
+
             $pdo->exec("
                 CREATE TABLE IF NOT EXISTS license_events (
                     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -31,7 +43,12 @@ if (!function_exists('admin_license_events_ensure_schema')) {
             ");
             $ready = true;
         } catch (Throwable $e) {
-            error_log('[FLUS Admin] license_events schema: ' . $e->getMessage());
+            $message = $e->getMessage();
+            if (str_contains($message, 'CREATE command denied') || str_contains($message, '1142')) {
+                error_log('[FLUS Admin] license_events no esta disponible. Importar admin/database/license_events.sql con un usuario MySQL con permisos de esquema.');
+            } else {
+                error_log('[FLUS Admin] license_events schema: ' . $message);
+            }
             $ready = false;
         }
 

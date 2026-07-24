@@ -55,8 +55,17 @@ queda registrado en `license_events` con usuario, motivo, estado anterior,
 estado nuevo y fecha.
 
 La tabla `license_events` esta incluida en `admin/database/schema.sql` para
-instalaciones limpias. En instalaciones existentes, el panel la crea de forma
-idempotente la primera vez que se abre el dashboard o se cambia una licencia.
+instalaciones limpias. En instalaciones existentes, importar
+`admin/database/license_events.sql` con un usuario MySQL con permisos de
+esquema. El usuario normal de la aplicacion puede quedar limitado a operar
+datos; el panel verifica que la tabla exista y solo intenta crearla como
+compatibilidad para entornos de desarrollo.
+
+Ejemplo local con XAMPP:
+
+```powershell
+& "C:\xampp82\mysql\bin\mysql.exe" -u root "flus-licenciadb" -e "SOURCE C:/xampp82/htdocs/flus-web/admin/database/license_events.sql;"
+```
 
 ## Sincronizacion cloud de sucursales
 
