@@ -20,6 +20,16 @@ if (!function_exists('admin_url')) {
     }
 }
 
+if (!function_exists('admin_public_asset_url')) {
+    function admin_public_asset_url(string $path): string
+    {
+        $basePath = rtrim((string) admin_config('base_path', '/admin'), '/');
+        $publicBase = preg_replace('#/admin$#', '', $basePath) ?: '';
+
+        return $publicBase . '/assets/' . ltrim($path, '/');
+    }
+}
+
 if (!function_exists('redirect_to')) {
     function redirect_to(string $path): void
     {

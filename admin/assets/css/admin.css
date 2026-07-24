@@ -1204,6 +1204,91 @@ body.login-page {
   color: var(--blue);
 }
 
+.section-header--spaced {
+  margin-top: 18px;
+}
+
+.cloud-commerce-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.cloud-sync-split {
+  display: grid;
+  grid-template-columns: minmax(260px, .8fr) minmax(320px, 1.2fr);
+  gap: 14px;
+  margin: 14px 0 18px;
+}
+
+.cloud-sync-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.cloud-payment-list,
+.cloud-sales-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cloud-payment-row,
+.cloud-sale-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.cloud-payment-row:first-child,
+.cloud-sale-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.cloud-payment-row span,
+.cloud-sale-item span,
+.cloud-payment-row small {
+  color: var(--text-muted);
+  font-size: .78rem;
+}
+
+.cloud-payment-row > span,
+.cloud-sale-item strong {
+  color: var(--text-primary);
+}
+
+.cloud-payment-row strong,
+.cloud-sale-item > div:last-child strong {
+  color: var(--accent);
+}
+
+.cloud-sale-item {
+  grid-template-columns: 1fr auto;
+}
+
+.cloud-sale-item > div {
+  display: grid;
+  gap: 3px;
+}
+
+.cloud-sale-item > div:last-child {
+  text-align: right;
+}
+
+.table-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.table-link:hover {
+  color: var(--accent);
+}
+
 .licenses-table table {
   min-width: 1120px;
 }
@@ -1679,6 +1764,21 @@ button.button--danger:hover {
   }
   .admin-license-panel { padding: 14px; }
   .license-ops-grid { grid-template-columns: 1fr 1fr; }
+  .cloud-commerce-grid { grid-template-columns: 1fr 1fr; }
+  .cloud-sync-split { grid-template-columns: 1fr; }
+  .cloud-payment-row {
+    grid-template-columns: 1fr auto;
+  }
+  .cloud-payment-row small {
+    grid-column: 1 / -1;
+  }
+  .cloud-sale-item {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+  .cloud-sale-item > div:last-child {
+    text-align: left;
+  }
   .ops-card { min-height: 82px; }
   .topbar-date { display: none; }
 }

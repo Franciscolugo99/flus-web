@@ -126,8 +126,7 @@ $__total_alerts = $__expiring_soon + $__expired;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($page_title ?? 'Panel Admin') ?> — FLUS Admin</title>
-  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
-  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="<?= e(admin_public_asset_url('img/favicon.png')) ?>">
   <link rel="stylesheet" href="<?= admin_url('assets/css/admin.css?v=' . (is_file(__DIR__ . '/../assets/css/admin.css') ? filemtime(__DIR__ . '/../assets/css/admin.css') : time())) ?>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>

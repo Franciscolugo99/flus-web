@@ -447,3 +447,107 @@ if (!function_exists('admin_cloud_sync_recent_events')) {
         return $stmt->fetchAll();
     }
 }
+
+if (!function_exists('admin_cloud_sync_decode_json')) {
+    function admin_cloud_sync_decode_json($value): array
+    {
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+}
+
+if (!function_exists('admin_cloud_sync_recent_sales')) {
+    function admin_cloud_sync_recent_sales(PDO $pdo, int $limit = 12): array
+    {
+        if (!admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $limit = max(1, min(50, $limit));
+        $stmt = $pdo->query("
+            SELECT
+                e.*,
+                c.legal_name,
+                c.trade_name,
+                b.name AS branch_name,
+                b.code AS branch_code,
+                i.display_name,
+                i.device_label,
+                l.license_key
+            FROM cloud_sync_events e
+            INNER JOIN clients c ON c.id = e.client_id
+            INNER JOIN client_installations i ON i.id = e.installation_id
+            INNER JOIN licenses l ON l.id = e.license_id
+            LEFT JOIN client_branches b ON b.id = e.branch_id
+            WHERE e.event_type = 'sale.created'
+            ORDER BY e.occurred_at DESC, e.id DESC
+            LIMIT " . $limit
+        );
+
+        $rows = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $row['summary'] = admin_cloud_sync_decode_json($row['summary_json'] ?? null);
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+}
+
+if (!function_exists('admin_cloud_sync_sales_overview')) {
+    function admin_cloud_sync_sales_overview(PDO $pdo): array
+    {
+        $overview = [
+            'sales_24h' => 0,
+            'amount_24h' => 0.0,
+            'avg_ticket_24h' => 0.0,
+            'items_24h' => 0,
+            'payments_24h' => [],
+        ];
+
+        if (!admin_cloud_sync_ensure_schema($pdo)) {
+            return $overview;
+        }
+
+        $stmt = $pdo->query("
+            SELECT summary_json
+            FROM cloud_sync_events
+            WHERE event_type = 'sale.created'
+              AND received_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY)
+        ");
+
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $summaryJson) {
+            $summary = admin_cloud_sync_decode_json($summaryJson);
+            $total = (float) ($summary['total'] ?? 0);
+            $items = (int) ($summary['items_count'] ?? 0);
+            $payment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
+            if ($payment === '') {
+                $payment = 'SIN_DATO';
+            }
+
+            $overview['sales_24h']++;
+            $overview['amount_24h'] += $total;
+            $overview['items_24h'] += $items;
+            if (!isset($overview['payments_24h'][$payment])) {
+                $overview['payments_24h'][$payment] = ['count' => 0, 'amount' => 0.0];
+            }
+            $overview['payments_24h'][$payment]['count']++;
+            $overview['payments_24h'][$payment]['amount'] += $total;
+        }
+
+        if ($overview['sales_24h'] > 0) {
+            $overview['avg_ticket_24h'] = $overview['amount_24h'] / $overview['sales_24h'];
+        }
+
+        uasort($overview['payments_24h'], static function (array $a, array $b): int {
+            return ($b['amount'] <=> $a['amount']) ?: ($b['count'] <=> $a['count']);
+        });
+
+        return $overview;
+    }
+}

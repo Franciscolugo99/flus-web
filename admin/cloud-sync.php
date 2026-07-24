@@ -8,6 +8,8 @@ require_once __DIR__ . '/includes/layout-header.php';
 $schemaReady = admin_cloud_sync_ensure_schema($pdo);
 $installations = $schemaReady ? admin_cloud_sync_recent_installations($pdo, 50) : [];
 $events = $schemaReady ? admin_cloud_sync_recent_events($pdo, 30) : [];
+$salesOverview = $schemaReady ? admin_cloud_sync_sales_overview($pdo) : [];
+$recentSales = $schemaReady ? admin_cloud_sync_recent_sales($pdo, 12) : [];
 
 $utc = new DateTimeZone('UTC');
 $onlineCutoff = new DateTimeImmutable('-10 minutes', $utc);
@@ -72,6 +74,97 @@ if ($schemaReady) {
       </div>
     </div>
 
+    <div class="section-header section-header--spaced">
+      <div>
+        <div class="section-title">Actividad comercial sincronizada</div>
+        <div class="section-meta">Lectura resumida de ventas recibidas en las ultimas 24 hs desde las instalaciones conectadas.</div>
+      </div>
+    </div>
+
+    <div class="cloud-commerce-grid">
+      <div class="ops-card ops-card--info">
+        <span class="ops-card-label">Ventas 24 hs</span>
+        <strong><?= (int) ($salesOverview['sales_24h'] ?? 0) ?></strong>
+        <span>Eventos de venta aceptados</span>
+      </div>
+      <div class="ops-card">
+        <span class="ops-card-label">Importe 24 hs</span>
+        <strong><?= e(format_money($salesOverview['amount_24h'] ?? 0)) ?></strong>
+        <span>Total sincronizado</span>
+      </div>
+      <div class="ops-card">
+        <span class="ops-card-label">Ticket promedio</span>
+        <strong><?= e(format_money($salesOverview['avg_ticket_24h'] ?? 0)) ?></strong>
+        <span>Sobre ventas recibidas</span>
+      </div>
+      <div class="ops-card ops-card--muted">
+        <span class="ops-card-label">Items</span>
+        <strong><?= (int) ($salesOverview['items_24h'] ?? 0) ?></strong>
+        <span>Unidades o renglones reportados</span>
+      </div>
+    </div>
+
+    <div class="cloud-sync-split">
+      <section class="cloud-sync-panel">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Medios de pago 24 hs</div>
+            <div class="section-meta">Importe recibido por medio informado por cada POS.</div>
+          </div>
+        </div>
+        <?php $payments24h = $salesOverview['payments_24h'] ?? []; ?>
+        <?php if (empty($payments24h)): ?>
+          <div class="empty-panel">Todavia no hay ventas sincronizadas en las ultimas 24 hs.</div>
+        <?php else: ?>
+          <div class="cloud-payment-list">
+            <?php foreach ($payments24h as $paymentName => $paymentStats): ?>
+              <div class="cloud-payment-row">
+                <span><?= e((string) $paymentName) ?></span>
+                <strong><?= e(format_money($paymentStats['amount'] ?? 0)) ?></strong>
+                <small><?= (int) ($paymentStats['count'] ?? 0) ?> ventas</small>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </section>
+
+      <section class="cloud-sync-panel">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Ultimas ventas recibidas</div>
+            <div class="section-meta">Muestra rapida para confirmar que cada caja esta reportando.</div>
+          </div>
+        </div>
+        <?php if (!$recentSales): ?>
+          <div class="empty-panel">Sin ventas recibidas todavia.</div>
+        <?php else: ?>
+          <div class="cloud-sales-list">
+            <?php foreach ($recentSales as $sale): ?>
+              <?php
+                $summary = is_array($sale['summary'] ?? null) ? $sale['summary'] : [];
+                $saleId = (int) ($summary['venta_id'] ?? 0);
+                $saleTotal = (float) ($summary['total'] ?? 0);
+                $salePayment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
+                $saleItems = (int) ($summary['items_count'] ?? 0);
+                $clientName = (string) ($sale['trade_name'] ?: $sale['legal_name']);
+                $branchName = (string) ($sale['branch_name'] ?: 'Sin sucursal');
+              ?>
+              <article class="cloud-sale-item">
+                <div>
+                  <strong><?= e($clientName) ?></strong>
+                  <span><?= e($branchName) ?> - venta <?= $saleId > 0 ? '#' . $saleId : 'sin numero' ?></span>
+                </div>
+                <div>
+                  <strong><?= e(format_money($saleTotal)) ?></strong>
+                  <span><?= e($salePayment) ?> - <?= $saleItems ?> items</span>
+                </div>
+              </article>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </section>
+    </div>
+
     <div class="section-header">
       <div>
         <div class="section-title">Instalaciones recientes</div>
@@ -105,7 +198,7 @@ if ($schemaReady) {
               ?>
               <tr>
                 <td data-label="Cliente">
-                  <a href="<?= admin_url('client-view.php?id=' . (int) $row['client_id']) ?>" style="color:inherit">
+                  <a href="<?= admin_url('client-view.php?id=' . (int) $row['client_id']) ?>" class="table-link">
                     <?= e($row['trade_name'] ?: $row['legal_name']) ?>
                   </a>
                 </td>
