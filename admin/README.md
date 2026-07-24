@@ -2,6 +2,22 @@
 
 Panel privado para gestionar clientes, licencias, pagos, vencimientos y descargas de FLUS.
 
+## Produccion En Wiroos
+
+Antes de publicar o actualizar una instalacion con licencias reales, seguir
+[`docs/WIROOS_DEPLOYMENT.md`](../docs/WIROOS_DEPLOYMENT.md).
+
+Puntos criticos:
+
+- no reimportar `admin/database/schema.sql` sobre una base productiva;
+- no regenerar ni sobrescribir las llaves RSA si ya hay licencias emitidas;
+- conservar `admin/config/config.local.php` del servidor;
+- ejecutar el preflight de solo lectura antes de conectar clientes reales:
+
+```powershell
+php admin/tools/production_preflight.php
+```
+
 ## Instalacion local
 
 1. Crear una base MySQL para el panel.
