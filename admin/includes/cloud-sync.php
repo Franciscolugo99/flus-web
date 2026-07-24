@@ -643,6 +643,7 @@ if (!function_exists('admin_cloud_sync_clients_overview')) {
                 COALESCE(b.active_branches_count, 0) AS active_branches_count,
                 COALESCE(i.installations_count, 0) AS installations_count,
                 COALESCE(i.online_count, 0) AS online_count,
+                i.first_seen_at,
                 i.last_seen_at,
                 COALESCE(l.cloud_license_count, 0) AS cloud_license_count,
                 COALESCE(l.cloud_plan_types, '') AS cloud_plan_types,
@@ -663,6 +664,7 @@ if (!function_exists('admin_cloud_sync_clients_overview')) {
                     client_id,
                     COUNT(*) AS installations_count,
                     SUM(CASE WHEN last_seen_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE) THEN 1 ELSE 0 END) AS online_count,
+                    COALESCE(NULLIF(MIN(created_at), '0000-00-00 00:00:00'), MIN(last_seen_at)) AS first_seen_at,
                     MAX(last_seen_at) AS last_seen_at
                 FROM client_installations
                 GROUP BY client_id
@@ -729,6 +731,7 @@ if (!function_exists('admin_cloud_sync_client_overview')) {
                 COALESCE(b.active_branches_count, 0) AS active_branches_count,
                 COALESCE(i.installations_count, 0) AS installations_count,
                 COALESCE(i.online_count, 0) AS online_count,
+                i.first_seen_at,
                 i.last_seen_at,
                 COALESCE(l.cloud_license_count, 0) AS cloud_license_count,
                 COALESCE(l.cloud_plan_types, '') AS cloud_plan_types,
@@ -750,6 +753,7 @@ if (!function_exists('admin_cloud_sync_client_overview')) {
                     client_id,
                     COUNT(*) AS installations_count,
                     SUM(CASE WHEN last_seen_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE) THEN 1 ELSE 0 END) AS online_count,
+                    COALESCE(NULLIF(MIN(created_at), '0000-00-00 00:00:00'), MIN(last_seen_at)) AS first_seen_at,
                     MAX(last_seen_at) AS last_seen_at
                 FROM client_installations
                 WHERE client_id = :installations_client_id

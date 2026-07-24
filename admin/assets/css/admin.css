@@ -1379,6 +1379,12 @@ body.login-page {
 
 .client-cloud-summary {
   margin-bottom: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.client-cloud-summary strong {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .client-cloud-empty {

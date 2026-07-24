@@ -50,6 +50,9 @@ $cloud_schema_ready = admin_cloud_sync_ensure_schema($pdo);
 $cloud_overview = $cloud_schema_ready ? admin_cloud_sync_client_overview($pdo, $id) : [];
 $cloud_branches = $cloud_schema_ready ? admin_cloud_sync_client_branches($pdo, $id) : [];
 $cloud_stock_overview = $cloud_schema_ready ? admin_cloud_sync_stock_overview($pdo, $id) : [];
+$cloud_started_label = format_datetime($cloud_overview['first_seen_at'] ?? null, 'Pendiente');
+$cloud_last_seen_label = format_datetime($cloud_overview['last_seen_at'] ?? null, 'Sin contacto');
+$cloud_stock_seen_label = format_datetime($cloud_stock_overview['last_synced_at'] ?? null, 'Sin stock');
 $portal_access_roles = [
     'owner' => 'Dueño',
     'manager' => 'Encargado',
@@ -504,14 +507,17 @@ require_once __DIR__ . '/includes/layout-header.php';
   <?php elseif (empty($cloud_branches)): ?>
     <div class="client-cloud-empty">
       <strong><?= $has_cloud_plan ? 'Sin sucursales sincronizadas todavia.' : 'Cliente sin plan cloud activo.' ?></strong>
-      <span><?= $has_cloud_plan ? 'Cuando una instalacion FLUS envie datos, va a aparecer aca con su sucursal y ultimo contacto.' : 'Si el cliente contrata cloud, creale una licencia cloud y configurale el token en la instalacion local.' ?></span>
+      <span><?= $has_cloud_plan ? 'Cuando una instalacion FLUS envie datos, va a aparecer aca con su sucursal y ultimo contacto. El portal empieza a mostrar informacion desde la activacion cloud.' : 'Si el cliente contrata cloud, creale una licencia cloud y configurale el token en la instalacion local.' ?></span>
     </div>
   <?php else: ?>
     <div class="client-cloud-summary">
+      <span><strong><?= e($cloud_started_label) ?></strong>Datos desde</span>
+      <span><strong><?= e($cloud_last_seen_label) ?></strong>Ultimo contacto</span>
       <span><strong><?= (int) ($cloud_overview['active_branches_count'] ?? count($cloud_branches)) ?></strong>Sucursales</span>
       <span><strong><?= (int) ($cloud_overview['installations_count'] ?? 0) ?></strong>Instalaciones</span>
       <span><strong><?= (int) ($cloud_overview['online_count'] ?? 0) ?></strong>Online</span>
       <span><strong><?= (int) ($cloud_overview['sales_24h'] ?? 0) ?></strong>Ventas 24 hs</span>
+      <span><strong><?= e($cloud_stock_seen_label) ?></strong>Ultimo stock</span>
       <span class="<?= (int) ($cloud_stock_overview['sin_stock'] ?? 0) + (int) ($cloud_stock_overview['bajo_minimo'] ?? 0) > 0 ? 'is-warn-text' : '' ?>">
         <strong><?= (int) ($cloud_stock_overview['sin_stock'] ?? 0) + (int) ($cloud_stock_overview['bajo_minimo'] ?? 0) ?></strong>Alertas stock
       </span>

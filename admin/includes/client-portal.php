@@ -213,8 +213,12 @@ if (!function_exists('portal_client_installations_summary')) {
             if ($lastSeenAt === null && !empty($row['last_seen_at'])) {
                 $lastSeenAt = (string) $row['last_seen_at'];
             }
-            if (!empty($row['created_at']) && ($firstSeenAt === null || (string) $row['created_at'] < $firstSeenAt)) {
-                $firstSeenAt = (string) $row['created_at'];
+            $rowCreatedAt = (string) ($row['created_at'] ?? '');
+            $rowFirstSeen = ($rowCreatedAt !== '' && $rowCreatedAt !== '0000-00-00 00:00:00')
+                ? $rowCreatedAt
+                : (string) ($row['last_seen_at'] ?? '');
+            if ($rowFirstSeen !== '' && ($firstSeenAt === null || $rowFirstSeen < $firstSeenAt)) {
+                $firstSeenAt = $rowFirstSeen;
             }
 
             $lastSeen = !empty($row['last_seen_at'])
