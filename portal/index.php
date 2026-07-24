@@ -35,6 +35,7 @@ $stockItems = admin_cloud_sync_stock_items($pdo, $clientId, [
     'branch_id' => $stockBranchId,
     'limit' => 40,
 ]);
+$cloudStartedLabel = format_datetime($installations['first_seen_at'] ?? null, 'Pendiente de primera sincronizacion');
 $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin sincronizacion');
 $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
 $installationRows = is_array($installations['rows'] ?? null) ? $installations['rows'] : [];
@@ -84,6 +85,14 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
         <a href="#ventas">Ventas</a>
       <?php endif; ?>
     </nav>
+
+    <section class="portal-sync-note" aria-label="Alcance de los datos cloud">
+      <div>
+        <span>Datos disponibles desde</span>
+        <strong><?= e($cloudStartedLabel) ?></strong>
+      </div>
+      <p>Este portal muestra la informacion recibida desde que Cloud esta activo en cada instalacion. Las ventas anteriores de FLUS local no se importan automaticamente.</p>
+    </section>
 
     <section id="resumen" class="portal-kpi-grid" aria-label="Resumen de las ultimas 24 horas">
       <?php if ($canViewSales): ?>

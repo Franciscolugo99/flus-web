@@ -191,6 +191,7 @@ if (!function_exists('portal_client_installations_summary')) {
                 i.device_label,
                 i.app_version,
                 i.last_seen_at,
+                i.created_at,
                 b.name AS branch_name
             FROM client_installations i
             LEFT JOIN client_branches b ON b.id = i.branch_id
@@ -206,10 +207,14 @@ if (!function_exists('portal_client_installations_summary')) {
         $online = 0;
         $offline = 0;
         $lastSeenAt = null;
+        $firstSeenAt = null;
 
         foreach ($rows as $row) {
             if ($lastSeenAt === null && !empty($row['last_seen_at'])) {
                 $lastSeenAt = (string) $row['last_seen_at'];
+            }
+            if (!empty($row['created_at']) && ($firstSeenAt === null || (string) $row['created_at'] < $firstSeenAt)) {
+                $firstSeenAt = (string) $row['created_at'];
             }
 
             $lastSeen = !empty($row['last_seen_at'])
@@ -228,6 +233,7 @@ if (!function_exists('portal_client_installations_summary')) {
             'online' => $online,
             'offline' => $offline,
             'last_seen_at' => $lastSeenAt,
+            'first_seen_at' => $firstSeenAt,
             'rows' => $rows,
         ];
     }

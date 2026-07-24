@@ -1751,6 +1751,41 @@ body.login-page {
   color: var(--text-primary);
 }
 
+.portal-sync-note {
+  align-items: center;
+  background: rgba(0,200,150,.07);
+  border: 1px solid rgba(0,200,150,.2);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, .34fr) minmax(0, 1fr);
+  padding: 13px 15px;
+}
+
+.portal-sync-note div {
+  display: grid;
+  gap: 3px;
+}
+
+.portal-sync-note span {
+  color: var(--text-muted);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.portal-sync-note strong {
+  color: var(--text-primary);
+  font-size: .92rem;
+}
+
+.portal-sync-note p {
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
 .portal-status-box span,
 .portal-status-list span,
 .portal-kpi span {
@@ -2598,6 +2633,11 @@ button.button--danger:hover {
   .portal-nav a {
     font-size: .72rem;
     padding: 7px 10px;
+  }
+  .portal-sync-note {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    padding: 12px;
   }
   .portal-kpi-grid {
     grid-template-columns: 1fr 1fr;

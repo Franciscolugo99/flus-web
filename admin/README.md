@@ -149,6 +149,11 @@ sus datos sincronizados:
 - licencia vigente;
 - ultimas ventas recibidas.
 
+El portal no importa historico automaticamente. Las ventas, stock y estados se
+muestran desde que la instalacion local queda actualizada, con Cloud activo y
+empieza a enviar eventos. Para traer datos anteriores haria falta una carga
+historica controlada aparte.
+
 El aislamiento se hace por `client_portal_memberships.client_id`. El admin ve
 todos los clientes desde `admin/cloud-sync.php`, pero un cliente del portal solo
 consulta el negocio asociado a su membresia activa.
