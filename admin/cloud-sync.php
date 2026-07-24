@@ -65,7 +65,7 @@ if ($schemaReady) {
         $branchesCount = (int) $pdo->query('SELECT COUNT(*) FROM client_branches')->fetchColumn();
         $eventsToday = (int) $pdo->query('SELECT COUNT(*) FROM cloud_sync_events WHERE DATE(received_at) = UTC_DATE()')->fetchColumn();
     }
-    $cloudPlanWhere = "(LOWER(plan_type) LIKE '%cloud%' OR LOWER(plan_type) LIKE '%multi%' OR LOWER(plan_type) LIKE '%sucursal%' OR LOWER(plan_type) LIKE '%online%' OR LOWER(plan_type) LIKE '%web%')";
+    $cloudPlanWhere = admin_cloud_plan_sql_condition();
     $clientLicenseWhere = $selectedClientId > 0 ? ' AND client_id = ' . $selectedClientId : '';
     $cloudLicenses = (int) $pdo->query("
         SELECT COUNT(*)

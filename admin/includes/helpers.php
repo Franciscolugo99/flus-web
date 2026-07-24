@@ -179,11 +179,75 @@ if (!function_exists('admin_plan_types')) {
     }
 }
 
+if (!function_exists('admin_plan_cloud_markers')) {
+    function admin_plan_cloud_markers(): array
+    {
+        return ['cloud', 'multi', 'sucursal', 'online', 'web'];
+    }
+}
+
+if (!function_exists('admin_plan_catalog')) {
+    function admin_plan_catalog(): array
+    {
+        return [
+            'mensual' => [
+                'label' => 'Local mensual',
+                'mode' => 'local',
+                'summary' => 'Licencia local para operar en el comercio sin portal ni sincronizacion.',
+            ],
+            'anual' => [
+                'label' => 'Local anual',
+                'mode' => 'local',
+                'summary' => 'Licencia local anual para operar en el comercio sin servicios cloud.',
+            ],
+            'cloud_mensual' => [
+                'label' => 'Cloud mensual',
+                'mode' => 'cloud',
+                'summary' => 'Incluye sincronizacion web, portal del cliente y consulta remota de datos.',
+            ],
+            'cloud_multi' => [
+                'label' => 'Cloud multi-sucursal',
+                'mode' => 'cloud',
+                'summary' => 'Incluye portal, stock y control remoto pensado para varias sucursales.',
+            ],
+            'demo' => [
+                'label' => 'Demo',
+                'mode' => 'local',
+                'summary' => 'Plan de prueba. Habilitar cloud solo usando un plan cloud real.',
+            ],
+            'otro' => [
+                'label' => 'Otro',
+                'mode' => 'local',
+                'summary' => 'Plan personalizado. Si debe sincronizar, usar un nombre que incluya cloud.',
+            ],
+        ];
+    }
+}
+
 if (!function_exists('plan_type_label')) {
     function plan_type_label(string $planType): string
     {
         $plans = admin_plan_types();
         return $plans[$planType] ?? ucfirst(str_replace('_', ' ', $planType));
+    }
+}
+
+if (!function_exists('admin_plan_mode')) {
+    function admin_plan_mode(string $planType): string
+    {
+        $planType = strtolower(trim($planType));
+        $catalog = admin_plan_catalog();
+        if (isset($catalog[$planType])) {
+            return (string) $catalog[$planType]['mode'];
+        }
+
+        foreach (admin_plan_cloud_markers() as $marker) {
+            if ($marker !== '' && str_contains($planType, $marker)) {
+                return 'cloud';
+            }
+        }
+
+        return 'local';
     }
 }
 
@@ -199,13 +263,7 @@ if (!function_exists('admin_license_plan_cloud_enabled')) {
             return false;
         }
 
-        foreach (['cloud', 'multi', 'sucursal', 'online', 'web'] as $marker) {
-            if (str_contains($planType, $marker)) {
-                return true;
-            }
-        }
-
-        return false;
+        return admin_plan_mode($planType) === 'cloud';
     }
 }
 
@@ -213,6 +271,19 @@ if (!function_exists('admin_license_cloud_mode_label')) {
     function admin_license_cloud_mode_label(array $license): string
     {
         return admin_license_plan_cloud_enabled($license) ? 'Cloud' : 'Local';
+    }
+}
+
+if (!function_exists('admin_cloud_plan_sql_condition')) {
+    function admin_cloud_plan_sql_condition(string $alias = ''): string
+    {
+        $column = $alias !== '' ? $alias . '.plan_type' : 'plan_type';
+        $checks = [];
+        foreach (admin_plan_cloud_markers() as $marker) {
+            $checks[] = "LOWER({$column}) LIKE '%" . str_replace("'", "''", $marker) . "%'";
+        }
+
+        return '(' . implode(' OR ', $checks) . ')';
     }
 }
 

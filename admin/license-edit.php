@@ -245,6 +245,19 @@ require __DIR__ . '/includes/layout-header.php';
             <small>Local no envia datos al portal. Cloud habilita sincronizacion y stock por sucursal.</small>
         </label>
 
+        <div class="license-plan-guide full">
+            <?php foreach (admin_plan_catalog() as $planKey => $planInfo): ?>
+                <?php if (!array_key_exists($planKey, admin_plan_types())) { continue; } ?>
+                <div class="license-plan-guide__item">
+                    <span class="badge <?= ($planInfo['mode'] ?? 'local') === 'cloud' ? 'badge-blue' : 'badge-gray' ?>">
+                        <?= ($planInfo['mode'] ?? 'local') === 'cloud' ? 'Cloud' : 'Local' ?>
+                    </span>
+                    <strong><?= e((string) $planInfo['label']) ?></strong>
+                    <small><?= e((string) $planInfo['summary']) ?></small>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
         <label>
             Fecha de inicio *
             <input type="date" name="starts_at" value="<?= e($license['starts_at']) ?>" required>

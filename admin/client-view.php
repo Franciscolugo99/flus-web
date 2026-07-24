@@ -463,6 +463,9 @@ require_once __DIR__ . '/includes/layout-header.php';
         <br><span class="detail-field-note">
           <?= plan_type_label($active_license['plan_type']) ?> · vence: <?= format_date($active_license['expires_at']) ?>
         </span>
+        <br><span class="badge <?= admin_license_plan_cloud_enabled($active_license) ? 'badge-blue' : 'badge-gray' ?>">
+          <?= admin_license_plan_cloud_enabled($active_license) ? 'Cloud habilitado' : 'Solo local' ?>
+        </span>
       </div>
     </div>
     <?php endif; ?>
@@ -666,18 +669,24 @@ require_once __DIR__ . '/includes/layout-header.php';
       <?php else: ?>
         <?php foreach ($licenses as $lic): ?>
           <?php
+            $cloudEnabled = admin_license_plan_cloud_enabled($lic);
             $cloudStatus = admin_cloud_status_from_license((string)$lic['status'], $lic['expires_at'] ?? null);
-            $cloudClass = match ($cloudStatus) {
-                'suspended' => 'badge-gray',
-                'expired', 'revoked' => 'badge-red',
-                default => 'badge-green',
-            };
-            $cloudLabel = match ($cloudStatus) {
-                'suspended' => 'Suspendida',
-                'expired' => 'Vencida',
-                'revoked' => 'Revocada',
-                default => 'Activa',
-            };
+            if (!$cloudEnabled) {
+                $cloudClass = 'badge-gray';
+                $cloudLabel = 'No incluido';
+            } else {
+                $cloudClass = match ($cloudStatus) {
+                    'suspended' => 'badge-gray',
+                    'expired', 'revoked' => 'badge-red',
+                    default => 'badge-green',
+                };
+                $cloudLabel = match ($cloudStatus) {
+                    'suspended' => 'Suspendida',
+                    'expired' => 'Vencida',
+                    'revoked' => 'Revocada',
+                    default => 'Activa',
+                };
+            }
           ?>
           <tr>
             <td data-label="Clave">

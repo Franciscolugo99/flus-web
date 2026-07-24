@@ -220,7 +220,7 @@ try {
     $summarySql = "
         SELECT
             SUM(CASE WHEN l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() THEN 1 ELSE 0 END) AS active,
-            SUM(CASE WHEN l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() AND (LOWER(l.plan_type) LIKE '%cloud%' OR LOWER(l.plan_type) LIKE '%multi%' OR LOWER(l.plan_type) LIKE '%sucursal%' OR LOWER(l.plan_type) LIKE '%online%' OR LOWER(l.plan_type) LIKE '%web%') THEN 1 ELSE 0 END) AS cloud,
+            SUM(CASE WHEN l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() AND " . admin_cloud_plan_sql_condition('l') . " THEN 1 ELSE 0 END) AS cloud,
             SUM(CASE WHEN l.status = 'suspendida' THEN 1 ELSE 0 END) AS suspended,
             SUM(CASE WHEN l.expires_at < CURDATE() AND l.status != 'suspendida' THEN 1 ELSE 0 END) AS expired,
             SUM(CASE WHEN l.expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND l.status NOT IN ('vencida','suspendida') THEN 1 ELSE 0 END) AS expiring,
@@ -267,7 +267,7 @@ try {
 
     $filterWhere = match ($filter) {
         'active' => "l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE()",
-        'cloud' => "l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() AND (LOWER(l.plan_type) LIKE '%cloud%' OR LOWER(l.plan_type) LIKE '%multi%' OR LOWER(l.plan_type) LIKE '%sucursal%' OR LOWER(l.plan_type) LIKE '%online%' OR LOWER(l.plan_type) LIKE '%web%')",
+        'cloud' => "l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() AND " . admin_cloud_plan_sql_condition('l'),
         'expiring' => "l.expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND l.status NOT IN ('vencida','suspendida')",
         'expired' => "l.expires_at < CURDATE() AND l.status != 'suspendida'",
         'suspended' => "l.status = 'suspendida'",

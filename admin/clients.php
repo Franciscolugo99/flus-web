@@ -12,6 +12,7 @@ $q = trim((string) ($_GET['q'] ?? ''));
 
 try {
     $pdo = admin_db();
+    $cloudPlanWhere = admin_cloud_plan_sql_condition('lp');
 
     if (request_is_post() && ($_POST['action'] ?? '') === 'delete') {
         verify_csrf();
@@ -41,7 +42,9 @@ try {
     $sql = "
         SELECT c.*,
                (SELECT COUNT(*) FROM licenses l WHERE l.client_id = c.id) AS licenses_count,
-               (SELECT COUNT(*) FROM payments p WHERE p.client_id = c.id) AS payments_count
+               (SELECT COUNT(*) FROM payments p WHERE p.client_id = c.id) AS payments_count,
+               (SELECT lp.plan_type FROM licenses lp WHERE lp.client_id = c.id ORDER BY (lp.status NOT IN ('vencida','suspendida') AND lp.expires_at >= CURDATE()) DESC, lp.expires_at DESC, lp.id DESC LIMIT 1) AS primary_plan_type,
+               (SELECT COUNT(*) FROM licenses lp WHERE lp.client_id = c.id AND lp.status NOT IN ('vencida','suspendida') AND lp.expires_at >= CURDATE() AND {$cloudPlanWhere}) AS active_cloud_licenses
         FROM clients c
     ";
     $params = [];
@@ -81,6 +84,7 @@ require __DIR__ . '/includes/layout-header.php';
                     <th>Cliente</th>
                     <th>Contacto</th>
                     <th>Estado</th>
+                    <th>Plan</th>
                     <th>Licencias</th>
                     <th>Pagos</th>
                     <th>Actualización</th>
@@ -100,6 +104,21 @@ require __DIR__ . '/includes/layout-header.php';
                         </td>
                         <td data-label="Estado">
                             <span class="badge <?= e(badge_class($client['status'])) ?>"><?= e(status_label($client['status'])) ?></span>
+                        </td>
+                        <td data-label="Plan">
+                            <?php
+                                $primaryPlan = trim((string) ($client['primary_plan_type'] ?? ''));
+                                $hasCloud = (int) ($client['active_cloud_licenses'] ?? 0) > 0;
+                                $planMode = $primaryPlan === '' ? 'none' : ($hasCloud ? 'cloud' : admin_plan_mode($primaryPlan));
+                                $planBadgeClass = match ($planMode) {
+                                    'cloud' => 'badge-blue',
+                                    'local' => 'badge-gray',
+                                    default => 'badge-yellow',
+                                };
+                                $planLabel = $primaryPlan !== '' ? plan_type_label($primaryPlan) : 'Sin licencia';
+                            ?>
+                            <span class="badge <?= e($planBadgeClass) ?>"><?= e($planMode === 'cloud' ? 'Cloud' : ($planMode === 'local' ? 'Local' : 'Pendiente')) ?></span><br>
+                            <span class="meta"><?= e($planLabel) ?></span>
                         </td>
                         <td data-label="Licencias"><?= e((string) $client['licenses_count']) ?></td>
                         <td data-label="Pagos"><?= e((string) $client['payments_count']) ?></td>

@@ -632,7 +632,7 @@ if (!function_exists('admin_cloud_sync_clients_overview')) {
         }
 
         $limit = max(1, min(100, $limit));
-        $cloudPlanWhere = "(LOWER(plan_type) LIKE '%cloud%' OR LOWER(plan_type) LIKE '%multi%' OR LOWER(plan_type) LIKE '%sucursal%' OR LOWER(plan_type) LIKE '%online%' OR LOWER(plan_type) LIKE '%web%')";
+        $cloudPlanWhere = admin_cloud_plan_sql_condition();
 
         $stmt = $pdo->query("
             SELECT
@@ -721,7 +721,7 @@ if (!function_exists('admin_cloud_sync_client_overview')) {
             return [];
         }
 
-        $cloudPlanWhere = "(LOWER(plan_type) LIKE '%cloud%' OR LOWER(plan_type) LIKE '%multi%' OR LOWER(plan_type) LIKE '%sucursal%' OR LOWER(plan_type) LIKE '%online%' OR LOWER(plan_type) LIKE '%web%')";
+        $cloudPlanWhere = admin_cloud_plan_sql_condition();
         $stmt = $pdo->prepare("
             SELECT
                 c.id AS client_id,
