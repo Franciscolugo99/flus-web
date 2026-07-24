@@ -159,6 +159,11 @@ Para crear o actualizar un acceso de cliente desde consola:
 & "C:\xampp\php\php.exe" "C:\xampp\htdocs\flus-web\admin\tools\create_client_portal_user.php" 1 cliente@negocio.com "ClaveSegura123" "Nombre Cliente"
 ```
 
+Tambien se puede administrar desde la ficha del cliente, en `Clientes > Ver`.
+El bloque `Accesos al portal` permite crear o actualizar el acceso, activar o
+desactivar la membresia y resetear la contraseña. FLUS Admin solo permite crear
+o activar accesos si el cliente tiene un plan cloud.
+
 Luego entrar a:
 
 ```text

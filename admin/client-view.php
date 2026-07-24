@@ -50,12 +50,213 @@ $cloud_schema_ready = admin_cloud_sync_ensure_schema($pdo);
 $cloud_overview = $cloud_schema_ready ? admin_cloud_sync_client_overview($pdo, $id) : [];
 $cloud_branches = $cloud_schema_ready ? admin_cloud_sync_client_branches($pdo, $id) : [];
 $cloud_stock_overview = $cloud_schema_ready ? admin_cloud_sync_stock_overview($pdo, $id) : [];
+$portal_access_roles = [
+    'owner' => 'Dueño',
+    'manager' => 'Encargado',
+    'viewer' => 'Consulta',
+];
+$client_view_url = admin_url('client-view.php?id=' . $id);
+$portal_access_url = $client_view_url . '#portal-access';
 $has_cloud_plan = false;
 foreach ($licenses as $lic) {
     if (admin_license_plan_cloud_enabled($lic)) {
         $has_cloud_plan = true;
         break;
     }
+}
+
+if (request_is_post() && isset($_POST['portal_action'])) {
+    verify_csrf();
+
+    if (!$cloud_schema_ready) {
+        redirect_with_flash($portal_access_url, 'error', 'No se pudo preparar el esquema del portal.');
+    }
+
+    $portalAction = (string) ($_POST['portal_action'] ?? '');
+
+    try {
+        if ($portalAction === 'save_access') {
+            if (!$has_cloud_plan) {
+                throw new RuntimeException('Para crear accesos al portal, el cliente necesita un plan cloud activo.');
+            }
+
+            $email = strtolower(trim((string) ($_POST['portal_email'] ?? '')));
+            $fullName = trim((string) ($_POST['portal_full_name'] ?? ''));
+            $password = (string) ($_POST['portal_password'] ?? '');
+            $role = (string) ($_POST['portal_role'] ?? 'owner');
+            if (!array_key_exists($role, $portal_access_roles)) {
+                $role = 'viewer';
+            }
+
+            if ($email === '' || $fullName === '' || $password === '') {
+                throw new RuntimeException('Email, nombre y contraseña son obligatorios.');
+            }
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new RuntimeException('El email no tiene un formato valido.');
+            }
+            if (strlen($password) < 10) {
+                throw new RuntimeException('La contraseña debe tener al menos 10 caracteres.');
+            }
+
+            $conflict = $pdo->prepare("
+                SELECT c.trade_name, c.legal_name
+                FROM client_portal_users u
+                INNER JOIN client_portal_memberships m ON m.user_id = u.id
+                INNER JOIN clients c ON c.id = m.client_id
+                WHERE u.email = :email
+                  AND m.client_id <> :client_id
+                  AND m.is_active = 1
+                LIMIT 1
+            ");
+            $conflict->execute(['email' => $email, 'client_id' => $id]);
+            $conflictRow = $conflict->fetch();
+            if ($conflictRow) {
+                $conflictClient = (string) ($conflictRow['trade_name'] ?: $conflictRow['legal_name']);
+                throw new RuntimeException('Ese email ya tiene acceso activo al portal de ' . $conflictClient . '.');
+            }
+
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            if (!is_string($passwordHash) || $passwordHash === '') {
+                throw new RuntimeException('No se pudo generar la contraseña.');
+            }
+
+            $pdo->beginTransaction();
+            try {
+                $userStmt = $pdo->prepare('
+                    INSERT INTO client_portal_users (email, full_name, password_hash, is_active)
+                    VALUES (:email, :full_name, :password_hash, 1)
+                    ON DUPLICATE KEY UPDATE
+                        full_name = VALUES(full_name),
+                        password_hash = VALUES(password_hash),
+                        is_active = 1,
+                        updated_at = NOW()
+                ');
+                $userStmt->execute([
+                    'email' => $email,
+                    'full_name' => $fullName,
+                    'password_hash' => $passwordHash,
+                ]);
+
+                $selectUser = $pdo->prepare('SELECT id FROM client_portal_users WHERE email = :email LIMIT 1');
+                $selectUser->execute(['email' => $email]);
+                $portalUserId = (int) $selectUser->fetchColumn();
+                if ($portalUserId <= 0) {
+                    throw new RuntimeException('No se pudo obtener el usuario del portal.');
+                }
+
+                $membershipStmt = $pdo->prepare('
+                    INSERT INTO client_portal_memberships (user_id, client_id, role, is_active)
+                    VALUES (:user_id, :client_id, :role, 1)
+                    ON DUPLICATE KEY UPDATE
+                        role = VALUES(role),
+                        is_active = 1,
+                        updated_at = NOW()
+                ');
+                $membershipStmt->execute([
+                    'user_id' => $portalUserId,
+                    'client_id' => $id,
+                    'role' => $role,
+                ]);
+
+                $pdo->commit();
+            } catch (Throwable $e) {
+                $pdo->rollBack();
+                throw $e;
+            }
+
+            redirect_with_flash($portal_access_url, 'success', 'Acceso del portal guardado correctamente.');
+        }
+
+        if ($portalAction === 'activate_access' || $portalAction === 'deactivate_access') {
+            if ($portalAction === 'activate_access' && !$has_cloud_plan) {
+                throw new RuntimeException('No se puede activar el portal sin un plan cloud activo.');
+            }
+
+            $membershipId = (int) ($_POST['membership_id'] ?? 0);
+            $lookup = $pdo->prepare('
+                SELECT m.id, m.user_id, u.email
+                FROM client_portal_memberships m
+                INNER JOIN client_portal_users u ON u.id = m.user_id
+                WHERE m.id = :membership_id
+                  AND m.client_id = :client_id
+                LIMIT 1
+            ');
+            $lookup->execute(['membership_id' => $membershipId, 'client_id' => $id]);
+            $membership = $lookup->fetch();
+            if (!$membership) {
+                throw new RuntimeException('Acceso del portal no encontrado para este cliente.');
+            }
+
+            $targetActive = $portalAction === 'activate_access' ? 1 : 0;
+            $update = $pdo->prepare('UPDATE client_portal_memberships SET is_active = :active, updated_at = NOW() WHERE id = :id AND client_id = :client_id');
+            $update->execute(['active' => $targetActive, 'id' => $membershipId, 'client_id' => $id]);
+            if ($targetActive === 1) {
+                $pdo->prepare('UPDATE client_portal_users SET is_active = 1, updated_at = NOW() WHERE id = :id')
+                    ->execute(['id' => (int) $membership['user_id']]);
+            }
+
+            redirect_with_flash($portal_access_url, 'success', $targetActive ? 'Acceso del portal activado.' : 'Acceso del portal desactivado.');
+        }
+
+        if ($portalAction === 'reset_password') {
+            $membershipId = (int) ($_POST['membership_id'] ?? 0);
+            $newPassword = (string) ($_POST['new_password'] ?? '');
+            if (strlen($newPassword) < 10) {
+                throw new RuntimeException('La nueva contraseña debe tener al menos 10 caracteres.');
+            }
+
+            $lookup = $pdo->prepare('
+                SELECT m.id, m.user_id, u.email
+                FROM client_portal_memberships m
+                INNER JOIN client_portal_users u ON u.id = m.user_id
+                WHERE m.id = :membership_id
+                  AND m.client_id = :client_id
+                LIMIT 1
+            ');
+            $lookup->execute(['membership_id' => $membershipId, 'client_id' => $id]);
+            $membership = $lookup->fetch();
+            if (!$membership) {
+                throw new RuntimeException('Acceso del portal no encontrado para este cliente.');
+            }
+
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            if (!is_string($passwordHash) || $passwordHash === '') {
+                throw new RuntimeException('No se pudo generar la nueva contraseña.');
+            }
+
+            $pdo->prepare('UPDATE client_portal_users SET password_hash = :password_hash, updated_at = NOW() WHERE id = :id')
+                ->execute(['password_hash' => $passwordHash, 'id' => (int) $membership['user_id']]);
+
+            redirect_with_flash($portal_access_url, 'success', 'Contraseña del portal actualizada.');
+        }
+
+        redirect_with_flash($portal_access_url, 'error', 'Accion del portal no reconocida.');
+    } catch (Throwable $e) {
+        redirect_with_flash($portal_access_url, 'error', $e->getMessage());
+    }
+}
+
+$portal_accesses = [];
+if ($cloud_schema_ready) {
+    $portalAccessStmt = $pdo->prepare('
+        SELECT
+            m.id AS membership_id,
+            m.role,
+            m.is_active AS membership_active,
+            m.created_at AS membership_created_at,
+            m.updated_at AS membership_updated_at,
+            u.id AS user_id,
+            u.email,
+            u.full_name,
+            u.is_active AS user_active,
+            u.last_login_at
+        FROM client_portal_memberships m
+        INNER JOIN client_portal_users u ON u.id = m.user_id
+        WHERE m.client_id = :client_id
+        ORDER BY m.is_active DESC, u.full_name ASC, u.email ASC
+    ');
+    $portalAccessStmt->execute(['client_id' => $id]);
+    $portal_accesses = $portalAccessStmt->fetchAll();
 }
 
 // Métricas financieras
@@ -334,6 +535,110 @@ require_once __DIR__ . '/includes/layout-header.php';
       <?php endforeach; ?>
     </div>
   <?php endif; ?>
+</div>
+
+<!-- Accesos portal -->
+<div class="section-header" id="portal-access">
+  <div>
+    <div class="section-title">Accesos al portal</div>
+    <div class="section-meta">Usuarios del cliente para consultar ventas, sucursales y stock desde el celular.</div>
+  </div>
+  <a href="<?= e(preg_replace('#/admin$#', '', admin_url()) . '/portal/login.php') ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Abrir portal</a>
+</div>
+
+<div class="detail-card portal-access-card">
+  <?php if (!$has_cloud_plan): ?>
+    <div class="alert alert-warning portal-access-warning">
+      Este cliente no tiene plan cloud activo. Los accesos al portal se administran solo para clientes Cloud o Cloud multi-sucursal.
+    </div>
+  <?php endif; ?>
+
+  <div class="portal-access-layout">
+    <form method="POST" action="<?= e($portal_access_url) ?>" class="portal-access-form">
+      <?= csrf_field() ?>
+      <input type="hidden" name="portal_action" value="save_access">
+
+      <div>
+        <div class="detail-card-header portal-access-form__header">Crear o actualizar acceso</div>
+        <p class="portal-access-note">Si el email ya existe para este cliente, se actualiza la contraseña, el nombre y el rol.</p>
+      </div>
+
+      <label>
+        <span>Nombre visible</span>
+        <input type="text" name="portal_full_name" placeholder="Ej: Dueño del negocio" <?= !$has_cloud_plan ? 'disabled' : '' ?> required>
+      </label>
+      <label>
+        <span>Email de acceso</span>
+        <input type="email" name="portal_email" placeholder="cliente@negocio.com" <?= !$has_cloud_plan ? 'disabled' : '' ?> required>
+      </label>
+      <label>
+        <span>Rol</span>
+        <select name="portal_role" <?= !$has_cloud_plan ? 'disabled' : '' ?>>
+          <?php foreach ($portal_access_roles as $roleKey => $roleLabel): ?>
+            <option value="<?= e($roleKey) ?>"><?= e($roleLabel) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+      <label>
+        <span>Contraseña inicial</span>
+        <input type="password" name="portal_password" minlength="10" placeholder="Mínimo 10 caracteres" <?= !$has_cloud_plan ? 'disabled' : '' ?> required>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="button" <?= !$has_cloud_plan ? 'disabled' : '' ?>>Guardar acceso</button>
+      </div>
+    </form>
+
+    <div class="portal-access-list">
+      <div class="portal-access-list__header">
+        <strong>Usuarios habilitados</strong>
+        <span><?= count($portal_accesses) ?> acceso<?= count($portal_accesses) === 1 ? '' : 's' ?></span>
+      </div>
+
+      <?php if (!$cloud_schema_ready): ?>
+        <div class="empty-panel">No se pudo preparar el esquema del portal.</div>
+      <?php elseif (empty($portal_accesses)): ?>
+        <div class="empty-panel">Todavía no hay accesos creados para este cliente.</div>
+      <?php else: ?>
+        <?php foreach ($portal_accesses as $access): ?>
+          <?php
+            $membershipId = (int) ($access['membership_id'] ?? 0);
+            $accessActive = (int) ($access['membership_active'] ?? 0) === 1 && (int) ($access['user_active'] ?? 0) === 1;
+            $roleLabel = $portal_access_roles[(string) ($access['role'] ?? '')] ?? ucfirst((string) ($access['role'] ?? 'Consulta'));
+          ?>
+          <article class="portal-access-row">
+            <div class="portal-access-row__main">
+              <strong><?= e((string) ($access['full_name'] ?: 'Sin nombre')) ?></strong>
+              <span><?= e((string) $access['email']) ?></span>
+              <small>Último ingreso: <?= e(format_datetime($access['last_login_at'] ?? null, 'Sin ingresos')) ?></small>
+            </div>
+            <div class="portal-access-row__state">
+              <span class="badge <?= $accessActive ? 'badge-green' : 'badge-gray' ?>"><?= $accessActive ? 'Activo' : 'Inactivo' ?></span>
+              <small><?= e($roleLabel) ?></small>
+            </div>
+            <div class="portal-access-row__actions">
+              <form method="POST" action="<?= e($portal_access_url) ?>">
+                <?= csrf_field() ?>
+                <input type="hidden" name="portal_action" value="<?= $accessActive ? 'deactivate_access' : 'activate_access' ?>">
+                <input type="hidden" name="membership_id" value="<?= $membershipId ?>">
+                <button type="submit" class="button button--ghost button--compact" data-confirm="<?= $accessActive ? 'Desactivar este acceso al portal?' : 'Activar este acceso al portal?' ?>" <?= (!$has_cloud_plan && !$accessActive) ? 'disabled' : '' ?>>
+                  <?= $accessActive ? 'Desactivar' : 'Activar' ?>
+                </button>
+              </form>
+
+              <form method="POST" action="<?= e($portal_access_url) ?>" class="portal-access-reset">
+                <?= csrf_field() ?>
+                <input type="hidden" name="portal_action" value="reset_password">
+                <input type="hidden" name="membership_id" value="<?= $membershipId ?>">
+                <input type="password" name="new_password" minlength="10" placeholder="Nueva contraseña" required>
+                <button type="submit" class="button button--ghost button--compact" data-confirm="Resetear contraseña de este acceso?">Resetear</button>
+              </form>
+            </div>
+          </article>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </div>
 </div>
 
 <!-- Licencias -->
