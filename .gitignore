@@ -8,3 +8,4 @@ admin/config/license.passphrase.local
 .codex_tmp/
 .rnd
 admin.zip
+dist/
