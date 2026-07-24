@@ -165,6 +165,57 @@ if (!function_exists('admin_license_statuses')) {
     }
 }
 
+if (!function_exists('admin_plan_types')) {
+    function admin_plan_types(): array
+    {
+        return [
+            'mensual' => 'Local mensual',
+            'anual' => 'Local anual',
+            'cloud_mensual' => 'Cloud mensual',
+            'cloud_multi' => 'Cloud multi-sucursal',
+            'demo' => 'Demo',
+            'otro' => 'Otro',
+        ];
+    }
+}
+
+if (!function_exists('plan_type_label')) {
+    function plan_type_label(string $planType): string
+    {
+        $plans = admin_plan_types();
+        return $plans[$planType] ?? ucfirst(str_replace('_', ' ', $planType));
+    }
+}
+
+if (!function_exists('admin_license_plan_cloud_enabled')) {
+    function admin_license_plan_cloud_enabled(array $license): bool
+    {
+        if (array_key_exists('cloud_enabled', $license)) {
+            return (bool) $license['cloud_enabled'];
+        }
+
+        $planType = strtolower(trim((string) ($license['plan_type'] ?? $license['plan'] ?? '')));
+        if ($planType === '') {
+            return false;
+        }
+
+        foreach (['cloud', 'multi', 'sucursal', 'online', 'web'] as $marker) {
+            if (str_contains($planType, $marker)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('admin_license_cloud_mode_label')) {
+    function admin_license_cloud_mode_label(array $license): string
+    {
+        return admin_license_plan_cloud_enabled($license) ? 'Cloud' : 'Local';
+    }
+}
+
 if (!function_exists('admin_payment_methods')) {
     function admin_payment_methods(): array
     {

@@ -44,6 +44,9 @@ if (!function_exists('build_license_payload')) {
 
         return [
             'plan' => (string) $license['plan_type'],
+            'plan_label' => plan_type_label((string) $license['plan_type']),
+            'cloud_enabled' => admin_license_plan_cloud_enabled($license),
+            'cloud_mode' => admin_license_cloud_mode_label($license),
             'expires_at' => (string) $license['expires_at'],
             'customer' => (string) ($license['trade_name'] ?: $license['legal_name']),
             'license_key' => (string) $license['license_key'],

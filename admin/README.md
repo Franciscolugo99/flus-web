@@ -60,6 +60,17 @@ idempotente la primera vez que se abre el dashboard o se cambia una licencia.
 
 ## Sincronizacion cloud de sucursales
 
+La sincronizacion y el portal cliente son una capacidad de planes cloud. En el
+alta o edicion de licencia usar:
+
+- `Local mensual` / `Local anual`: FLUS opera en la PC del comercio sin portal.
+- `Cloud mensual`: habilita portal, ventas recientes, stock y una sucursal.
+- `Cloud multi-sucursal`: habilita portal y lectura consolidada por sucursal.
+
+El endpoint rechaza eventos de licencias locales con `LICENSE_CLOUD_DISABLED`.
+Esto permite vender FLUS Local y FLUS Cloud con precios distintos sin depender
+solo de la configuracion de la PC del cliente.
+
 El primer contrato para conectar sucursales vive en
 `admin/api/sync-ingest.php`. FLUS local debe enviar eventos resumidos por POST,
 usando el mismo token configurado en `license.cloud_api_token`:
@@ -140,7 +151,8 @@ que las tablas existan y no necesita crear tablas en cada request.
 
 Checklist para conectar una instalacion FLUS nueva:
 
-1. Crear cliente y licencia en este panel.
+1. Crear cliente y licencia en este panel con plan `Cloud mensual` o
+   `Cloud multi-sucursal`.
 2. Dejar configurado `license.cloud_api_token` en `admin/config/config.local.php`.
 3. Cargar la licencia en la PC local de FLUS.
 4. En el `src/config.php` local, configurar `FLUS_LICENSE_CLOUD_URL`,
@@ -152,6 +164,8 @@ Checklist para conectar una instalacion FLUS nueva:
    venta recibida.
 8. Desde el tecnico local de FLUS, usar `Enviar stock actual` para cargar el
    primer inventario visible en el portal.
+9. Para automatizar, programar en Windows el script local
+   `scripts/cloud_sync_tick.php` cada 5 minutos.
 
 Este portal queda pensado para planes cloud o multi-sucursal. El cliente puede
 consultar ventas y stock desde el celular, pero no modifica datos operativos de

@@ -77,7 +77,8 @@ try {
     }
 
     if (!admin_cloud_sync_license_accepts_events($license)) {
-        cloud_sync_json_response(403, ['ok' => false, 'error' => 'LICENSE_NOT_ACTIVE']);
+        $reason = admin_cloud_sync_license_reject_reason($license);
+        cloud_sync_json_response(403, ['ok' => false, 'error' => $reason !== '' ? $reason : 'LICENSE_NOT_ACTIVE']);
     }
 
     $pdo->beginTransaction();

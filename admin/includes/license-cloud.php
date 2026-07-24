@@ -33,6 +33,15 @@ if (!function_exists('admin_cloud_status_message')) {
     }
 }
 
+if (!function_exists('admin_cloud_plan_message')) {
+    function admin_cloud_plan_message(array $license): string
+    {
+        return admin_license_plan_cloud_enabled($license)
+            ? 'Plan cloud habilitado para portal y sucursales.'
+            : 'Plan local: no incluye sincronizacion cloud.';
+    }
+}
+
 if (!function_exists('admin_cloud_next_check_at')) {
     function admin_cloud_next_check_at(): string
     {
@@ -56,10 +65,13 @@ if (!function_exists('admin_build_cloud_license_payload')) {
             'installation_id' => trim((string) ($request['installation_id'] ?? '')),
             'status' => $cloudStatus,
             'plan' => (string) ($license['plan_type'] ?? ''),
+            'plan_label' => plan_type_label((string) ($license['plan_type'] ?? '')),
+            'cloud_enabled' => admin_license_plan_cloud_enabled($license),
+            'cloud_mode' => admin_license_cloud_mode_label($license),
             'expires_at' => (string) ($license['expires_at'] ?? ''),
             'checked_at' => gmdate(DATE_ATOM),
             'next_check_at' => admin_cloud_next_check_at(),
-            'message' => admin_cloud_status_message($cloudStatus),
+            'message' => admin_cloud_status_message($cloudStatus) ?: admin_cloud_plan_message($license),
         ];
     }
 }

@@ -92,6 +92,9 @@ try {
         if ($data['plan_type'] === '') {
             $errors[] = 'El tipo de plan es obligatorio.';
         }
+        if (!array_key_exists($data['plan_type'], admin_plan_types()) && strlen($data['plan_type']) > 50) {
+            $errors[] = 'El tipo de plan no puede superar 50 caracteres.';
+        }
 
         $license = array_merge($license, $data);
 
@@ -227,7 +230,19 @@ require __DIR__ . '/includes/layout-header.php';
 
         <label>
             Tipo de plan *
-            <input type="text" name="plan_type" value="<?= e($license['plan_type']) ?>" required>
+            <select name="plan_type" required>
+                <?php
+                    $currentPlan = (string) $license['plan_type'];
+                    $planOptions = admin_plan_types();
+                    if ($currentPlan !== '' && !array_key_exists($currentPlan, $planOptions)) {
+                        $planOptions = [$currentPlan => plan_type_label($currentPlan)] + $planOptions;
+                    }
+                ?>
+                <?php foreach ($planOptions as $value => $label): ?>
+                    <option value="<?= e($value) ?>" <?= $currentPlan === $value ? 'selected' : '' ?>><?= e($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <small>Local no envia datos al portal. Cloud habilita sincronizacion y stock por sucursal.</small>
         </label>
 
         <label>

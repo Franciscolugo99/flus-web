@@ -28,9 +28,39 @@ foreach ($installations as $installation) {
 
 $branchesCount = 0;
 $eventsToday = 0;
+$cloudLicenses = 0;
+$cloudNoContact = 0;
+$localInstallations = 0;
 if ($schemaReady) {
     $branchesCount = (int) $pdo->query('SELECT COUNT(*) FROM client_branches')->fetchColumn();
     $eventsToday = (int) $pdo->query('SELECT COUNT(*) FROM cloud_sync_events WHERE DATE(received_at) = UTC_DATE()')->fetchColumn();
+    $cloudPlanWhere = "(LOWER(plan_type) LIKE '%cloud%' OR LOWER(plan_type) LIKE '%multi%' OR LOWER(plan_type) LIKE '%sucursal%' OR LOWER(plan_type) LIKE '%online%' OR LOWER(plan_type) LIKE '%web%')";
+    $cloudLicenses = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM licenses
+        WHERE status NOT IN ('vencida','suspendida')
+          AND expires_at >= CURDATE()
+          AND {$cloudPlanWhere}
+    ")->fetchColumn();
+    $cloudNoContact = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM licenses l
+        LEFT JOIN (
+            SELECT license_id, MAX(last_seen_at) AS last_seen_at
+            FROM client_installations
+            GROUP BY license_id
+        ) i ON i.license_id = l.id
+        WHERE l.status NOT IN ('vencida','suspendida')
+          AND l.expires_at >= CURDATE()
+          AND {$cloudPlanWhere}
+          AND (i.last_seen_at IS NULL OR i.last_seen_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE))
+    ")->fetchColumn();
+    $localInstallations = (int) $pdo->query("
+        SELECT COUNT(*)
+        FROM client_installations i
+        INNER JOIN licenses l ON l.id = i.license_id
+        WHERE NOT {$cloudPlanWhere}
+    ")->fetchColumn();
 }
 ?>
 
@@ -66,6 +96,21 @@ if ($schemaReady) {
         <span class="ops-card-label">Sucursales</span>
         <strong><?= $branchesCount ?></strong>
         <span>Registradas por cliente</span>
+      </div>
+      <div class="ops-card ops-card--info">
+        <span class="ops-card-label">Licencias cloud</span>
+        <strong><?= $cloudLicenses ?></strong>
+        <span>Habilitadas para portal</span>
+      </div>
+      <div class="ops-card <?= $cloudNoContact > 0 ? 'ops-card--warn' : '' ?>">
+        <span class="ops-card-label">Cloud sin contacto</span>
+        <strong><?= $cloudNoContact ?></strong>
+        <span>Planes cloud offline</span>
+      </div>
+      <div class="ops-card ops-card--muted">
+        <span class="ops-card-label">Locales detectadas</span>
+        <strong><?= $localInstallations ?></strong>
+        <span>Instalaciones sin plan cloud</span>
       </div>
       <div class="ops-card ops-card--info">
         <span class="ops-card-label">Eventos hoy</span>
@@ -180,6 +225,7 @@ if ($schemaReady) {
             <th>Sucursal</th>
             <th>Instalacion</th>
             <th>Licencia</th>
+            <th>Plan</th>
             <th>Version</th>
             <th>Ultimo contacto</th>
             <th>Estado</th>
@@ -187,7 +233,7 @@ if ($schemaReady) {
         </thead>
         <tbody>
           <?php if (!$installations): ?>
-            <tr class="empty-row"><td colspan="7">Todavia no hay instalaciones sincronizadas.</td></tr>
+            <tr class="empty-row"><td colspan="8">Todavia no hay instalaciones sincronizadas.</td></tr>
           <?php else: ?>
             <?php foreach ($installations as $row): ?>
               <?php
@@ -205,6 +251,13 @@ if ($schemaReady) {
                 <td data-label="Sucursal"><?= e($row['branch_name'] ?: 'Sin sucursal') ?></td>
                 <td data-label="Instalacion" class="td-mono td-mono--compact"><?= e($row['installation_uid']) ?></td>
                 <td data-label="Licencia" class="td-mono td-mono--compact"><?= e($row['license_key']) ?></td>
+                <td data-label="Plan">
+                  <?php if (admin_license_plan_cloud_enabled($row)): ?>
+                    <span class="badge badge-blue"><?= e(plan_type_label((string) $row['plan_type'])) ?></span>
+                  <?php else: ?>
+                    <span class="badge badge-gray">Local</span>
+                  <?php endif; ?>
+                </td>
                 <td data-label="Version"><?= e($row['app_version'] ?: '-') ?></td>
                 <td data-label="Ultimo contacto"><?= e(format_datetime($row['last_seen_at'] ?? null)) ?></td>
                 <td data-label="Estado">

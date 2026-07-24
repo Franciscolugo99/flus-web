@@ -251,6 +251,10 @@ if (!function_exists('admin_cloud_sync_find_license')) {
 if (!function_exists('admin_cloud_sync_license_accepts_events')) {
     function admin_cloud_sync_license_accepts_events(array $license): bool
     {
+        if (!admin_license_plan_cloud_enabled($license)) {
+            return false;
+        }
+
         if (in_array((string) ($license['client_status'] ?? ''), ['suspendido', 'inactivo'], true)) {
             return false;
         }
@@ -261,6 +265,26 @@ if (!function_exists('admin_cloud_sync_license_accepts_events')) {
         );
 
         return $cloudStatus === 'active';
+    }
+}
+
+if (!function_exists('admin_cloud_sync_license_reject_reason')) {
+    function admin_cloud_sync_license_reject_reason(array $license): string
+    {
+        if (!admin_license_plan_cloud_enabled($license)) {
+            return 'LICENSE_CLOUD_DISABLED';
+        }
+
+        if (in_array((string) ($license['client_status'] ?? ''), ['suspendido', 'inactivo'], true)) {
+            return 'CLIENT_NOT_ACTIVE';
+        }
+
+        $cloudStatus = admin_cloud_status_from_license(
+            (string) ($license['status'] ?? ''),
+            isset($license['expires_at']) ? (string) $license['expires_at'] : null
+        );
+
+        return $cloudStatus === 'active' ? '' : 'LICENSE_NOT_ACTIVE';
     }
 }
 
@@ -536,7 +560,10 @@ if (!function_exists('admin_cloud_sync_recent_installations')) {
                 c.trade_name,
                 b.name AS branch_name,
                 b.code AS branch_code,
-                l.license_key
+                l.license_key,
+                l.plan_type,
+                l.status AS license_status,
+                l.expires_at AS license_expires_at
             FROM client_installations i
             INNER JOIN clients c ON c.id = i.client_id
             INNER JOIN licenses l ON l.id = i.license_id

@@ -11,7 +11,7 @@ $licenses = [];
 $clientId = (int) ($_GET['client_id'] ?? 0);
 $q = trim((string) ($_GET['q'] ?? ''));
 $filter = trim((string) ($_GET['filter'] ?? 'all'));
-$allowedFilters = ['all', 'active', 'expiring', 'expired', 'suspended', 'perpetual'];
+$allowedFilters = ['all', 'active', 'cloud', 'expiring', 'expired', 'suspended', 'perpetual'];
 if (!in_array($filter, $allowedFilters, true)) {
     $filter = 'all';
 }
@@ -19,6 +19,7 @@ $cloudIntervalMinutes = max(1, (int) ceil(max(30, (int) (admin_config('license',
 $eventsAvailable = false;
 $summary = [
     'active' => 0,
+    'cloud' => 0,
     'suspended' => 0,
     'expired' => 0,
     'expiring' => 0,
@@ -219,6 +220,7 @@ try {
     $summarySql = "
         SELECT
             SUM(CASE WHEN l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() THEN 1 ELSE 0 END) AS active,
+            SUM(CASE WHEN l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() AND (LOWER(l.plan_type) LIKE '%cloud%' OR LOWER(l.plan_type) LIKE '%multi%' OR LOWER(l.plan_type) LIKE '%sucursal%' OR LOWER(l.plan_type) LIKE '%online%' OR LOWER(l.plan_type) LIKE '%web%') THEN 1 ELSE 0 END) AS cloud,
             SUM(CASE WHEN l.status = 'suspendida' THEN 1 ELSE 0 END) AS suspended,
             SUM(CASE WHEN l.expires_at < CURDATE() AND l.status != 'suspendida' THEN 1 ELSE 0 END) AS expired,
             SUM(CASE WHEN l.expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND l.status NOT IN ('vencida','suspendida') THEN 1 ELSE 0 END) AS expiring,
@@ -265,6 +267,7 @@ try {
 
     $filterWhere = match ($filter) {
         'active' => "l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE()",
+        'cloud' => "l.status NOT IN ('vencida','suspendida') AND l.expires_at >= CURDATE() AND (LOWER(l.plan_type) LIKE '%cloud%' OR LOWER(l.plan_type) LIKE '%multi%' OR LOWER(l.plan_type) LIKE '%sucursal%' OR LOWER(l.plan_type) LIKE '%online%' OR LOWER(l.plan_type) LIKE '%web%')",
         'expiring' => "l.expires_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY) AND l.status NOT IN ('vencida','suspendida')",
         'expired' => "l.expires_at < CURDATE() AND l.status != 'suspendida'",
         'suspended' => "l.status = 'suspendida'",
@@ -303,6 +306,7 @@ try {
 $filterLabels = [
     'all' => 'Todas',
     'active' => 'Activas',
+    'cloud' => 'Cloud',
     'expiring' => 'Por vencer',
     'expired' => 'Vencidas',
     'suspended' => 'Suspendidas',
@@ -353,9 +357,14 @@ require __DIR__ . '/includes/layout-header.php';
 
     <div class="license-ops-grid">
         <a class="ops-card <?= $filter === 'active' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('active')) ?>">
-            <span class="ops-card__label">Cloud activo</span>
+            <span class="ops-card__label">Licencias activas</span>
             <strong><?= e((string) $summary['active']) ?></strong>
-            <span>Responde active a FLUS</span>
+            <span>Vigentes para operar</span>
+        </a>
+        <a class="ops-card ops-card--info <?= $filter === 'cloud' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('cloud')) ?>">
+            <span class="ops-card__label">Cloud habilitado</span>
+            <strong><?= e((string) $summary['cloud']) ?></strong>
+            <span>Portal y sucursales</span>
         </a>
         <a class="ops-card ops-card--warn <?= $filter === 'expiring' ? 'is-active' : '' ?>" href="<?= e($licenseFilterUrl('expiring')) ?>">
             <span class="ops-card__label">Por vencer</span>
@@ -427,7 +436,10 @@ require __DIR__ . '/includes/layout-header.php';
                             <span class="td-mono"><?= e($license['license_key']) ?></span>
                             <button type="button" class="button button--ghost button--compact" data-copy="<?= e($license['license_key']) ?>">Copiar</button>
                         </td>
-                        <td data-label="Plan"><?= e(status_label((string) $license['plan_type'])) ?></td>
+                        <td data-label="Plan">
+                            <?= e(plan_type_label((string) $license['plan_type'])) ?><br>
+                            <span class="meta"><?= e(admin_license_cloud_mode_label($license)) ?></span>
+                        </td>
                         <td data-label="Vence">
                             <?= e(format_date($license['expires_at'])) ?><br>
                             <span class="meta">
@@ -444,8 +456,13 @@ require __DIR__ . '/includes/layout-header.php';
                         </td>
                         <td data-label="Estado"><span class="badge <?= e(badge_class($currentStatus)) ?>"><?= e(status_label($currentStatus)) ?></span></td>
                         <td data-label="Cloud">
-                            <span class="badge <?= e($cloudBadge) ?>"><?= e($cloudLabel) ?></span><br>
-                            <span class="meta"><?= e(admin_cloud_status_message($cloudStatus) ?: 'Operacion habilitada') ?></span>
+                            <?php if (!admin_license_plan_cloud_enabled($license)): ?>
+                                <span class="badge is-muted">Local</span><br>
+                                <span class="meta">Sin portal cloud</span>
+                            <?php else: ?>
+                                <span class="badge <?= e($cloudBadge) ?>"><?= e($cloudLabel) ?></span><br>
+                                <span class="meta"><?= e(admin_cloud_status_message($cloudStatus) ?: 'Operacion habilitada') ?></span>
+                            <?php endif; ?>
                         </td>
                         <td data-label="Ultimo cambio">
                             <?= e(format_datetime($license['last_event_at'] ?? null)) ?><br>

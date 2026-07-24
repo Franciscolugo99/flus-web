@@ -81,11 +81,6 @@ if (!function_exists('payment_method_label')) {
         return ['efectivo'=>'Efectivo','transferencia'=>'Transferencia','mercado_pago'=>'Mercado Pago','otro'=>'Otro'][$m] ?? e($m);
     }
 }
-if (!function_exists('plan_type_label')) {
-    function plan_type_label(string $p): string {
-        return ['mensual'=>'Mensual','anual'=>'Anual','demo'=>'Demo','otro'=>'Otro'][$p] ?? e($p);
-    }
-}
 if (!function_exists('compute_license_status')) {
     function compute_license_status(string $expires_at, string $current_status): string {
         return license_current_status($current_status, $expires_at);
