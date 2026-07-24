@@ -164,6 +164,12 @@ El bloque `Accesos al portal` permite crear o actualizar el acceso, activar o
 desactivar la membresia y resetear la contraseña. FLUS Admin solo permite crear
 o activar accesos si el cliente tiene un plan cloud.
 
+Roles del portal:
+
+- `owner` / Dueño: ve ventas, importes, medios de pago, sucursales y stock.
+- `manager` / Encargado: ve ventas, importes, medios de pago, sucursales y stock.
+- `viewer` / Consulta operativa: ve sucursales, estado de conexion y stock; no ve ventas ni importes.
+
 Luego entrar a:
 
 ```text

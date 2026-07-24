@@ -53,7 +53,7 @@ $cloud_stock_overview = $cloud_schema_ready ? admin_cloud_sync_stock_overview($p
 $portal_access_roles = [
     'owner' => 'Dueño',
     'manager' => 'Encargado',
-    'viewer' => 'Consulta',
+    'viewer' => 'Consulta operativa',
 ];
 $client_view_url = admin_url('client-view.php?id=' . $id);
 $portal_access_url = $client_view_url . '#portal-access';
@@ -560,7 +560,7 @@ require_once __DIR__ . '/includes/layout-header.php';
 
       <div>
         <div class="detail-card-header portal-access-form__header">Crear o actualizar acceso</div>
-        <p class="portal-access-note">Si el email ya existe para este cliente, se actualiza la contraseña, el nombre y el rol.</p>
+        <p class="portal-access-note">Dueño y Encargado ven ventas e importes. Consulta operativa solo ve sucursales, conexión y stock.</p>
       </div>
 
       <label>

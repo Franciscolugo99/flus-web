@@ -47,6 +47,30 @@ if (!function_exists('portal_current_user')) {
     }
 }
 
+if (!function_exists('portal_current_role')) {
+    function portal_current_role(): string
+    {
+        $user = portal_current_user();
+        $role = is_array($user) ? (string) ($user['role'] ?? 'viewer') : 'viewer';
+
+        return in_array($role, ['owner', 'manager', 'viewer'], true) ? $role : 'viewer';
+    }
+}
+
+if (!function_exists('portal_role_can')) {
+    function portal_role_can(string $capability, ?string $role = null): bool
+    {
+        $role = $role ?? portal_current_role();
+        $capabilities = [
+            'owner' => ['view_sales', 'view_financials', 'view_stock', 'view_operations'],
+            'manager' => ['view_sales', 'view_financials', 'view_stock', 'view_operations'],
+            'viewer' => ['view_stock', 'view_operations'],
+        ];
+
+        return in_array($capability, $capabilities[$role] ?? $capabilities['viewer'], true);
+    }
+}
+
 if (!function_exists('portal_is_logged_in')) {
     function portal_is_logged_in(): bool
     {

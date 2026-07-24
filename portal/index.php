@@ -12,9 +12,12 @@ admin_cloud_sync_ensure_schema($pdo);
 $portalUser = portal_current_user() ?? [];
 $clientId = (int) ($portalUser['client_id'] ?? 0);
 $clientName = (string) ($portalUser['client_name'] ?? 'Mi negocio');
+$portalRole = portal_current_role();
+$canViewSales = portal_role_can('view_sales', $portalRole);
+$canViewFinancials = portal_role_can('view_financials', $portalRole);
 
-$salesOverview = admin_cloud_sync_sales_overview($pdo, $clientId);
-$recentSales = admin_cloud_sync_recent_sales($pdo, 8, $clientId);
+$salesOverview = $canViewSales ? admin_cloud_sync_sales_overview($pdo, $clientId) : [];
+$recentSales = $canViewSales ? admin_cloud_sync_recent_sales($pdo, 8, $clientId) : [];
 $installations = portal_client_installations_summary($pdo, $clientId);
 $license = portal_client_license_summary($pdo, $clientId);
 $stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
@@ -64,6 +67,10 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
         <p>Ventas, sucursales y stock sincronizados desde tus instalaciones FLUS.</p>
       </div>
       <div class="portal-status-box">
+        <span>Acceso</span>
+        <strong><?= e(['owner' => 'Dueño', 'manager' => 'Encargado', 'viewer' => 'Consulta'][$portalRole] ?? 'Consulta') ?></strong>
+      </div>
+      <div class="portal-status-box">
         <span>Ultima sincronizacion</span>
         <strong><?= e($lastSyncLabel) ?></strong>
       </div>
@@ -73,25 +80,47 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
       <a href="#resumen">Resumen</a>
       <a href="#sucursales">Sucursales</a>
       <a href="#stock">Stock</a>
-      <a href="#ventas">Ventas</a>
+      <?php if ($canViewSales): ?>
+        <a href="#ventas">Ventas</a>
+      <?php endif; ?>
     </nav>
 
     <section id="resumen" class="portal-kpi-grid" aria-label="Resumen de las ultimas 24 horas">
-      <article class="portal-kpi">
-        <span>Ventas 24 hs</span>
-        <strong><?= (int) ($salesOverview['sales_24h'] ?? 0) ?></strong>
-        <small>Comprobantes recibidos</small>
-      </article>
-      <article class="portal-kpi">
-        <span>Importe 24 hs</span>
-        <strong><?= e(format_money($salesOverview['amount_24h'] ?? 0)) ?></strong>
-        <small>Total sincronizado</small>
-      </article>
-      <article class="portal-kpi">
-        <span>Ticket promedio</span>
-        <strong><?= e(format_money($salesOverview['avg_ticket_24h'] ?? 0)) ?></strong>
-        <small>Sobre ventas recibidas</small>
-      </article>
+      <?php if ($canViewSales): ?>
+        <article class="portal-kpi">
+          <span>Ventas 24 hs</span>
+          <strong><?= (int) ($salesOverview['sales_24h'] ?? 0) ?></strong>
+          <small>Comprobantes recibidos</small>
+        </article>
+        <?php if ($canViewFinancials): ?>
+          <article class="portal-kpi">
+            <span>Importe 24 hs</span>
+            <strong><?= e(format_money($salesOverview['amount_24h'] ?? 0)) ?></strong>
+            <small>Total sincronizado</small>
+          </article>
+          <article class="portal-kpi">
+            <span>Ticket promedio</span>
+            <strong><?= e(format_money($salesOverview['avg_ticket_24h'] ?? 0)) ?></strong>
+            <small>Sobre ventas recibidas</small>
+          </article>
+        <?php endif; ?>
+      <?php else: ?>
+        <article class="portal-kpi">
+          <span>Productos</span>
+          <strong><?= (int) ($stockOverview['total'] ?? 0) ?></strong>
+          <small>Stock sincronizado</small>
+        </article>
+        <article class="portal-kpi">
+          <span>Sin stock</span>
+          <strong><?= (int) ($stockOverview['sin_stock'] ?? 0) ?></strong>
+          <small>Requiere reposicion</small>
+        </article>
+        <article class="portal-kpi">
+          <span>Bajo minimo</span>
+          <strong><?= (int) ($stockOverview['bajo_minimo'] ?? 0) ?></strong>
+          <small>Atencion operativa</small>
+        </article>
+      <?php endif; ?>
       <article class="portal-kpi">
         <span>Instalaciones</span>
         <strong><?= (int) ($installations['online'] ?? 0) ?>/<?= (int) ($installations['total'] ?? 0) ?></strong>
@@ -100,29 +129,43 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
     </section>
 
     <section class="portal-grid">
-      <article class="portal-panel">
-        <div class="section-header">
-          <div>
-            <div class="section-title">Medios de pago</div>
-            <div class="section-meta">Ventas recibidas durante las ultimas 24 hs.</div>
+      <?php if ($canViewSales): ?>
+        <article class="portal-panel">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Medios de pago</div>
+              <div class="section-meta">Ventas recibidas durante las ultimas 24 hs.</div>
+            </div>
           </div>
-        </div>
 
-        <?php $payments24h = $salesOverview['payments_24h'] ?? []; ?>
-        <?php if (!$payments24h): ?>
-          <div class="empty-panel">Todavia no hay ventas sincronizadas hoy.</div>
-        <?php else: ?>
-          <div class="cloud-payment-list">
-            <?php foreach ($payments24h as $paymentName => $paymentStats): ?>
-              <div class="cloud-payment-row">
-                <span><?= e((string) $paymentName) ?></span>
-                <strong><?= e(format_money($paymentStats['amount'] ?? 0)) ?></strong>
-                <small><?= (int) ($paymentStats['count'] ?? 0) ?> ventas</small>
-              </div>
-            <?php endforeach; ?>
+          <?php $payments24h = $salesOverview['payments_24h'] ?? []; ?>
+          <?php if (!$payments24h): ?>
+            <div class="empty-panel">Todavia no hay ventas sincronizadas hoy.</div>
+          <?php else: ?>
+            <div class="cloud-payment-list">
+              <?php foreach ($payments24h as $paymentName => $paymentStats): ?>
+                <div class="cloud-payment-row">
+                  <span><?= e((string) $paymentName) ?></span>
+                  <?php if ($canViewFinancials): ?>
+                    <strong><?= e(format_money($paymentStats['amount'] ?? 0)) ?></strong>
+                  <?php endif; ?>
+                  <small><?= (int) ($paymentStats['count'] ?? 0) ?> ventas</small>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </article>
+      <?php else: ?>
+        <article class="portal-panel">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Consulta operativa</div>
+              <div class="section-meta">Este acceso puede revisar sucursales, estado de conexion y stock.</div>
+            </div>
           </div>
-        <?php endif; ?>
-      </article>
+          <div class="empty-panel">Los importes y ventas quedan reservados para accesos Dueño o Encargado.</div>
+        </article>
+      <?php endif; ?>
 
       <article class="portal-panel">
         <div class="section-header">
@@ -259,7 +302,7 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
               <div>
                 <span class="portal-stock-badge"><?= e($stateLabel) ?></span>
                 <strong><?= e(number_format($stock, 3, ',', '.')) ?><?= $unit !== '' ? ' ' . e($unit) : '' ?></strong>
-                <small>Min. <?= e(number_format($stockMin, 3, ',', '.')) ?> - <?= e(format_money($item['precio'] ?? 0)) ?></small>
+                <small>Min. <?= e(number_format($stockMin, 3, ',', '.')) ?><?= $canViewFinancials ? ' - ' . e(format_money($item['precio'] ?? 0)) : '' ?></small>
               </div>
             </article>
           <?php endforeach; ?>
@@ -267,41 +310,45 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
       <?php endif; ?>
     </section>
 
-    <section id="ventas" class="portal-panel">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Ultimas ventas recibidas</div>
-          <div class="section-meta">Listado de control para confirmar que la informacion llega desde caja.</div>
+    <?php if ($canViewSales): ?>
+      <section id="ventas" class="portal-panel">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Ultimas ventas recibidas</div>
+            <div class="section-meta">Listado de control para confirmar que la informacion llega desde caja.</div>
+          </div>
         </div>
-      </div>
 
-      <?php if (!$recentSales): ?>
-        <div class="empty-panel">Sin ventas recibidas todavia.</div>
-      <?php else: ?>
-        <div class="cloud-sales-list">
-          <?php foreach ($recentSales as $sale): ?>
-            <?php
-              $summary = is_array($sale['summary'] ?? null) ? $sale['summary'] : [];
-              $saleId = (int) ($summary['venta_id'] ?? 0);
-              $saleTotal = (float) ($summary['total'] ?? 0);
-              $salePayment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
-              $saleItems = (int) ($summary['items_count'] ?? 0);
-              $branchName = (string) ($sale['branch_name'] ?: 'Sin sucursal');
-            ?>
-            <article class="cloud-sale-item">
-              <div>
-                <strong><?= e($branchName) ?> - <?= $saleId > 0 ? 'venta #' . $saleId : 'venta sin numero' ?></strong>
-                <span><?= e(format_datetime($sale['received_at'] ?? null)) ?></span>
-              </div>
-              <div>
-                <strong><?= e(format_money($saleTotal)) ?></strong>
-                <span><?= e($salePayment) ?> - <?= $saleItems ?> items</span>
-              </div>
-            </article>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-    </section>
+        <?php if (!$recentSales): ?>
+          <div class="empty-panel">Sin ventas recibidas todavia.</div>
+        <?php else: ?>
+          <div class="cloud-sales-list">
+            <?php foreach ($recentSales as $sale): ?>
+              <?php
+                $summary = is_array($sale['summary'] ?? null) ? $sale['summary'] : [];
+                $saleId = (int) ($summary['venta_id'] ?? 0);
+                $saleTotal = (float) ($summary['total'] ?? 0);
+                $salePayment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
+                $saleItems = (int) ($summary['items_count'] ?? 0);
+                $branchName = (string) ($sale['branch_name'] ?: 'Sin sucursal');
+              ?>
+              <article class="cloud-sale-item">
+                <div>
+                  <strong><?= e($branchName) ?> - <?= $saleId > 0 ? 'venta #' . $saleId : 'venta sin numero' ?></strong>
+                  <span><?= e(format_datetime($sale['received_at'] ?? null)) ?></span>
+                </div>
+                <div>
+                  <?php if ($canViewFinancials): ?>
+                    <strong><?= e(format_money($saleTotal)) ?></strong>
+                  <?php endif; ?>
+                  <span><?= e($salePayment) ?> - <?= $saleItems ?> items</span>
+                </div>
+              </article>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
   </main>
 </body>
 </html>
