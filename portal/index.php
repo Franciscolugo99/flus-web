@@ -23,8 +23,14 @@ $license = portal_client_license_summary($pdo, $clientId);
 $stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
 $stockState = trim((string) ($_GET['stock_estado'] ?? 'attention'));
 $stockBranchId = max(0, (int) ($_GET['stock_sucursal'] ?? 0));
-$allowedStockStates = ['attention', 'sin_stock', 'bajo_minimo', 'ok', 'all'];
-if (!in_array($stockState, $allowedStockStates, true)) {
+$stockStateLabels = [
+    'attention' => 'Atencion',
+    'sin_stock' => 'Sin stock',
+    'bajo_minimo' => 'Bajo minimo',
+    'ok' => 'Disponible',
+    'all' => 'Todos',
+];
+if (!array_key_exists($stockState, $stockStateLabels)) {
     $stockState = 'attention';
 }
 $stockOverview = admin_cloud_sync_stock_overview($pdo, $clientId);
@@ -40,6 +46,11 @@ $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin si
 $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
 $installationRows = is_array($installations['rows'] ?? null) ? $installations['rows'] : [];
 $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
+$stockFilterBase = [
+    'stock_q' => $stockQuery,
+    'stock_sucursal' => $stockBranchId,
+];
+$stockResultContext = $stockStateLabels[$stockState] . ($stockQuery !== '' ? ' con busqueda "' . $stockQuery . '"' : '');
 ?>
 <!doctype html>
 <html lang="es">
@@ -244,6 +255,10 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
           <div class="section-title">Stock por sucursal</div>
           <div class="section-meta">Solo lectura. Ultima actualizacion: <?= e($lastStockLabel) ?>.</div>
         </div>
+        <div class="portal-stock-current">
+          <span><?= e($stockStateLabels[$stockState]) ?></span>
+          <strong><?= count($stockItems) ?></strong>
+        </div>
       </div>
 
       <div class="portal-stock-summary" aria-label="Resumen de stock">
@@ -260,6 +275,18 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
           <strong><?= (int) ($stockOverview['bajo_minimo'] ?? 0) ?></strong>
         </div>
       </div>
+
+      <nav class="portal-stock-tabs" aria-label="Filtros rapidos de stock">
+        <?php foreach ($stockStateLabels as $stateKey => $stateLabel): ?>
+          <?php
+            $stateUrl = portal_url('index.php?' . http_build_query($stockFilterBase + ['stock_estado' => $stateKey]) . '#stock');
+            $isCurrentState = $stockState === $stateKey;
+          ?>
+          <a href="<?= e($stateUrl) ?>" class="<?= $isCurrentState ? 'is-active' : '' ?>" aria-current="<?= $isCurrentState ? 'page' : 'false' ?>">
+            <?= e($stateLabel) ?>
+          </a>
+        <?php endforeach; ?>
+      </nav>
 
       <form class="portal-stock-filters" method="get">
         <label>
@@ -291,6 +318,11 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
         <button class="button" type="submit">Filtrar</button>
       </form>
 
+      <div class="portal-stock-result-note">
+        <span><?= count($stockItems) ?> producto<?= count($stockItems) === 1 ? '' : 's' ?> mostrado<?= count($stockItems) === 1 ? '' : 's' ?></span>
+        <small><?= e($stockResultContext) ?></small>
+      </div>
+
       <?php if (!$stockItems): ?>
         <div class="empty-panel">Todavia no hay stock sincronizado con esos filtros.</div>
       <?php else: ?>
@@ -302,16 +334,19 @@ $onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
               $stock = (float) ($item['stock'] ?? 0);
               $stockMin = (float) ($item['stock_minimo'] ?? 0);
               $unit = trim((string) ($item['unidad_venta'] ?? ''));
+              $stockLabel = number_format($stock, 3, ',', '.');
+              $stockMinLabel = number_format($stockMin, 3, ',', '.');
             ?>
             <article class="portal-stock-item portal-stock-item--<?= e($state) ?>">
               <div>
                 <strong><?= e((string) $item['nombre']) ?></strong>
-                <span><?= e((string) ($item['codigo'] ?: 'Sin codigo')) ?> - <?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?></span>
+                <span><?= e((string) ($item['codigo'] ?: 'Sin codigo')) ?></span>
+                <small><?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?></small>
               </div>
               <div>
                 <span class="portal-stock-badge"><?= e($stateLabel) ?></span>
-                <strong><?= e(number_format($stock, 3, ',', '.')) ?><?= $unit !== '' ? ' ' . e($unit) : '' ?></strong>
-                <small>Min. <?= e(number_format($stockMin, 3, ',', '.')) ?><?= $canViewFinancials ? ' - ' . e(format_money($item['precio'] ?? 0)) : '' ?></small>
+                <strong><?= e($stockLabel) ?><?= $unit !== '' ? ' ' . e($unit) : '' ?></strong>
+                <small>Min. <?= e($stockMinLabel) ?><?= $canViewFinancials ? ' - ' . e(format_money($item['precio'] ?? 0)) : '' ?></small>
               </div>
             </article>
           <?php endforeach; ?>

@@ -1985,6 +1985,76 @@ body.login-page {
   line-height: 1;
 }
 
+.portal-stock-current {
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 8px;
+  padding: 7px 10px;
+}
+
+.portal-stock-current span {
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.portal-stock-current strong {
+  color: var(--accent);
+  font-size: .92rem;
+}
+
+.portal-stock-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: -2px 0 12px;
+}
+
+.portal-stock-tabs a {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 7px 10px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.portal-stock-tabs a:hover,
+.portal-stock-tabs a:focus,
+.portal-stock-tabs a.is-active {
+  border-color: rgba(0,200,150,.36);
+  color: var(--accent);
+}
+
+.portal-stock-result-note {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin: -2px 0 10px;
+}
+
+.portal-stock-result-note span {
+  color: var(--text-primary);
+  font-size: .84rem;
+  font-weight: 700;
+}
+
+.portal-stock-result-note small {
+  color: var(--text-muted);
+  font-size: .78rem;
+}
+
 .portal-stock-filters {
   align-items: end;
   display: grid;
@@ -2035,6 +2105,12 @@ body.login-page {
 .portal-stock-item span {
   color: var(--text-muted);
   font-size: .82rem;
+}
+
+.portal-stock-item > div:first-child small {
+  font-size: .76rem;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .portal-stock-badge {
@@ -2673,9 +2749,27 @@ button.button--danger:hover {
   .portal-stock-summary {
     grid-template-columns: 1fr;
   }
+  .portal-stock-current {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .portal-stock-tabs {
+    flex-wrap: nowrap;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .portal-stock-tabs a {
+    flex: 0 0 auto;
+  }
   .portal-stock-filters {
     align-items: stretch;
     grid-template-columns: 1fr;
+  }
+  .portal-stock-result-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
   }
   .portal-stock-filters .button,
   .portal-stock-filters button {
