@@ -12,7 +12,28 @@ $q = trim((string) ($_GET['q'] ?? ''));
 
 try {
     $pdo = admin_db();
+    $cloudSchemaReady = admin_cloud_sync_ensure_schema($pdo);
     $cloudPlanWhere = admin_cloud_plan_sql_condition('lp');
+    $cloudSelects = "
+               0 AS active_branches_count,
+               0 AS installations_count,
+               0 AS online_installations,
+               NULL AS cloud_last_seen_at,
+               0 AS stock_attention";
+    if ($cloudSchemaReady) {
+        $cloudSelects = "
+               (SELECT COUNT(*) FROM client_branches cb WHERE cb.client_id = c.id AND cb.status = 'active') AS active_branches_count,
+               (SELECT COUNT(*) FROM client_installations ci WHERE ci.client_id = c.id) AS installations_count,
+               (SELECT COUNT(*) FROM client_installations ci WHERE ci.client_id = c.id AND ci.last_seen_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE)) AS online_installations,
+               (SELECT MAX(ci.last_seen_at) FROM client_installations ci WHERE ci.client_id = c.id) AS cloud_last_seen_at,
+               (SELECT COUNT(*) FROM cloud_sync_stock_items cs
+                   WHERE cs.client_id = c.id
+                     AND cs.activo = 1
+                     AND (cs.estado_stock IN ('sin_stock', 'bajo_minimo')
+                          OR cs.stock <= 0
+                          OR (cs.stock_minimo > 0 AND cs.stock <= cs.stock_minimo))
+                ) AS stock_attention";
+    }
 
     if (request_is_post() && ($_POST['action'] ?? '') === 'delete') {
         verify_csrf();
@@ -44,7 +65,8 @@ try {
                (SELECT COUNT(*) FROM licenses l WHERE l.client_id = c.id) AS licenses_count,
                (SELECT COUNT(*) FROM payments p WHERE p.client_id = c.id) AS payments_count,
                (SELECT lp.plan_type FROM licenses lp WHERE lp.client_id = c.id ORDER BY (lp.status NOT IN ('vencida','suspendida') AND lp.expires_at >= CURDATE()) DESC, lp.expires_at DESC, lp.id DESC LIMIT 1) AS primary_plan_type,
-               (SELECT COUNT(*) FROM licenses lp WHERE lp.client_id = c.id AND lp.status NOT IN ('vencida','suspendida') AND lp.expires_at >= CURDATE() AND {$cloudPlanWhere}) AS active_cloud_licenses
+               (SELECT COUNT(*) FROM licenses lp WHERE lp.client_id = c.id AND lp.status NOT IN ('vencida','suspendida') AND lp.expires_at >= CURDATE() AND {$cloudPlanWhere}) AS active_cloud_licenses,
+               {$cloudSelects}
         FROM clients c
     ";
     $params = [];
@@ -85,7 +107,7 @@ require __DIR__ . '/includes/layout-header.php';
                     <th>Contacto</th>
                     <th>Estado</th>
                     <th>Plan</th>
-                    <th>Licencias</th>
+                    <th>Operacion</th>
                     <th>Pagos</th>
                     <th>Actualización</th>
                     <th>Acciones</th>
@@ -120,12 +142,48 @@ require __DIR__ . '/includes/layout-header.php';
                             <span class="badge <?= e($planBadgeClass) ?>"><?= e($planMode === 'cloud' ? 'Cloud' : ($planMode === 'local' ? 'Local' : 'Pendiente')) ?></span><br>
                             <span class="meta"><?= e($planLabel) ?></span>
                         </td>
-                        <td data-label="Licencias"><?= e((string) $client['licenses_count']) ?></td>
+                        <td data-label="Operacion">
+                            <?php
+                                $branches = (int) ($client['active_branches_count'] ?? 0);
+                                $installations = (int) ($client['installations_count'] ?? 0);
+                                $online = (int) ($client['online_installations'] ?? 0);
+                                $stockAttention = (int) ($client['stock_attention'] ?? 0);
+                                if (!$hasCloud) {
+                                    $cloudStateClass = 'badge-gray';
+                                    $cloudStateLabel = 'Solo local';
+                                    $cloudMeta = (int) $client['licenses_count'] . ' licencia' . ((int) $client['licenses_count'] === 1 ? '' : 's');
+                                } elseif ($installations <= 0) {
+                                    $cloudStateClass = 'badge-yellow';
+                                    $cloudStateLabel = 'Sin instalar';
+                                    $cloudMeta = 'Cloud contratado, sin PC vinculada';
+                                } elseif ($online > 0) {
+                                    $cloudStateClass = 'badge-green';
+                                    $cloudStateLabel = 'Online';
+                                    $cloudMeta = $branches . ' suc. - ' . $online . '/' . $installations . ' PC online';
+                                } else {
+                                    $cloudStateClass = 'badge-yellow';
+                                    $cloudStateLabel = 'Sin contacto';
+                                    $cloudMeta = $branches . ' suc. - ' . $installations . ' PC sin contacto';
+                                }
+                            ?>
+                            <div class="client-cloud-cell">
+                                <span class="badge <?= e($cloudStateClass) ?>"><?= e($cloudStateLabel) ?></span>
+                                <span class="meta"><?= e($cloudMeta) ?></span>
+                                <?php if ($hasCloud && $stockAttention > 0): ?>
+                                    <span class="meta meta--warn"><?= $stockAttention ?> alerta<?= $stockAttention === 1 ? '' : 's' ?> de stock</span>
+                                <?php elseif ($hasCloud && $installations > 0): ?>
+                                    <span class="meta">Ultimo contacto: <?= e(format_datetime($client['cloud_last_seen_at'] ?? null)) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                         <td data-label="Pagos"><?= e((string) $client['payments_count']) ?></td>
                         <td data-label="Actualización"><?= e(format_datetime($client['updated_at'])) ?></td>
                         <td data-label="Acciones">
                             <div class="actions">
                                 <a class="button button--ghost" href="<?= e(admin_url('client-view.php?id=' . (int) $client['id'])) ?>">Ver</a>
+                                <?php if ($hasCloud): ?>
+                                    <a class="button button--ghost" href="<?= e(admin_url('cloud-sync.php?client_id=' . (int) $client['id'])) ?>">Cloud</a>
+                                <?php endif; ?>
                                 <a class="button button--ghost" href="<?= e(admin_url('client-edit.php?id=' . (int) $client['id'])) ?>">Editar</a>
                                 <form method="post" style="display:inline;">
                                     <?= csrf_input() ?>

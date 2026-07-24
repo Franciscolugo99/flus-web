@@ -53,6 +53,12 @@ $cloud_stock_overview = $cloud_schema_ready ? admin_cloud_sync_stock_overview($p
 $cloud_started_label = format_datetime($cloud_overview['first_seen_at'] ?? null, 'Pendiente');
 $cloud_last_seen_label = format_datetime($cloud_overview['last_seen_at'] ?? null, 'Sin contacto');
 $cloud_stock_seen_label = format_datetime($cloud_stock_overview['last_synced_at'] ?? null, 'Sin stock');
+$cloud_branches_count = (int) ($cloud_overview['active_branches_count'] ?? count($cloud_branches));
+$cloud_installations_count = (int) ($cloud_overview['installations_count'] ?? 0);
+$cloud_online_count = (int) ($cloud_overview['online_count'] ?? 0);
+$cloud_offline_count = max(0, $cloud_installations_count - $cloud_online_count);
+$cloud_sales_24h = (int) ($cloud_overview['sales_24h'] ?? 0);
+$cloud_stock_attention = (int) ($cloud_stock_overview['sin_stock'] ?? 0) + (int) ($cloud_stock_overview['bajo_minimo'] ?? 0);
 $portal_access_roles = [
     'owner' => 'Dueño',
     'manager' => 'Encargado',
@@ -66,6 +72,43 @@ foreach ($licenses as $lic) {
         $has_cloud_plan = true;
         break;
     }
+}
+
+$cloud_health_class = 'is-muted';
+$cloud_health_title = 'Cliente local';
+$cloud_health_text = 'Este cliente opera sin portal ni sincronizacion web.';
+$cloud_next_action = 'Ofrecer Cloud';
+$cloud_next_text = 'Si necesita ver sucursales, stock o ventas desde el celular, corresponde un plan Cloud.';
+if ($has_cloud_plan && !$cloud_schema_ready) {
+    $cloud_health_class = 'is-danger';
+    $cloud_health_title = 'Cloud no disponible';
+    $cloud_health_text = 'No se pudo preparar el esquema de sincronizacion.';
+    $cloud_next_action = 'Revisar sistema';
+    $cloud_next_text = 'Validar base de datos y permisos antes de crear accesos.';
+} elseif ($has_cloud_plan && $cloud_installations_count <= 0) {
+    $cloud_health_class = 'is-warn';
+    $cloud_health_title = 'Cloud contratado, sin PC vinculada';
+    $cloud_health_text = 'La licencia permite portal, pero todavia no llego una instalacion FLUS.';
+    $cloud_next_action = 'Configurar instalacion';
+    $cloud_next_text = 'Cargar token cloud en FLUS local y ejecutar la tarea de sincronizacion.';
+} elseif ($has_cloud_plan && $cloud_offline_count > 0) {
+    $cloud_health_class = 'is-warn';
+    $cloud_health_title = 'Sucursal sin contacto';
+    $cloud_health_text = $cloud_offline_count . ' instalacion' . ($cloud_offline_count === 1 ? '' : 'es') . ' no reporta en los ultimos minutos.';
+    $cloud_next_action = 'Revisar conexion';
+    $cloud_next_text = 'Confirmar PC encendida, internet y tarea cloud activa.';
+} elseif ($has_cloud_plan && $cloud_stock_attention > 0) {
+    $cloud_health_class = 'is-warn';
+    $cloud_health_title = 'Stock con atencion';
+    $cloud_health_text = $cloud_stock_attention . ' producto' . ($cloud_stock_attention === 1 ? '' : 's') . ' requiere reposicion o revision.';
+    $cloud_next_action = 'Ver stock';
+    $cloud_next_text = 'Entrar a datos cloud para revisar faltantes y bajo minimo.';
+} elseif ($has_cloud_plan) {
+    $cloud_health_class = 'is-ok';
+    $cloud_health_title = 'Cloud operativo';
+    $cloud_health_text = 'El cliente tiene portal y datos sincronizados disponibles.';
+    $cloud_next_action = 'Controlar portal';
+    $cloud_next_text = 'Mantener accesos y revisar actividad cuando el cliente consulte.';
 }
 
 if (request_is_post() && isset($_POST['portal_action'])) {
@@ -508,21 +551,46 @@ require_once __DIR__ . '/includes/layout-header.php';
   <?php if (!$cloud_schema_ready): ?>
     <div class="empty-panel">No se pudo preparar el esquema de sincronizacion cloud.</div>
   <?php elseif (empty($cloud_branches)): ?>
+    <div class="client-cloud-overview <?= e($cloud_health_class) ?>">
+      <div>
+        <span>Situacion cloud</span>
+        <strong><?= e($cloud_health_title) ?></strong>
+        <small><?= e($cloud_health_text) ?></small>
+      </div>
+      <div>
+        <span>Proximo paso</span>
+        <strong><?= e($cloud_next_action) ?></strong>
+        <small><?= e($cloud_next_text) ?></small>
+      </div>
+    </div>
     <div class="client-cloud-empty">
       <strong><?= $has_cloud_plan ? 'Sin sucursales sincronizadas todavia.' : 'Cliente sin plan cloud activo.' ?></strong>
       <span><?= $has_cloud_plan ? 'Cuando una instalacion FLUS envie datos, va a aparecer aca con su sucursal y ultimo contacto. El portal empieza a mostrar informacion desde la activacion cloud.' : 'Si el cliente contrata cloud, creale una licencia cloud y configurale el token en la instalacion local.' ?></span>
     </div>
   <?php else: ?>
+    <div class="client-cloud-overview <?= e($cloud_health_class) ?>">
+      <div>
+        <span>Situacion cloud</span>
+        <strong><?= e($cloud_health_title) ?></strong>
+        <small><?= e($cloud_health_text) ?></small>
+      </div>
+      <div>
+        <span>Proximo paso</span>
+        <strong><?= e($cloud_next_action) ?></strong>
+        <small><?= e($cloud_next_text) ?></small>
+      </div>
+    </div>
+
     <div class="client-cloud-summary">
       <span><strong><?= e($cloud_started_label) ?></strong>Datos desde</span>
       <span><strong><?= e($cloud_last_seen_label) ?></strong>Ultimo contacto</span>
-      <span><strong><?= (int) ($cloud_overview['active_branches_count'] ?? count($cloud_branches)) ?></strong>Sucursales</span>
-      <span><strong><?= (int) ($cloud_overview['installations_count'] ?? 0) ?></strong>Instalaciones</span>
-      <span><strong><?= (int) ($cloud_overview['online_count'] ?? 0) ?></strong>Online</span>
-      <span><strong><?= (int) ($cloud_overview['sales_24h'] ?? 0) ?></strong>Ventas 24 hs</span>
+      <span><strong><?= $cloud_branches_count ?></strong>Sucursales</span>
+      <span><strong><?= $cloud_installations_count ?></strong>Instalaciones</span>
+      <span><strong><?= $cloud_online_count ?></strong>Online</span>
+      <span><strong><?= $cloud_sales_24h ?></strong>Ventas 24 hs</span>
       <span><strong><?= e($cloud_stock_seen_label) ?></strong>Ultimo stock</span>
-      <span class="<?= (int) ($cloud_stock_overview['sin_stock'] ?? 0) + (int) ($cloud_stock_overview['bajo_minimo'] ?? 0) > 0 ? 'is-warn-text' : '' ?>">
-        <strong><?= (int) ($cloud_stock_overview['sin_stock'] ?? 0) + (int) ($cloud_stock_overview['bajo_minimo'] ?? 0) ?></strong>Alertas stock
+      <span class="<?= $cloud_stock_attention > 0 ? 'is-warn-text' : '' ?>">
+        <strong><?= $cloud_stock_attention ?></strong>Alertas stock
       </span>
     </div>
 

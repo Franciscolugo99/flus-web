@@ -629,6 +629,20 @@ textarea { resize: vertical; min-height: 90px; }
   color: var(--text-muted);
   font-size: .78rem;
 }
+
+.client-cloud-cell {
+  display: grid;
+  gap: 4px;
+  min-width: 165px;
+}
+
+.client-cloud-cell .badge {
+  justify-self: start;
+}
+
+.meta--warn {
+  color: var(--yellow) !important;
+}
 .section-table {
   margin-bottom: 20px;
 }
@@ -1401,6 +1415,53 @@ body.login-page {
 
 .client-cloud-card {
   padding: 16px;
+}
+
+.client-cloud-overview {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, .62fr);
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.client-cloud-overview.is-ok {
+  border-color: rgba(0,200,150,.24);
+}
+
+.client-cloud-overview.is-warn {
+  border-color: rgba(245,158,11,.28);
+}
+
+.client-cloud-overview.is-danger {
+  border-color: rgba(239,68,68,.3);
+}
+
+.client-cloud-overview > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.client-cloud-overview span {
+  color: var(--text-muted);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.client-cloud-overview strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.client-cloud-overview small {
+  color: var(--text-secondary);
+  line-height: 1.45;
 }
 
 .client-cloud-summary {
@@ -2679,6 +2740,9 @@ button.button--danger:hover {
   .cloud-branch-row,
   .client-cloud-branch {
     align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+  .client-cloud-overview {
     grid-template-columns: 1fr;
   }
   .cloud-client-actions {
