@@ -153,18 +153,20 @@ if ($schemaReady) {
         <strong><?= $localInstallations ?></strong>
         <span>Instalaciones sin plan cloud</span>
       </div>
-      <div class="ops-card ops-card--info">
-        <span class="ops-card-label">Eventos hoy</span>
-        <strong><?= $eventsToday ?></strong>
-        <span>Recibidos por la API</span>
-      </div>
+      <?php if ($selectedClient): ?>
+        <div class="ops-card ops-card--info">
+          <span class="ops-card-label">Eventos hoy</span>
+          <strong><?= $eventsToday ?></strong>
+          <span>Recibidos por la API</span>
+        </div>
+      <?php endif; ?>
     </div>
 
     <?php if (!$selectedClient): ?>
-      <div class="section-header section-header--spaced">
+          <div class="section-header section-header--spaced">
         <div>
           <div class="section-title">Clientes cloud</div>
-          <div class="section-meta">Cada cliente concentra sus sucursales, PCs conectadas, ventas recientes y alertas de stock.</div>
+          <div class="section-meta">Estado de plan, sucursales e instalaciones. Los datos comerciales se ven al entrar al cliente.</div>
         </div>
       </div>
 
@@ -192,8 +194,6 @@ if ($schemaReady) {
                 <span><strong><?= (int) ($cloudClient['active_branches_count'] ?? 0) ?></strong>Sucursales</span>
                 <span><strong><?= $installationsCount ?></strong>Instalaciones</span>
                 <span><strong><?= $onlineCount ?></strong>Online</span>
-                <span><strong><?= (int) ($cloudClient['sales_24h'] ?? 0) ?></strong>Ventas 24 hs</span>
-                <span class="<?= (int) ($cloudClient['stock_attention'] ?? 0) > 0 ? 'is-warn-text' : '' ?>"><strong><?= (int) ($cloudClient['stock_attention'] ?? 0) ?></strong>Stock atencion</span>
               </div>
               <div class="cloud-client-actions">
                 <span>Ultimo contacto: <?= e(format_datetime($cloudClient['last_seen_at'] ?? null)) ?></span>
@@ -236,96 +236,97 @@ if ($schemaReady) {
       </div>
     <?php endif; ?>
 
-    <div class="section-header section-header--spaced">
-      <div>
-        <div class="section-title">Actividad comercial sincronizada</div>
-        <div class="section-meta">Lectura resumida de ventas recibidas en las ultimas 24 hs desde las instalaciones conectadas.</div>
-      </div>
-    </div>
-
-    <div class="cloud-commerce-grid">
-      <div class="ops-card ops-card--info">
-        <span class="ops-card-label">Ventas 24 hs</span>
-        <strong><?= (int) ($salesOverview['sales_24h'] ?? 0) ?></strong>
-        <span>Eventos de venta aceptados</span>
-      </div>
-      <div class="ops-card">
-        <span class="ops-card-label">Importe 24 hs</span>
-        <strong><?= e(format_money($salesOverview['amount_24h'] ?? 0)) ?></strong>
-        <span>Total sincronizado</span>
-      </div>
-      <div class="ops-card">
-        <span class="ops-card-label">Ticket promedio</span>
-        <strong><?= e(format_money($salesOverview['avg_ticket_24h'] ?? 0)) ?></strong>
-        <span>Sobre ventas recibidas</span>
-      </div>
-      <div class="ops-card ops-card--muted">
-        <span class="ops-card-label">Items</span>
-        <strong><?= (int) ($salesOverview['items_24h'] ?? 0) ?></strong>
-        <span>Unidades o renglones reportados</span>
-      </div>
-    </div>
-
-    <div class="cloud-sync-split">
-      <section class="cloud-sync-panel">
-        <div class="section-header">
-          <div>
-            <div class="section-title">Medios de pago 24 hs</div>
-            <div class="section-meta">Importe recibido por medio informado por cada POS.</div>
-          </div>
+    <?php if ($selectedClient): ?>
+      <div class="section-header section-header--spaced">
+        <div>
+          <div class="section-title">Actividad comercial sincronizada</div>
+          <div class="section-meta">Lectura resumida de ventas recibidas en las ultimas 24 hs para este cliente.</div>
         </div>
-        <?php $payments24h = $salesOverview['payments_24h'] ?? []; ?>
-        <?php if (empty($payments24h)): ?>
-          <div class="empty-panel">Todavia no hay ventas sincronizadas en las ultimas 24 hs.</div>
-        <?php else: ?>
-          <div class="cloud-payment-list">
-            <?php foreach ($payments24h as $paymentName => $paymentStats): ?>
-              <div class="cloud-payment-row">
-                <span><?= e((string) $paymentName) ?></span>
-                <strong><?= e(format_money($paymentStats['amount'] ?? 0)) ?></strong>
-                <small><?= (int) ($paymentStats['count'] ?? 0) ?> ventas</small>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
-      </section>
+      </div>
 
-      <section class="cloud-sync-panel">
-        <div class="section-header">
-          <div>
-            <div class="section-title">Ultimas ventas recibidas</div>
-            <div class="section-meta">Muestra rapida para confirmar que cada caja esta reportando.</div>
-          </div>
+      <div class="cloud-commerce-grid">
+        <div class="ops-card ops-card--info">
+          <span class="ops-card-label">Ventas 24 hs</span>
+          <strong><?= (int) ($salesOverview['sales_24h'] ?? 0) ?></strong>
+          <span>Eventos de venta aceptados</span>
         </div>
-        <?php if (!$recentSales): ?>
-          <div class="empty-panel">Sin ventas recibidas todavia.</div>
-        <?php else: ?>
-          <div class="cloud-sales-list">
-            <?php foreach ($recentSales as $sale): ?>
-              <?php
-                $summary = is_array($sale['summary'] ?? null) ? $sale['summary'] : [];
-                $saleId = (int) ($summary['venta_id'] ?? 0);
-                $saleTotal = (float) ($summary['total'] ?? 0);
-                $salePayment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
-                $saleItems = (int) ($summary['items_count'] ?? 0);
-                $clientName = (string) ($sale['trade_name'] ?: $sale['legal_name']);
-                $branchName = (string) ($sale['branch_name'] ?: 'Sin sucursal');
-              ?>
-              <article class="cloud-sale-item">
-                <div>
-                  <strong><?= e($clientName) ?></strong>
-                  <span><?= e($branchName) ?> - venta <?= $saleId > 0 ? '#' . $saleId : 'sin numero' ?></span>
-                </div>
-                <div>
-                  <strong><?= e(format_money($saleTotal)) ?></strong>
-                  <span><?= e($salePayment) ?> - <?= $saleItems ?> items</span>
-                </div>
-              </article>
-            <?php endforeach; ?>
+        <div class="ops-card">
+          <span class="ops-card-label">Importe 24 hs</span>
+          <strong><?= e(format_money($salesOverview['amount_24h'] ?? 0)) ?></strong>
+          <span>Total sincronizado</span>
+        </div>
+        <div class="ops-card">
+          <span class="ops-card-label">Ticket promedio</span>
+          <strong><?= e(format_money($salesOverview['avg_ticket_24h'] ?? 0)) ?></strong>
+          <span>Sobre ventas recibidas</span>
+        </div>
+        <div class="ops-card ops-card--muted">
+          <span class="ops-card-label">Items</span>
+          <strong><?= (int) ($salesOverview['items_24h'] ?? 0) ?></strong>
+          <span>Unidades o renglones reportados</span>
+        </div>
+      </div>
+
+      <div class="cloud-sync-split">
+        <section class="cloud-sync-panel">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Medios de pago 24 hs</div>
+              <div class="section-meta">Importe recibido por medio informado por el POS.</div>
+            </div>
           </div>
-        <?php endif; ?>
-      </section>
-    </div>
+          <?php $payments24h = $salesOverview['payments_24h'] ?? []; ?>
+          <?php if (empty($payments24h)): ?>
+            <div class="empty-panel">Todavia no hay ventas sincronizadas en las ultimas 24 hs.</div>
+          <?php else: ?>
+            <div class="cloud-payment-list">
+              <?php foreach ($payments24h as $paymentName => $paymentStats): ?>
+                <div class="cloud-payment-row">
+                  <span><?= e((string) $paymentName) ?></span>
+                  <strong><?= e(format_money($paymentStats['amount'] ?? 0)) ?></strong>
+                  <small><?= (int) ($paymentStats['count'] ?? 0) ?> ventas</small>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </section>
+
+        <section class="cloud-sync-panel">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Ultimas ventas recibidas</div>
+              <div class="section-meta">Muestra rapida para confirmar que cada caja esta reportando.</div>
+            </div>
+          </div>
+          <?php if (!$recentSales): ?>
+            <div class="empty-panel">Sin ventas recibidas todavia.</div>
+          <?php else: ?>
+            <div class="cloud-sales-list">
+              <?php foreach ($recentSales as $sale): ?>
+                <?php
+                  $summary = is_array($sale['summary'] ?? null) ? $sale['summary'] : [];
+                  $saleId = (int) ($summary['venta_id'] ?? 0);
+                  $saleTotal = (float) ($summary['total'] ?? 0);
+                  $salePayment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
+                  $saleItems = (int) ($summary['items_count'] ?? 0);
+                  $branchName = (string) ($sale['branch_name'] ?: 'Sin sucursal');
+                ?>
+                <article class="cloud-sale-item">
+                  <div>
+                    <strong><?= e($branchName) ?></strong>
+                    <span>Venta <?= $saleId > 0 ? '#' . $saleId : 'sin numero' ?></span>
+                  </div>
+                  <div>
+                    <strong><?= e(format_money($saleTotal)) ?></strong>
+                    <span><?= e($salePayment) ?> - <?= $saleItems ?> items</span>
+                  </div>
+                </article>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </section>
+      </div>
+    <?php endif; ?>
 
     <div class="section-header">
       <div>
@@ -387,41 +388,43 @@ if ($schemaReady) {
       </table>
     </div>
 
-    <div class="section-header">
-      <div>
-        <div class="section-title">Eventos recientes</div>
-        <div class="section-meta">Resumen tecnico para auditar llegada de ventas, caja, stock y alertas.</div>
+    <?php if ($selectedClient): ?>
+      <div class="section-header">
+        <div>
+          <div class="section-title">Eventos recientes</div>
+          <div class="section-meta">Resumen tecnico para auditar llegada de ventas, caja, stock y alertas de este cliente.</div>
+        </div>
       </div>
-    </div>
 
-    <div class="table-wrapper table-wrap--mobile-cards">
-      <table>
-        <thead>
-          <tr>
-            <th>Recibido</th>
-            <th>Cliente</th>
-            <th>Sucursal</th>
-            <th>Tipo</th>
-            <th>Evento</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if (!$events): ?>
-            <tr class="empty-row"><td colspan="5">Sin eventos recibidos todavia.</td></tr>
-          <?php else: ?>
-            <?php foreach ($events as $event): ?>
-              <tr>
-                <td data-label="Recibido"><?= e(format_datetime($event['received_at'] ?? null)) ?></td>
-                <td data-label="Cliente"><?= e($event['trade_name'] ?: $event['legal_name']) ?></td>
-                <td data-label="Sucursal"><?= e($event['branch_name'] ?: 'Sin sucursal') ?></td>
-                <td data-label="Tipo"><span class="badge badge-blue"><?= e($event['event_type']) ?></span></td>
-                <td data-label="Evento" class="td-mono td-mono--compact"><?= e($event['event_uid']) ?></td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
+      <div class="table-wrapper table-wrap--mobile-cards">
+        <table>
+          <thead>
+            <tr>
+              <th>Recibido</th>
+              <th>Cliente</th>
+              <th>Sucursal</th>
+              <th>Tipo</th>
+              <th>Evento</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (!$events): ?>
+              <tr class="empty-row"><td colspan="5">Sin eventos recibidos todavia.</td></tr>
+            <?php else: ?>
+              <?php foreach ($events as $event): ?>
+                <tr>
+                  <td data-label="Recibido"><?= e(format_datetime($event['received_at'] ?? null)) ?></td>
+                  <td data-label="Cliente"><?= e($event['trade_name'] ?: $event['legal_name']) ?></td>
+                  <td data-label="Sucursal"><?= e($event['branch_name'] ?: 'Sin sucursal') ?></td>
+                  <td data-label="Tipo"><span class="badge badge-blue"><?= e($event['event_type']) ?></span></td>
+                  <td data-label="Evento" class="td-mono td-mono--compact"><?= e($event['event_uid']) ?></td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
   <?php endif; ?>
 </section>
 
