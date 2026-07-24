@@ -18,7 +18,7 @@ if (!function_exists('admin_start_session')) {
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
-            'secure' => admin_config('env', 'production') === 'production' ? true : $isHttps,
+            'secure' => $isHttps,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
