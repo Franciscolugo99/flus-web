@@ -9,6 +9,7 @@ require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/license-cloud.php';
 require_once __DIR__ . '/includes/license-events.php';
+require_once __DIR__ . '/includes/cloud-sync.php';
 admin_start_session();
 require_admin_login();
 $pdo = admin_db();
@@ -45,6 +46,17 @@ $payments_stmt->execute([$id]);
 $payments = $payments_stmt->fetchAll();
 
 $license_events = admin_license_events_for_client($pdo, $id, 10);
+$cloud_schema_ready = admin_cloud_sync_ensure_schema($pdo);
+$cloud_overview = $cloud_schema_ready ? admin_cloud_sync_client_overview($pdo, $id) : [];
+$cloud_branches = $cloud_schema_ready ? admin_cloud_sync_client_branches($pdo, $id) : [];
+$cloud_stock_overview = $cloud_schema_ready ? admin_cloud_sync_stock_overview($pdo, $id) : [];
+$has_cloud_plan = false;
+foreach ($licenses as $lic) {
+    if (admin_license_plan_cloud_enabled($lic)) {
+        $has_cloud_plan = true;
+        break;
+    }
+}
 
 // Métricas financieras
 $r = $pdo->prepare('SELECT COALESCE(SUM(amount),0) FROM payments WHERE client_id = ?');
@@ -271,6 +283,54 @@ require_once __DIR__ . '/includes/layout-header.php';
             <div class="timeline-amount"><?= e($item['amount']) ?></div>
           <?php endif; ?>
         </div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+</div>
+
+<!-- Sucursales cloud -->
+<div class="section-header">
+  <div>
+    <div class="section-title">Sucursales cloud</div>
+    <div class="section-meta">Instalaciones y stock recibido desde FLUS local para este cliente.</div>
+  </div>
+  <a href="<?= admin_url('cloud-sync.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">Ver datos cloud</a>
+</div>
+
+<div class="detail-card client-cloud-card">
+  <?php if (!$cloud_schema_ready): ?>
+    <div class="empty-panel">No se pudo preparar el esquema de sincronizacion cloud.</div>
+  <?php elseif (empty($cloud_branches)): ?>
+    <div class="client-cloud-empty">
+      <strong><?= $has_cloud_plan ? 'Sin sucursales sincronizadas todavia.' : 'Cliente sin plan cloud activo.' ?></strong>
+      <span><?= $has_cloud_plan ? 'Cuando una instalacion FLUS envie datos, va a aparecer aca con su sucursal y ultimo contacto.' : 'Si el cliente contrata cloud, creale una licencia cloud y configurale el token en la instalacion local.' ?></span>
+    </div>
+  <?php else: ?>
+    <div class="client-cloud-summary">
+      <span><strong><?= (int) ($cloud_overview['active_branches_count'] ?? count($cloud_branches)) ?></strong>Sucursales</span>
+      <span><strong><?= (int) ($cloud_overview['installations_count'] ?? 0) ?></strong>Instalaciones</span>
+      <span><strong><?= (int) ($cloud_overview['online_count'] ?? 0) ?></strong>Online</span>
+      <span><strong><?= (int) ($cloud_overview['sales_24h'] ?? 0) ?></strong>Ventas 24 hs</span>
+      <span class="<?= (int) ($cloud_stock_overview['sin_stock'] ?? 0) + (int) ($cloud_stock_overview['bajo_minimo'] ?? 0) > 0 ? 'is-warn-text' : '' ?>">
+        <strong><?= (int) ($cloud_stock_overview['sin_stock'] ?? 0) + (int) ($cloud_stock_overview['bajo_minimo'] ?? 0) ?></strong>Alertas stock
+      </span>
+    </div>
+
+    <div class="client-cloud-branches">
+      <?php foreach ($cloud_branches as $branch): ?>
+        <?php $branchOnline = (int) ($branch['online_count'] ?? 0); ?>
+        <article class="client-cloud-branch">
+          <div>
+            <strong><?= e((string) ($branch['branch_name'] ?: 'Sin sucursal')) ?></strong>
+            <span><?= e((string) ($branch['branch_code'] ?: 'sin codigo')) ?></span>
+          </div>
+          <div class="client-cloud-branch__meta">
+            <span><?= (int) ($branch['installations_count'] ?? 0) ?> instalacion<?= (int) ($branch['installations_count'] ?? 0) === 1 ? '' : 'es' ?></span>
+            <span><?= (int) ($branch['stock_items'] ?? 0) ?> productos stock</span>
+            <span>Ultimo contacto: <?= e(format_datetime($branch['last_seen_at'] ?? null)) ?></span>
+          </div>
+          <span class="badge <?= $branchOnline > 0 ? 'badge-green' : 'badge-yellow' ?>"><?= $branchOnline > 0 ? 'Online' : 'Sin contacto' ?></span>
+        </article>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>

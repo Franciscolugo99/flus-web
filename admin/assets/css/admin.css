@@ -1228,6 +1228,143 @@ body.login-page {
   padding: 14px;
 }
 
+.cloud-focus-bar,
+.cloud-client-row,
+.cloud-branch-row,
+.client-cloud-branch {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.cloud-focus-bar {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  margin: 14px 0 16px;
+  padding: 14px;
+}
+
+.cloud-focus-bar > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.cloud-focus-bar strong {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.cloud-focus-bar span:not(.eyebrow) {
+  color: var(--text-secondary);
+  font-size: .84rem;
+}
+
+.cloud-focus-actions,
+.cloud-client-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cloud-client-list,
+.cloud-branch-list,
+.client-cloud-branches {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.cloud-client-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, .9fr) minmax(420px, 1.5fr) minmax(260px, auto);
+  padding: 12px 14px;
+}
+
+.cloud-client-main,
+.cloud-branch-row > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.cloud-client-main strong,
+.cloud-branch-row strong,
+.client-cloud-branch strong {
+  color: var(--text-primary);
+}
+
+.cloud-client-main span,
+.cloud-client-actions > span,
+.cloud-branch-row span,
+.client-cloud-branch span,
+.client-cloud-empty span {
+  color: var(--text-secondary);
+  font-size: .78rem;
+}
+
+.cloud-client-metrics,
+.cloud-branch-metrics,
+.client-cloud-summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(98px, 1fr));
+}
+
+.cloud-client-metrics span,
+.cloud-branch-metrics span,
+.client-cloud-summary span {
+  color: var(--text-secondary);
+  display: grid;
+  font-size: .7rem;
+  gap: 2px;
+  text-transform: uppercase;
+}
+
+.cloud-client-metrics strong,
+.cloud-branch-metrics strong,
+.client-cloud-summary strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+  text-transform: none;
+}
+
+.cloud-branch-row,
+.client-cloud-branch {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(170px, .7fr) minmax(360px, 1.4fr) auto;
+  padding: 12px 14px;
+}
+
+.client-cloud-card {
+  padding: 16px;
+}
+
+.client-cloud-summary {
+  margin-bottom: 14px;
+}
+
+.client-cloud-empty {
+  display: grid;
+  gap: 6px;
+}
+
+.client-cloud-branch__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.is-warn-text strong {
+  color: var(--yellow);
+}
+
 .cloud-payment-list,
 .cloud-sales-list {
   display: grid;
@@ -1966,6 +2103,22 @@ button.button--danger:hover {
   .license-status-form input[type=text] {
     width: 100%;
   }
+  .cloud-focus-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .cloud-focus-actions {
+    justify-content: flex-start;
+  }
+  .cloud-client-row,
+  .cloud-branch-row,
+  .client-cloud-branch {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+  .cloud-client-actions {
+    justify-content: flex-start;
+  }
 }
 @media (max-width: 600px) {
   .content-body { padding: 13px; }
@@ -2085,6 +2238,15 @@ button.button--danger:hover {
   .license-ops-grid { grid-template-columns: 1fr 1fr; }
   .cloud-commerce-grid { grid-template-columns: 1fr 1fr; }
   .cloud-sync-split { grid-template-columns: 1fr; }
+  .cloud-client-metrics,
+  .cloud-branch-metrics,
+  .client-cloud-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cloud-focus-actions .button,
+  .cloud-client-actions .button {
+    width: 100%;
+  }
   .cloud-payment-row {
     grid-template-columns: 1fr auto;
   }

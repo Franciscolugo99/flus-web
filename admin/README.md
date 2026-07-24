@@ -112,8 +112,10 @@ Las tablas estan incluidas en `admin/database/schema.sql` y tambien en
 `admin/database/cloud_sync.sql` para actualizar instalaciones existentes. La
 base de usuarios de clientes queda separada en usuarios y membresias, para que
 una cuenta pueda administrar uno o mas negocios sin mezclar datos. La pantalla
-`admin/cloud-sync.php` permite ver instalaciones, sucursales, ultimo contacto y
-eventos recientes desde el panel interno.
+`admin/cloud-sync.php` agrupa primero por cliente y desde ahi permite entrar a
+sus sucursales, instalaciones, ventas recientes, stock sincronizado y eventos.
+La ficha `admin/client-view.php` tambien muestra las sucursales cloud activas
+del cliente y enlaza al detalle filtrado de sus datos.
 
 ## Portal de clientes
 
@@ -160,11 +162,13 @@ Checklist para conectar una instalacion FLUS nueva:
    `FLUS_CLOUD_SYNC_URL`.
 5. Ejecutar migraciones locales de FLUS.
 6. Hacer una venta de prueba y enviar pendientes desde el panel tecnico local.
-7. Confirmar aca, en `admin/cloud-sync.php`, que aparezcan la instalacion y la
+7. Confirmar aca, en `admin/cloud-sync.php`, que el cliente aparezca en
+   `Clientes cloud` y que `Ver datos` filtre sus sucursales, instalacion y
    venta recibida.
-8. Desde el tecnico local de FLUS, usar `Enviar stock actual` para cargar el
+8. Entrar a la ficha del cliente y confirmar el bloque `Sucursales cloud`.
+9. Desde el tecnico local de FLUS, usar `Enviar stock actual` para cargar el
    primer inventario visible en el portal.
-9. Para automatizar, programar en Windows el script local
+10. Para automatizar, programar en Windows el script local
    `scripts/cloud_sync_tick.php` cada 5 minutos.
 
 Este portal queda pensado para planes cloud o multi-sucursal. El cliente puede

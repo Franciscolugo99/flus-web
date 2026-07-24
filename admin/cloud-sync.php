@@ -6,10 +6,26 @@ $active_menu = 'cloud-sync';
 require_once __DIR__ . '/includes/layout-header.php';
 
 $schemaReady = admin_cloud_sync_ensure_schema($pdo);
-$installations = $schemaReady ? admin_cloud_sync_recent_installations($pdo, 50) : [];
-$events = $schemaReady ? admin_cloud_sync_recent_events($pdo, 30) : [];
-$salesOverview = $schemaReady ? admin_cloud_sync_sales_overview($pdo) : [];
-$recentSales = $schemaReady ? admin_cloud_sync_recent_sales($pdo, 12) : [];
+$selectedClientId = max(0, (int) ($_GET['client_id'] ?? 0));
+$clientFilter = $selectedClientId > 0 ? $selectedClientId : null;
+$selectedClient = null;
+$cloudClients = $schemaReady ? admin_cloud_sync_clients_overview($pdo, 80) : [];
+$clientBranches = [];
+if ($schemaReady && $selectedClientId > 0) {
+    $clientStmt = $pdo->prepare('SELECT id, legal_name, trade_name FROM clients WHERE id = ? LIMIT 1');
+    $clientStmt->execute([$selectedClientId]);
+    $selectedClient = $clientStmt->fetch() ?: null;
+    if ($selectedClient) {
+        $clientBranches = admin_cloud_sync_client_branches($pdo, $selectedClientId);
+    } else {
+        $selectedClientId = 0;
+        $clientFilter = null;
+    }
+}
+$installations = $schemaReady ? admin_cloud_sync_recent_installations($pdo, 50, $clientFilter) : [];
+$events = $schemaReady ? admin_cloud_sync_recent_events($pdo, 30, $clientFilter) : [];
+$salesOverview = $schemaReady ? admin_cloud_sync_sales_overview($pdo, $clientFilter) : [];
+$recentSales = $schemaReady ? admin_cloud_sync_recent_sales($pdo, 12, $clientFilter) : [];
 
 $utc = new DateTimeZone('UTC');
 $onlineCutoff = new DateTimeImmutable('-10 minutes', $utc);
@@ -32,14 +48,23 @@ $cloudLicenses = 0;
 $cloudNoContact = 0;
 $localInstallations = 0;
 if ($schemaReady) {
-    $branchesCount = (int) $pdo->query('SELECT COUNT(*) FROM client_branches')->fetchColumn();
-    $eventsToday = (int) $pdo->query('SELECT COUNT(*) FROM cloud_sync_events WHERE DATE(received_at) = UTC_DATE()')->fetchColumn();
+    if ($selectedClientId > 0) {
+        $branchesCount = count($clientBranches);
+        $eventsTodayStmt = $pdo->prepare('SELECT COUNT(*) FROM cloud_sync_events WHERE DATE(received_at) = UTC_DATE() AND client_id = ?');
+        $eventsTodayStmt->execute([$selectedClientId]);
+        $eventsToday = (int) $eventsTodayStmt->fetchColumn();
+    } else {
+        $branchesCount = (int) $pdo->query('SELECT COUNT(*) FROM client_branches')->fetchColumn();
+        $eventsToday = (int) $pdo->query('SELECT COUNT(*) FROM cloud_sync_events WHERE DATE(received_at) = UTC_DATE()')->fetchColumn();
+    }
     $cloudPlanWhere = "(LOWER(plan_type) LIKE '%cloud%' OR LOWER(plan_type) LIKE '%multi%' OR LOWER(plan_type) LIKE '%sucursal%' OR LOWER(plan_type) LIKE '%online%' OR LOWER(plan_type) LIKE '%web%')";
+    $clientLicenseWhere = $selectedClientId > 0 ? ' AND client_id = ' . $selectedClientId : '';
     $cloudLicenses = (int) $pdo->query("
         SELECT COUNT(*)
         FROM licenses
         WHERE status NOT IN ('vencida','suspendida')
           AND expires_at >= CURDATE()
+          {$clientLicenseWhere}
           AND {$cloudPlanWhere}
     ")->fetchColumn();
     $cloudNoContact = (int) $pdo->query("
@@ -52,6 +77,7 @@ if ($schemaReady) {
         ) i ON i.license_id = l.id
         WHERE l.status NOT IN ('vencida','suspendida')
           AND l.expires_at >= CURDATE()
+          {$clientLicenseWhere}
           AND {$cloudPlanWhere}
           AND (i.last_seen_at IS NULL OR i.last_seen_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE))
     ")->fetchColumn();
@@ -60,6 +86,7 @@ if ($schemaReady) {
         FROM client_installations i
         INNER JOIN licenses l ON l.id = i.license_id
         WHERE NOT {$cloudPlanWhere}
+        " . ($selectedClientId > 0 ? " AND i.client_id = {$selectedClientId}" : '') . "
     ")->fetchColumn();
 }
 ?>
@@ -69,13 +96,27 @@ if ($schemaReady) {
     <div>
       <span class="eyebrow">Control operativo</span>
       <h1>Sucursales cloud</h1>
-      <p>Estado de instalaciones FLUS que reportan datos desde cada negocio.</p>
+      <p><?= $selectedClient ? 'Vista filtrada por cliente, sucursales e instalaciones.' : 'Clientes, sucursales e instalaciones FLUS que reportan datos desde cada negocio.' ?></p>
     </div>
   </div>
 
   <?php if (!$schemaReady): ?>
     <div class="alert alert-error">No se pudo preparar el esquema de sincronizacion cloud.</div>
   <?php else: ?>
+    <?php if ($selectedClient): ?>
+      <div class="cloud-focus-bar">
+        <div>
+          <span class="eyebrow">Cliente seleccionado</span>
+          <strong><?= e($selectedClient['trade_name'] ?: $selectedClient['legal_name']) ?></strong>
+          <span>Los datos de ventas, stock, eventos e instalaciones estan filtrados por este cliente.</span>
+        </div>
+        <div class="cloud-focus-actions">
+          <a href="<?= admin_url('client-view.php?id=' . $selectedClientId) ?>" class="button button--ghost">Ficha del cliente</a>
+          <a href="<?= admin_url('cloud-sync.php') ?>" class="button button--ghost">Ver todos</a>
+        </div>
+      </div>
+    <?php endif; ?>
+
     <div class="license-ops-grid">
       <div class="ops-card ops-card--info">
         <span class="ops-card-label">Instalaciones</span>
@@ -118,6 +159,82 @@ if ($schemaReady) {
         <span>Recibidos por la API</span>
       </div>
     </div>
+
+    <?php if (!$selectedClient): ?>
+      <div class="section-header section-header--spaced">
+        <div>
+          <div class="section-title">Clientes cloud</div>
+          <div class="section-meta">Cada cliente concentra sus sucursales, PCs conectadas, ventas recientes y alertas de stock.</div>
+        </div>
+      </div>
+
+      <div class="cloud-client-list">
+        <?php if (!$cloudClients): ?>
+          <div class="empty-panel">Todavia no hay clientes con cloud, sucursales o instalaciones sincronizadas.</div>
+        <?php else: ?>
+          <?php foreach ($cloudClients as $cloudClient): ?>
+            <?php
+              $clientName = (string) ($cloudClient['trade_name'] ?: $cloudClient['legal_name']);
+              $planTypes = trim((string) ($cloudClient['cloud_plan_types'] ?? ''));
+              $planLabels = [];
+              foreach (array_filter(array_map('trim', explode(',', $planTypes))) as $planType) {
+                  $planLabels[] = plan_type_label($planType);
+              }
+              $installationsCount = (int) ($cloudClient['installations_count'] ?? 0);
+              $onlineCount = (int) ($cloudClient['online_count'] ?? 0);
+            ?>
+            <article class="cloud-client-row">
+              <div class="cloud-client-main">
+                <strong><?= e($clientName) ?></strong>
+                <span><?= $planLabels ? e(implode(', ', array_unique($planLabels))) : 'Sin plan cloud activo' ?></span>
+              </div>
+              <div class="cloud-client-metrics">
+                <span><strong><?= (int) ($cloudClient['active_branches_count'] ?? 0) ?></strong>Sucursales</span>
+                <span><strong><?= $installationsCount ?></strong>Instalaciones</span>
+                <span><strong><?= $onlineCount ?></strong>Online</span>
+                <span><strong><?= (int) ($cloudClient['sales_24h'] ?? 0) ?></strong>Ventas 24 hs</span>
+                <span class="<?= (int) ($cloudClient['stock_attention'] ?? 0) > 0 ? 'is-warn-text' : '' ?>"><strong><?= (int) ($cloudClient['stock_attention'] ?? 0) ?></strong>Stock atencion</span>
+              </div>
+              <div class="cloud-client-actions">
+                <span>Ultimo contacto: <?= e(format_datetime($cloudClient['last_seen_at'] ?? null)) ?></span>
+                <a href="<?= admin_url('cloud-sync.php?client_id=' . (int) $cloudClient['client_id']) ?>" class="button button--compact">Ver datos</a>
+                <a href="<?= admin_url('client-view.php?id=' . (int) $cloudClient['client_id']) ?>" class="button button--ghost button--compact">Cliente</a>
+              </div>
+            </article>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+    <?php else: ?>
+      <div class="section-header section-header--spaced">
+        <div>
+          <div class="section-title">Sucursales del cliente</div>
+          <div class="section-meta">Puntos activos reportados por las instalaciones FLUS de este comercio.</div>
+        </div>
+      </div>
+
+      <div class="cloud-branch-list">
+        <?php if (!$clientBranches): ?>
+          <div class="empty-panel">Este cliente todavia no tiene sucursales sincronizadas.</div>
+        <?php else: ?>
+          <?php foreach ($clientBranches as $branch): ?>
+            <?php $branchOnline = (int) ($branch['online_count'] ?? 0); ?>
+            <article class="cloud-branch-row">
+              <div>
+                <strong><?= e((string) ($branch['branch_name'] ?: 'Sin sucursal')) ?></strong>
+                <span><?= e((string) ($branch['branch_code'] ?: 'sin codigo')) ?></span>
+              </div>
+              <div class="cloud-branch-metrics">
+                <span><strong><?= (int) ($branch['installations_count'] ?? 0) ?></strong>Instalaciones</span>
+                <span><strong><?= $branchOnline ?></strong>Online</span>
+                <span><strong><?= (int) ($branch['stock_items'] ?? 0) ?></strong>Productos stock</span>
+                <span>Ultimo contacto: <?= e(format_datetime($branch['last_seen_at'] ?? null)) ?></span>
+              </div>
+              <span class="badge <?= $branchOnline > 0 ? 'badge-green' : 'badge-yellow' ?>"><?= $branchOnline > 0 ? 'Operativa' : 'Sin contacto' ?></span>
+            </article>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
 
     <div class="section-header section-header--spaced">
       <div>

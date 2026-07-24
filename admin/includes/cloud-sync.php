@@ -546,14 +546,21 @@ if (!function_exists('admin_cloud_sync_store_events')) {
 }
 
 if (!function_exists('admin_cloud_sync_recent_installations')) {
-    function admin_cloud_sync_recent_installations(PDO $pdo, int $limit = 20): array
+    function admin_cloud_sync_recent_installations(PDO $pdo, int $limit = 20, ?int $clientId = null): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
             return [];
         }
 
         $limit = max(1, min(100, $limit));
-        $stmt = $pdo->query("
+        $where = '';
+        $params = [];
+        if ($clientId !== null && $clientId > 0) {
+            $where = 'WHERE i.client_id = :client_id';
+            $params['client_id'] = $clientId;
+        }
+
+        $stmt = $pdo->prepare("
             SELECT
                 i.*,
                 c.legal_name,
@@ -568,23 +575,32 @@ if (!function_exists('admin_cloud_sync_recent_installations')) {
             INNER JOIN clients c ON c.id = i.client_id
             INNER JOIN licenses l ON l.id = i.license_id
             LEFT JOIN client_branches b ON b.id = i.branch_id
+            {$where}
             ORDER BY i.last_seen_at DESC, i.id DESC
             LIMIT " . $limit
         );
+        $stmt->execute($params);
 
         return $stmt->fetchAll();
     }
 }
 
 if (!function_exists('admin_cloud_sync_recent_events')) {
-    function admin_cloud_sync_recent_events(PDO $pdo, int $limit = 25): array
+    function admin_cloud_sync_recent_events(PDO $pdo, int $limit = 25, ?int $clientId = null): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
             return [];
         }
 
         $limit = max(1, min(100, $limit));
-        $stmt = $pdo->query("
+        $where = '';
+        $params = [];
+        if ($clientId !== null && $clientId > 0) {
+            $where = 'WHERE e.client_id = :client_id';
+            $params['client_id'] = $clientId;
+        }
+
+        $stmt = $pdo->prepare("
             SELECT
                 e.*,
                 c.legal_name,
@@ -598,11 +614,275 @@ if (!function_exists('admin_cloud_sync_recent_events')) {
             INNER JOIN client_installations i ON i.id = e.installation_id
             INNER JOIN licenses l ON l.id = e.license_id
             LEFT JOIN client_branches b ON b.id = e.branch_id
+            {$where}
             ORDER BY e.received_at DESC, e.id DESC
+            LIMIT " . $limit
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+}
+
+if (!function_exists('admin_cloud_sync_clients_overview')) {
+    function admin_cloud_sync_clients_overview(PDO $pdo, int $limit = 50): array
+    {
+        if (!admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $limit = max(1, min(100, $limit));
+        $cloudPlanWhere = "(LOWER(plan_type) LIKE '%cloud%' OR LOWER(plan_type) LIKE '%multi%' OR LOWER(plan_type) LIKE '%sucursal%' OR LOWER(plan_type) LIKE '%online%' OR LOWER(plan_type) LIKE '%web%')";
+
+        $stmt = $pdo->query("
+            SELECT
+                c.id AS client_id,
+                c.legal_name,
+                c.trade_name,
+                COALESCE(b.branches_count, 0) AS branches_count,
+                COALESCE(b.active_branches_count, 0) AS active_branches_count,
+                COALESCE(i.installations_count, 0) AS installations_count,
+                COALESCE(i.online_count, 0) AS online_count,
+                i.last_seen_at,
+                COALESCE(l.cloud_license_count, 0) AS cloud_license_count,
+                COALESCE(l.cloud_plan_types, '') AS cloud_plan_types,
+                COALESCE(sales.sales_24h, 0) AS sales_24h,
+                COALESCE(stock.stock_attention, 0) AS stock_attention,
+                stock.last_synced_at
+            FROM clients c
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS branches_count,
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_branches_count
+                FROM client_branches
+                GROUP BY client_id
+            ) b ON b.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS installations_count,
+                    SUM(CASE WHEN last_seen_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE) THEN 1 ELSE 0 END) AS online_count,
+                    MAX(last_seen_at) AS last_seen_at
+                FROM client_installations
+                GROUP BY client_id
+            ) i ON i.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS cloud_license_count,
+                    GROUP_CONCAT(DISTINCT plan_type ORDER BY plan_type SEPARATOR ', ') AS cloud_plan_types
+                FROM licenses
+                WHERE status NOT IN ('vencida','suspendida')
+                  AND expires_at >= CURDATE()
+                  AND {$cloudPlanWhere}
+                GROUP BY client_id
+            ) l ON l.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS sales_24h
+                FROM cloud_sync_events
+                WHERE event_type IN ('sale.created', 'sale_created')
+                  AND received_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY)
+                GROUP BY client_id
+            ) sales ON sales.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    SUM(CASE
+                        WHEN activo = 1
+                         AND (estado_stock IN ('sin_stock', 'bajo_minimo')
+                              OR stock <= 0
+                              OR (stock_minimo > 0 AND stock <= stock_minimo))
+                        THEN 1 ELSE 0
+                    END) AS stock_attention,
+                    MAX(synced_at) AS last_synced_at
+                FROM cloud_sync_stock_items
+                GROUP BY client_id
+            ) stock ON stock.client_id = c.id
+            WHERE COALESCE(b.branches_count, 0) > 0
+               OR COALESCE(i.installations_count, 0) > 0
+               OR COALESCE(l.cloud_license_count, 0) > 0
+            ORDER BY i.last_seen_at DESC, c.trade_name ASC, c.legal_name ASC
             LIMIT " . $limit
         );
 
         return $stmt->fetchAll();
+    }
+}
+
+if (!function_exists('admin_cloud_sync_client_overview')) {
+    function admin_cloud_sync_client_overview(PDO $pdo, int $clientId): array
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $cloudPlanWhere = "(LOWER(plan_type) LIKE '%cloud%' OR LOWER(plan_type) LIKE '%multi%' OR LOWER(plan_type) LIKE '%sucursal%' OR LOWER(plan_type) LIKE '%online%' OR LOWER(plan_type) LIKE '%web%')";
+        $stmt = $pdo->prepare("
+            SELECT
+                c.id AS client_id,
+                c.legal_name,
+                c.trade_name,
+                COALESCE(b.branches_count, 0) AS branches_count,
+                COALESCE(b.active_branches_count, 0) AS active_branches_count,
+                COALESCE(i.installations_count, 0) AS installations_count,
+                COALESCE(i.online_count, 0) AS online_count,
+                i.last_seen_at,
+                COALESCE(l.cloud_license_count, 0) AS cloud_license_count,
+                COALESCE(l.cloud_plan_types, '') AS cloud_plan_types,
+                COALESCE(sales.sales_24h, 0) AS sales_24h,
+                COALESCE(stock.stock_attention, 0) AS stock_attention,
+                stock.last_synced_at
+            FROM clients c
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS branches_count,
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_branches_count
+                FROM client_branches
+                WHERE client_id = :branches_client_id
+                GROUP BY client_id
+            ) b ON b.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS installations_count,
+                    SUM(CASE WHEN last_seen_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE) THEN 1 ELSE 0 END) AS online_count,
+                    MAX(last_seen_at) AS last_seen_at
+                FROM client_installations
+                WHERE client_id = :installations_client_id
+                GROUP BY client_id
+            ) i ON i.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS cloud_license_count,
+                    GROUP_CONCAT(DISTINCT plan_type ORDER BY plan_type SEPARATOR ', ') AS cloud_plan_types
+                FROM licenses
+                WHERE client_id = :licenses_client_id
+                  AND status NOT IN ('vencida','suspendida')
+                  AND expires_at >= CURDATE()
+                  AND {$cloudPlanWhere}
+                GROUP BY client_id
+            ) l ON l.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    COUNT(*) AS sales_24h
+                FROM cloud_sync_events
+                WHERE client_id = :sales_client_id
+                  AND event_type IN ('sale.created', 'sale_created')
+                  AND received_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY)
+                GROUP BY client_id
+            ) sales ON sales.client_id = c.id
+            LEFT JOIN (
+                SELECT
+                    client_id,
+                    SUM(CASE
+                        WHEN activo = 1
+                         AND (estado_stock IN ('sin_stock', 'bajo_minimo')
+                              OR stock <= 0
+                              OR (stock_minimo > 0 AND stock <= stock_minimo))
+                        THEN 1 ELSE 0
+                    END) AS stock_attention,
+                    MAX(synced_at) AS last_synced_at
+                FROM cloud_sync_stock_items
+                WHERE client_id = :stock_client_id
+                GROUP BY client_id
+            ) stock ON stock.client_id = c.id
+            WHERE c.id = :client_id
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'branches_client_id' => $clientId,
+            'installations_client_id' => $clientId,
+            'licenses_client_id' => $clientId,
+            'sales_client_id' => $clientId,
+            'stock_client_id' => $clientId,
+            'client_id' => $clientId,
+        ]);
+
+        $row = $stmt->fetch();
+        return is_array($row) ? $row : [];
+    }
+}
+
+if (!function_exists('admin_cloud_sync_client_branches')) {
+    function admin_cloud_sync_client_branches(PDO $pdo, int $clientId): array
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT
+                b.id AS branch_id,
+                b.name AS branch_name,
+                b.code AS branch_code,
+                b.status AS branch_status,
+                COALESCE(i.installations_count, 0) AS installations_count,
+                COALESCE(i.online_count, 0) AS online_count,
+                i.last_seen_at,
+                COALESCE(stock.stock_items, 0) AS stock_items,
+                stock.last_synced_at
+            FROM client_branches b
+            LEFT JOIN (
+                SELECT
+                    branch_id,
+                    COUNT(*) AS installations_count,
+                    SUM(CASE WHEN last_seen_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE) THEN 1 ELSE 0 END) AS online_count,
+                    MAX(last_seen_at) AS last_seen_at
+                FROM client_installations
+                WHERE client_id = :install_client_id
+                GROUP BY branch_id
+            ) i ON i.branch_id = b.id
+            LEFT JOIN (
+                SELECT
+                    branch_id,
+                    COUNT(*) AS stock_items,
+                    MAX(synced_at) AS last_synced_at
+                FROM cloud_sync_stock_items
+                WHERE client_id = :stock_client_id
+                  AND activo = 1
+                GROUP BY branch_id
+            ) stock ON stock.branch_id = b.id
+            WHERE b.client_id = :branch_client_id
+            ORDER BY
+                CASE WHEN b.status = 'active' THEN 0 ELSE 1 END,
+                b.name ASC,
+                b.id ASC
+        ");
+        $stmt->execute([
+            'install_client_id' => $clientId,
+            'stock_client_id' => $clientId,
+            'branch_client_id' => $clientId,
+        ]);
+        $branches = $stmt->fetchAll();
+
+        $unassigned = $pdo->prepare("
+            SELECT
+                0 AS branch_id,
+                'Sin sucursal' AS branch_name,
+                '' AS branch_code,
+                'active' AS branch_status,
+                COUNT(*) AS installations_count,
+                SUM(CASE WHEN last_seen_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 MINUTE) THEN 1 ELSE 0 END) AS online_count,
+                MAX(last_seen_at) AS last_seen_at,
+                0 AS stock_items,
+                NULL AS last_synced_at
+            FROM client_installations
+            WHERE client_id = :client_id
+              AND branch_id IS NULL
+        ");
+        $unassigned->execute(['client_id' => $clientId]);
+        $row = $unassigned->fetch();
+        if (is_array($row) && (int) ($row['installations_count'] ?? 0) > 0) {
+            $branches[] = $row;
+        }
+
+        return $branches;
     }
 }
 
