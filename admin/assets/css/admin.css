@@ -1498,6 +1498,116 @@ body.login-page {
   padding-bottom: 0;
 }
 
+.portal-stock-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 14px 0;
+}
+
+.portal-stock-summary > div {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.portal-stock-summary span,
+.portal-stock-filters span,
+.portal-stock-item small {
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.portal-stock-summary strong {
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.portal-stock-filters {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, .45fr) minmax(160px, .45fr) auto;
+  margin-bottom: 14px;
+}
+
+.portal-stock-filters label {
+  display: grid;
+  gap: 6px;
+}
+
+.portal-stock-list {
+  display: grid;
+  gap: 8px;
+}
+
+.portal-stock-item {
+  align-items: center;
+  border-top: 1px solid var(--border-light);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px 0;
+}
+
+.portal-stock-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.portal-stock-item > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.portal-stock-item > div:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
+.portal-stock-item strong {
+  color: var(--text-primary);
+}
+
+.portal-stock-item span {
+  color: var(--text-muted);
+  font-size: .82rem;
+}
+
+.portal-stock-badge {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-primary) !important;
+  display: inline-flex;
+  font-size: .72rem !important;
+  font-weight: 800;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
+.portal-stock-item--sin_stock .portal-stock-badge {
+  background: rgba(239,68,68,.14);
+  border-color: rgba(239,68,68,.35);
+}
+
+.portal-stock-item--bajo_minimo .portal-stock-badge {
+  background: rgba(245,158,11,.14);
+  border-color: rgba(245,158,11,.36);
+}
+
+.portal-stock-item--ok .portal-stock-badge {
+  background: rgba(16,185,129,.14);
+  border-color: rgba(16,185,129,.35);
+}
+
 .licenses-table table {
   min-width: 1120px;
 }
@@ -2024,6 +2134,25 @@ button.button--danger:hover {
   }
   .portal-panel {
     padding: 14px;
+  }
+  .portal-stock-summary {
+    grid-template-columns: 1fr;
+  }
+  .portal-stock-filters {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+  .portal-stock-filters .button,
+  .portal-stock-filters button {
+    width: 100%;
+  }
+  .portal-stock-item {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+  .portal-stock-item > div:last-child {
+    justify-items: start;
+    text-align: left;
   }
   .ops-card { min-height: 82px; }
   .topbar-date { display: none; }

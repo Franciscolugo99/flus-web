@@ -111,6 +111,8 @@ sus datos sincronizados:
 
 - ventas e importe de las ultimas 24 hs;
 - medios de pago;
+- stock por sucursal, de solo lectura;
+- productos sin stock o bajo minimo;
 - estado de instalaciones;
 - licencia vigente;
 - ultimas ventas recibidas.
@@ -148,6 +150,12 @@ Checklist para conectar una instalacion FLUS nueva:
 6. Hacer una venta de prueba y enviar pendientes desde el panel tecnico local.
 7. Confirmar aca, en `admin/cloud-sync.php`, que aparezcan la instalacion y la
    venta recibida.
+8. Desde el tecnico local de FLUS, usar `Enviar stock actual` para cargar el
+   primer inventario visible en el portal.
+
+Este portal queda pensado para planes cloud o multi-sucursal. El cliente puede
+consultar ventas y stock desde el celular, pero no modifica datos operativos de
+la sucursal.
 
 ## Avisos por email
 

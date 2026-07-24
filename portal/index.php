@@ -17,7 +17,23 @@ $salesOverview = admin_cloud_sync_sales_overview($pdo, $clientId);
 $recentSales = admin_cloud_sync_recent_sales($pdo, 8, $clientId);
 $installations = portal_client_installations_summary($pdo, $clientId);
 $license = portal_client_license_summary($pdo, $clientId);
+$stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
+$stockState = trim((string) ($_GET['stock_estado'] ?? 'attention'));
+$stockBranchId = max(0, (int) ($_GET['stock_sucursal'] ?? 0));
+$allowedStockStates = ['attention', 'sin_stock', 'bajo_minimo', 'ok', 'all'];
+if (!in_array($stockState, $allowedStockStates, true)) {
+    $stockState = 'attention';
+}
+$stockOverview = admin_cloud_sync_stock_overview($pdo, $clientId);
+$stockBranches = admin_cloud_sync_stock_branches($pdo, $clientId);
+$stockItems = admin_cloud_sync_stock_items($pdo, $clientId, [
+    'q' => $stockQuery,
+    'state' => $stockState,
+    'branch_id' => $stockBranchId,
+    'limit' => 40,
+]);
 $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin sincronizacion');
+$lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
 ?>
 <!doctype html>
 <html lang="es">
@@ -122,6 +138,87 @@ $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin si
           </div>
         </div>
       </article>
+    </section>
+
+    <section class="portal-panel">
+      <div class="section-header section-header--spaced">
+        <div>
+          <div class="section-title">Stock por sucursal</div>
+          <div class="section-meta">Solo lectura. Ultima actualizacion: <?= e($lastStockLabel) ?>.</div>
+        </div>
+      </div>
+
+      <div class="portal-stock-summary" aria-label="Resumen de stock">
+        <div>
+          <span>Productos</span>
+          <strong><?= (int) ($stockOverview['total'] ?? 0) ?></strong>
+        </div>
+        <div>
+          <span>Sin stock</span>
+          <strong><?= (int) ($stockOverview['sin_stock'] ?? 0) ?></strong>
+        </div>
+        <div>
+          <span>Bajo minimo</span>
+          <strong><?= (int) ($stockOverview['bajo_minimo'] ?? 0) ?></strong>
+        </div>
+      </div>
+
+      <form class="portal-stock-filters" method="get">
+        <label>
+          <span>Buscar</span>
+          <input type="search" name="stock_q" value="<?= e($stockQuery) ?>" placeholder="Producto, codigo o categoria">
+        </label>
+        <label>
+          <span>Sucursal</span>
+          <select name="stock_sucursal">
+            <option value="0">Todas</option>
+            <?php foreach ($stockBranches as $branch): ?>
+              <?php $branchId = (int) ($branch['branch_id'] ?? 0); ?>
+              <?php if ($branchId > 0): ?>
+                <option value="<?= $branchId ?>" <?= $stockBranchId === $branchId ? 'selected' : '' ?>><?= e((string) $branch['branch_name']) ?></option>
+              <?php endif; ?>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>
+          <span>Estado</span>
+          <select name="stock_estado">
+            <option value="attention" <?= $stockState === 'attention' ? 'selected' : '' ?>>Requiere atencion</option>
+            <option value="sin_stock" <?= $stockState === 'sin_stock' ? 'selected' : '' ?>>Sin stock</option>
+            <option value="bajo_minimo" <?= $stockState === 'bajo_minimo' ? 'selected' : '' ?>>Bajo minimo</option>
+            <option value="ok" <?= $stockState === 'ok' ? 'selected' : '' ?>>Stock disponible</option>
+            <option value="all" <?= $stockState === 'all' ? 'selected' : '' ?>>Todos</option>
+          </select>
+        </label>
+        <button class="button" type="submit">Filtrar</button>
+      </form>
+
+      <?php if (!$stockItems): ?>
+        <div class="empty-panel">Todavia no hay stock sincronizado con esos filtros.</div>
+      <?php else: ?>
+        <div class="portal-stock-list">
+          <?php foreach ($stockItems as $item): ?>
+            <?php
+              $state = (string) ($item['estado_stock'] ?? 'ok');
+              $stateLabel = $state === 'sin_stock' ? 'Sin stock' : ($state === 'bajo_minimo' ? 'Bajo minimo' : 'Disponible');
+              $stock = (float) ($item['stock'] ?? 0);
+              $stockMin = (float) ($item['stock_minimo'] ?? 0);
+              $unit = trim((string) ($item['unidad_venta'] ?? ''));
+            ?>
+            <article class="portal-stock-item portal-stock-item--<?= e($state) ?>">
+              <div>
+                <strong><?= e((string) $item['nombre']) ?></strong>
+                <span><?= e((string) ($item['codigo'] ?: 'Sin codigo')) ?> - <?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?></span>
+              </div>
+              <div>
+                <span class="portal-stock-badge"><?= e($stateLabel) ?></span>
+                <strong><?= e(number_format($stock, 3, ',', '.')) ?><?= $unit !== '' ? ' ' . e($unit) : '' ?></strong>
+                <small>Min. <?= e(number_format($stockMin, 3, ',', '.')) ?> - <?= e(format_money($item['precio'] ?? 0)) ?></small>
+              </div>
+            </article>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </section>
 
     <section class="portal-panel">

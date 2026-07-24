@@ -88,3 +88,37 @@ CREATE TABLE IF NOT EXISTS cloud_sync_events (
     CONSTRAINT fk_cloud_sync_events_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_cloud_sync_events_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cloud_sync_stock_items (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id INT UNSIGNED NOT NULL,
+    branch_id INT UNSIGNED DEFAULT NULL,
+    installation_id BIGINT UNSIGNED NOT NULL,
+    license_id INT UNSIGNED NOT NULL,
+    product_uid VARCHAR(120) NOT NULL,
+    local_product_id INT UNSIGNED DEFAULT NULL,
+    codigo VARCHAR(80) DEFAULT NULL,
+    nombre VARCHAR(190) NOT NULL,
+    categoria VARCHAR(120) DEFAULT NULL,
+    marca VARCHAR(120) DEFAULT NULL,
+    precio DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    stock DECIMAL(12,3) NOT NULL DEFAULT 0.000,
+    stock_minimo DECIMAL(12,3) NOT NULL DEFAULT 0.000,
+    estado_stock VARCHAR(30) NOT NULL DEFAULT 'ok',
+    unidad_venta VARCHAR(20) DEFAULT NULL,
+    es_pesable TINYINT(1) NOT NULL DEFAULT 0,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    product_updated_at DATETIME DEFAULT NULL,
+    last_event_uid VARCHAR(120) DEFAULT NULL,
+    synced_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_cloud_sync_stock_installation_product (installation_id, product_uid),
+    KEY idx_cloud_sync_stock_client_state (client_id, estado_stock),
+    KEY idx_cloud_sync_stock_client_name (client_id, nombre),
+    KEY idx_cloud_sync_stock_branch (branch_id),
+    KEY idx_cloud_sync_stock_license (license_id),
+    CONSTRAINT fk_cloud_sync_stock_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_sync_stock_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_sync_stock_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_sync_stock_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

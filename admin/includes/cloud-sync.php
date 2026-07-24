@@ -15,6 +15,7 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
             'client_branches',
             'client_installations',
             'cloud_sync_events',
+            'cloud_sync_stock_items',
         ];
 
         try {
@@ -134,6 +135,42 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
                     CONSTRAINT fk_cloud_sync_events_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE SET NULL ON UPDATE CASCADE,
                     CONSTRAINT fk_cloud_sync_events_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
                     CONSTRAINT fk_cloud_sync_events_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS cloud_sync_stock_items (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    client_id INT UNSIGNED NOT NULL,
+                    branch_id INT UNSIGNED DEFAULT NULL,
+                    installation_id BIGINT UNSIGNED NOT NULL,
+                    license_id INT UNSIGNED NOT NULL,
+                    product_uid VARCHAR(120) NOT NULL,
+                    local_product_id INT UNSIGNED DEFAULT NULL,
+                    codigo VARCHAR(80) DEFAULT NULL,
+                    nombre VARCHAR(190) NOT NULL,
+                    categoria VARCHAR(120) DEFAULT NULL,
+                    marca VARCHAR(120) DEFAULT NULL,
+                    precio DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                    stock DECIMAL(12,3) NOT NULL DEFAULT 0.000,
+                    stock_minimo DECIMAL(12,3) NOT NULL DEFAULT 0.000,
+                    estado_stock VARCHAR(30) NOT NULL DEFAULT 'ok',
+                    unidad_venta VARCHAR(20) DEFAULT NULL,
+                    es_pesable TINYINT(1) NOT NULL DEFAULT 0,
+                    activo TINYINT(1) NOT NULL DEFAULT 1,
+                    product_updated_at DATETIME DEFAULT NULL,
+                    last_event_uid VARCHAR(120) DEFAULT NULL,
+                    synced_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_cloud_sync_stock_installation_product (installation_id, product_uid),
+                    KEY idx_cloud_sync_stock_client_state (client_id, estado_stock),
+                    KEY idx_cloud_sync_stock_client_name (client_id, nombre),
+                    KEY idx_cloud_sync_stock_branch (branch_id),
+                    KEY idx_cloud_sync_stock_license (license_id),
+                    CONSTRAINT fk_cloud_sync_stock_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    CONSTRAINT fk_cloud_sync_stock_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE SET NULL ON UPDATE CASCADE,
+                    CONSTRAINT fk_cloud_sync_stock_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    CONSTRAINT fk_cloud_sync_stock_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
@@ -323,12 +360,103 @@ if (!function_exists('admin_cloud_sync_upsert_installation')) {
     }
 }
 
+if (!function_exists('admin_cloud_sync_store_stock_event')) {
+    function admin_cloud_sync_store_stock_event(PDO $pdo, array $license, int $installationId, ?int $branchId, string $eventUid, string $eventType, array $payload): int
+    {
+        if (!in_array($eventType, ['stock.snapshot', 'stock_snapshot', 'stock.updated', 'stock_updated'], true)) {
+            return 0;
+        }
+
+        $products = $payload['products'] ?? [];
+        if (!is_array($products)) {
+            return 0;
+        }
+
+        $stmt = $pdo->prepare('
+            INSERT INTO cloud_sync_stock_items (
+                client_id, branch_id, installation_id, license_id, product_uid, local_product_id,
+                codigo, nombre, categoria, marca, precio, stock, stock_minimo, estado_stock,
+                unidad_venta, es_pesable, activo, product_updated_at, last_event_uid, synced_at
+            ) VALUES (
+                :client_id, :branch_id, :installation_id, :license_id, :product_uid, :local_product_id,
+                :codigo, :nombre, :categoria, :marca, :precio, :stock, :stock_minimo, :estado_stock,
+                :unidad_venta, :es_pesable, :activo, :product_updated_at, :last_event_uid, UTC_TIMESTAMP()
+            )
+            ON DUPLICATE KEY UPDATE
+                branch_id = VALUES(branch_id),
+                license_id = VALUES(license_id),
+                local_product_id = VALUES(local_product_id),
+                codigo = VALUES(codigo),
+                nombre = VALUES(nombre),
+                categoria = VALUES(categoria),
+                marca = VALUES(marca),
+                precio = VALUES(precio),
+                stock = VALUES(stock),
+                stock_minimo = VALUES(stock_minimo),
+                estado_stock = VALUES(estado_stock),
+                unidad_venta = VALUES(unidad_venta),
+                es_pesable = VALUES(es_pesable),
+                activo = VALUES(activo),
+                product_updated_at = VALUES(product_updated_at),
+                last_event_uid = VALUES(last_event_uid),
+                synced_at = UTC_TIMESTAMP(),
+                updated_at = CURRENT_TIMESTAMP
+        ');
+
+        $stored = 0;
+        foreach (array_slice($products, 0, 200) as $product) {
+            if (!is_array($product)) {
+                continue;
+            }
+
+            $productUid = admin_cloud_sync_normalize_uid((string) ($product['product_uid'] ?? ''), 120);
+            $name = trim((string) ($product['nombre'] ?? $product['name'] ?? ''));
+            if ($productUid === '' || $name === '') {
+                continue;
+            }
+
+            $stock = round((float) ($product['stock'] ?? 0), 3);
+            $stockMin = round((float) ($product['stock_minimo'] ?? $product['stock_min'] ?? 0), 3);
+            $state = trim((string) ($product['estado_stock'] ?? ''));
+            if ($state === '') {
+                $state = $stock <= 0 ? 'sin_stock' : ($stockMin > 0 && $stock <= $stockMin ? 'bajo_minimo' : 'ok');
+            }
+
+            $stmt->execute([
+                'client_id' => (int) $license['client_id'],
+                'branch_id' => $branchId,
+                'installation_id' => $installationId,
+                'license_id' => (int) $license['id'],
+                'product_uid' => $productUid,
+                'local_product_id' => ((int) ($product['producto_id'] ?? 0)) > 0 ? (int) $product['producto_id'] : null,
+                'codigo' => normalize_nullable(substr(trim((string) ($product['codigo'] ?? '')), 0, 80)),
+                'nombre' => substr($name, 0, 190),
+                'categoria' => normalize_nullable(substr(trim((string) ($product['categoria'] ?? '')), 0, 120)),
+                'marca' => normalize_nullable(substr(trim((string) ($product['marca'] ?? '')), 0, 120)),
+                'precio' => round((float) ($product['precio'] ?? 0), 2),
+                'stock' => $stock,
+                'stock_minimo' => $stockMin,
+                'estado_stock' => substr($state, 0, 30),
+                'unidad_venta' => normalize_nullable(substr(trim((string) ($product['unidad_venta'] ?? '')), 0, 20)),
+                'es_pesable' => !empty($product['es_pesable']) ? 1 : 0,
+                'activo' => array_key_exists('activo', $product) ? (!empty($product['activo']) ? 1 : 0) : 1,
+                'product_updated_at' => admin_cloud_sync_parse_datetime(isset($product['updated_at']) ? (string) $product['updated_at'] : null),
+                'last_event_uid' => $eventUid,
+            ]);
+            $stored++;
+        }
+
+        return $stored;
+    }
+}
+
 if (!function_exists('admin_cloud_sync_store_events')) {
     function admin_cloud_sync_store_events(PDO $pdo, array $license, int $installationId, ?int $branchId, array $events): array
     {
         $accepted = 0;
         $duplicates = 0;
         $rejected = 0;
+        $stockItems = 0;
 
         $insert = $pdo->prepare('
             INSERT IGNORE INTO cloud_sync_events (
@@ -380,12 +508,15 @@ if (!function_exists('admin_cloud_sync_store_events')) {
             } else {
                 $duplicates++;
             }
+
+            $stockItems += admin_cloud_sync_store_stock_event($pdo, $license, $installationId, $branchId, $eventUid, $eventType, is_array($payload) ? $payload : []);
         }
 
         return [
             'accepted' => $accepted,
             'duplicates' => $duplicates,
             'rejected' => $rejected,
+            'stock_items' => $stockItems,
         ];
     }
 }
@@ -567,5 +698,131 @@ if (!function_exists('admin_cloud_sync_sales_overview')) {
         });
 
         return $overview;
+    }
+}
+
+if (!function_exists('admin_cloud_sync_stock_overview')) {
+    function admin_cloud_sync_stock_overview(PDO $pdo, int $clientId): array
+    {
+        $overview = [
+            'total' => 0,
+            'sin_stock' => 0,
+            'bajo_minimo' => 0,
+            'ok' => 0,
+            'last_synced_at' => null,
+        ];
+
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return $overview;
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN estado_stock = 'sin_stock' OR stock <= 0 THEN 1 ELSE 0 END) AS sin_stock,
+                SUM(CASE WHEN estado_stock = 'bajo_minimo' OR (stock_minimo > 0 AND stock > 0 AND stock <= stock_minimo) THEN 1 ELSE 0 END) AS bajo_minimo,
+                SUM(CASE WHEN estado_stock = 'ok' AND stock > 0 THEN 1 ELSE 0 END) AS ok_count,
+                MAX(synced_at) AS last_synced_at
+            FROM cloud_sync_stock_items
+            WHERE client_id = :client_id
+              AND activo = 1
+        ");
+        $stmt->execute(['client_id' => $clientId]);
+        $row = $stmt->fetch();
+        if (!is_array($row)) {
+            return $overview;
+        }
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'sin_stock' => (int) ($row['sin_stock'] ?? 0),
+            'bajo_minimo' => (int) ($row['bajo_minimo'] ?? 0),
+            'ok' => (int) ($row['ok_count'] ?? 0),
+            'last_synced_at' => $row['last_synced_at'] ?? null,
+        ];
+    }
+}
+
+if (!function_exists('admin_cloud_sync_stock_branches')) {
+    function admin_cloud_sync_stock_branches(PDO $pdo, int $clientId): array
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT
+                COALESCE(b.id, 0) AS branch_id,
+                COALESCE(b.name, 'Sin sucursal') AS branch_name
+            FROM cloud_sync_stock_items s
+            LEFT JOIN client_branches b ON b.id = s.branch_id
+            WHERE s.client_id = :client_id
+            ORDER BY branch_name ASC
+        ");
+        $stmt->execute(['client_id' => $clientId]);
+
+        return $stmt->fetchAll();
+    }
+}
+
+if (!function_exists('admin_cloud_sync_stock_items')) {
+    function admin_cloud_sync_stock_items(PDO $pdo, int $clientId, array $filters = []): array
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $limit = max(5, min(80, (int) ($filters['limit'] ?? 30)));
+        $state = trim((string) ($filters['state'] ?? 'attention'));
+        $query = trim((string) ($filters['q'] ?? ''));
+        $branchId = (int) ($filters['branch_id'] ?? 0);
+
+        $where = ['s.client_id = :client_id', 's.activo = 1'];
+        $params = ['client_id' => $clientId];
+
+        if ($state === 'sin_stock') {
+            $where[] = "(s.estado_stock = 'sin_stock' OR s.stock <= 0)";
+        } elseif ($state === 'bajo_minimo') {
+            $where[] = "(s.estado_stock = 'bajo_minimo' OR (s.stock_minimo > 0 AND s.stock > 0 AND s.stock <= s.stock_minimo))";
+        } elseif ($state === 'ok') {
+            $where[] = "s.estado_stock = 'ok' AND s.stock > 0";
+        } elseif ($state === 'attention') {
+            $where[] = "(s.estado_stock IN ('sin_stock', 'bajo_minimo') OR s.stock <= 0 OR (s.stock_minimo > 0 AND s.stock <= s.stock_minimo))";
+        }
+
+        if ($branchId > 0) {
+            $where[] = 's.branch_id = :branch_id';
+            $params['branch_id'] = $branchId;
+        }
+
+        if ($query !== '') {
+            $where[] = '(s.nombre LIKE :q_nombre OR s.codigo LIKE :q_codigo OR s.categoria LIKE :q_categoria)';
+            $params['q_nombre'] = '%' . $query . '%';
+            $params['q_codigo'] = '%' . $query . '%';
+            $params['q_categoria'] = '%' . $query . '%';
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT
+                s.*,
+                COALESCE(b.name, 'Sin sucursal') AS branch_name,
+                COALESCE(i.display_name, i.device_label, i.installation_uid) AS installation_name
+            FROM cloud_sync_stock_items s
+            LEFT JOIN client_branches b ON b.id = s.branch_id
+            INNER JOIN client_installations i ON i.id = s.installation_id
+            WHERE " . implode(' AND ', $where) . "
+            ORDER BY
+                CASE
+                    WHEN s.estado_stock = 'sin_stock' OR s.stock <= 0 THEN 0
+                    WHEN s.estado_stock = 'bajo_minimo' OR (s.stock_minimo > 0 AND s.stock <= s.stock_minimo) THEN 1
+                    ELSE 2
+                END,
+                s.nombre ASC,
+                s.codigo ASC
+            LIMIT " . $limit
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
     }
 }

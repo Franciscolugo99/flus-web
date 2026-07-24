@@ -95,6 +95,7 @@ try {
         'accepted' => $result['accepted'],
         'duplicates' => $result['duplicates'],
         'rejected' => $result['rejected'],
+        'stock_items' => $result['stock_items'] ?? 0,
         'next_push_after_sec' => 60,
     ]);
 } catch (Throwable $e) {
