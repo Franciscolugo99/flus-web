@@ -34,6 +34,8 @@ $stockItems = admin_cloud_sync_stock_items($pdo, $clientId, [
 ]);
 $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin sincronizacion');
 $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
+$installationRows = is_array($installations['rows'] ?? null) ? $installations['rows'] : [];
+$onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
 ?>
 <!doctype html>
 <html lang="es">
@@ -59,7 +61,7 @@ $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin
       <div>
         <span class="section-eyebrow">Panel del comercio</span>
         <h1><?= e($clientName) ?></h1>
-        <p>Resumen online de actividad recibida desde tus instalaciones FLUS.</p>
+        <p>Ventas, sucursales y stock sincronizados desde tus instalaciones FLUS.</p>
       </div>
       <div class="portal-status-box">
         <span>Ultima sincronizacion</span>
@@ -67,7 +69,14 @@ $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin
       </div>
     </section>
 
-    <section class="portal-kpi-grid" aria-label="Resumen de las ultimas 24 horas">
+    <nav class="portal-nav" aria-label="Secciones del panel">
+      <a href="#resumen">Resumen</a>
+      <a href="#sucursales">Sucursales</a>
+      <a href="#stock">Stock</a>
+      <a href="#ventas">Ventas</a>
+    </nav>
+
+    <section id="resumen" class="portal-kpi-grid" aria-label="Resumen de las ultimas 24 horas">
       <article class="portal-kpi">
         <span>Ventas 24 hs</span>
         <strong><?= (int) ($salesOverview['sales_24h'] ?? 0) ?></strong>
@@ -138,9 +147,46 @@ $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin
           </div>
         </div>
       </article>
+
+      <article id="sucursales" class="portal-panel portal-panel--wide">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Sucursales e instalaciones</div>
+            <div class="section-meta">PCs que estan enviando informacion al portal.</div>
+          </div>
+        </div>
+
+        <?php if (!$installationRows): ?>
+          <div class="empty-panel">Todavia no hay instalaciones sincronizadas.</div>
+        <?php else: ?>
+          <div class="portal-branch-list">
+            <?php foreach ($installationRows as $installation): ?>
+              <?php
+                $lastSeenRaw = (string) ($installation['last_seen_at'] ?? '');
+                $lastSeen = $lastSeenRaw !== ''
+                    ? DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $lastSeenRaw, new DateTimeZone('UTC'))
+                    : false;
+                $isOnline = $lastSeen && $lastSeen >= $onlineCutoff;
+                $branchName = trim((string) ($installation['branch_name'] ?? ''));
+                $deviceName = trim((string) ($installation['display_name'] ?: $installation['device_label'] ?: 'Instalacion FLUS'));
+              ?>
+              <div class="portal-branch-row">
+                <div>
+                  <strong><?= e($branchName !== '' ? $branchName : 'Sin sucursal') ?></strong>
+                  <span><?= e($deviceName) ?><?= !empty($installation['app_version']) ? ' - v' . e((string) $installation['app_version']) : '' ?></span>
+                </div>
+                <div>
+                  <span class="portal-presence <?= $isOnline ? 'is-online' : 'is-offline' ?>"><?= $isOnline ? 'Online' : 'Sin contacto' ?></span>
+                  <small><?= e(format_datetime($installation['last_seen_at'] ?? null, 'Sin registro')) ?></small>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </article>
     </section>
 
-    <section class="portal-panel">
+    <section id="stock" class="portal-panel">
       <div class="section-header section-header--spaced">
         <div>
           <div class="section-title">Stock por sucursal</div>
@@ -221,7 +267,7 @@ $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin
       <?php endif; ?>
     </section>
 
-    <section class="portal-panel">
+    <section id="ventas" class="portal-panel">
       <div class="section-header">
         <div>
           <div class="section-title">Ultimas ventas recibidas</div>

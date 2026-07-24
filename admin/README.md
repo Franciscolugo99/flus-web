@@ -145,7 +145,7 @@ sus datos sincronizados:
 - medios de pago;
 - stock por sucursal, de solo lectura;
 - productos sin stock o bajo minimo;
-- estado de instalaciones;
+- sucursales e instalaciones conectadas;
 - licencia vigente;
 - ultimas ventas recibidas.
 
@@ -194,8 +194,8 @@ Checklist para conectar una instalacion FLUS nueva:
    `scripts/cloud_sync_tick.php` cada 5 minutos.
 
 Este portal queda pensado para planes cloud o multi-sucursal. El cliente puede
-consultar ventas y stock desde el celular, pero no modifica datos operativos de
-la sucursal.
+consultar ventas, sucursales y stock desde el celular, pero no modifica datos
+operativos de la sucursal.
 
 ## Avisos por email
 
