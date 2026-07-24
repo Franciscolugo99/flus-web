@@ -112,8 +112,18 @@ Las tablas estan incluidas en `admin/database/schema.sql` y tambien en
 `admin/database/cloud_sync.sql` para actualizar instalaciones existentes. La
 base de usuarios de clientes queda separada en usuarios y membresias, para que
 una cuenta pueda administrar uno o mas negocios sin mezclar datos. La pantalla
-`admin/cloud-sync.php` agrupa primero por cliente y desde ahi permite entrar a
-sus sucursales, instalaciones, ventas recientes, stock sincronizado y eventos.
+`admin/cloud-sync.php` funciona primero como indice operativo por cliente:
+plan, sucursales, instalaciones, estado online y ultimo contacto. Los datos
+comerciales no se muestran agrupados en la vista global; aparecen solo al
+entrar a `Ver datos` de un cliente.
+
+Dentro del detalle filtrado por cliente, `admin/cloud-sync.php` separa la
+lectura en:
+
+- `Operacion`: sucursales e instalaciones conectadas.
+- `Ventas`: actividad comercial de las ultimas 24 hs y medios de pago.
+- `Tecnico`: eventos recibidos para auditoria de sincronizacion.
+
 La ficha `admin/client-view.php` tambien muestra las sucursales cloud activas
 del cliente y enlaza al detalle filtrado de sus datos.
 
@@ -163,12 +173,15 @@ Checklist para conectar una instalacion FLUS nueva:
 5. Ejecutar migraciones locales de FLUS.
 6. Hacer una venta de prueba y enviar pendientes desde el panel tecnico local.
 7. Confirmar aca, en `admin/cloud-sync.php`, que el cliente aparezca en
-   `Clientes cloud` y que `Ver datos` filtre sus sucursales, instalacion y
-   venta recibida.
-8. Entrar a la ficha del cliente y confirmar el bloque `Sucursales cloud`.
-9. Desde el tecnico local de FLUS, usar `Enviar stock actual` para cargar el
+   `Clientes cloud`.
+8. Entrar con `Ver datos` y revisar:
+   - `Operacion`: sucursales e instalacion.
+   - `Ventas`: venta recibida y medios de pago.
+   - `Tecnico`: eventos aceptados.
+9. Entrar a la ficha del cliente y confirmar el bloque `Sucursales cloud`.
+10. Desde el tecnico local de FLUS, usar `Enviar stock actual` para cargar el
    primer inventario visible en el portal.
-10. Para automatizar, programar en Windows el script local
+11. Para automatizar, programar en Windows el script local
    `scripts/cloud_sync_tick.php` cada 5 minutos.
 
 Este portal queda pensado para planes cloud o multi-sucursal. El cliente puede

@@ -22,6 +22,14 @@ if ($schemaReady && $selectedClientId > 0) {
         $clientFilter = null;
     }
 }
+$allowedClientViews = ['operacion', 'ventas', 'tecnico'];
+$clientView = $selectedClient ? trim((string) ($_GET['view'] ?? 'operacion')) : '';
+if ($selectedClient && !in_array($clientView, $allowedClientViews, true)) {
+    $clientView = 'operacion';
+}
+$clientViewUrl = static function (string $view) use ($selectedClientId): string {
+    return admin_url('cloud-sync.php?client_id=' . $selectedClientId . '&view=' . urlencode($view));
+};
 $installations = $schemaReady ? admin_cloud_sync_recent_installations($pdo, 50, $clientFilter) : [];
 $events = $schemaReady ? admin_cloud_sync_recent_events($pdo, 30, $clientFilter) : [];
 $salesOverview = $schemaReady ? admin_cloud_sync_sales_overview($pdo, $clientFilter) : [];
@@ -115,6 +123,12 @@ if ($schemaReady) {
           <a href="<?= admin_url('cloud-sync.php') ?>" class="button button--ghost">Ver todos</a>
         </div>
       </div>
+
+      <nav class="cloud-client-tabs" aria-label="Datos cloud del cliente">
+        <a href="<?= e($clientViewUrl('operacion')) ?>" class="<?= $clientView === 'operacion' ? 'is-active' : '' ?>">Operacion</a>
+        <a href="<?= e($clientViewUrl('ventas')) ?>" class="<?= $clientView === 'ventas' ? 'is-active' : '' ?>">Ventas</a>
+        <a href="<?= e($clientViewUrl('tecnico')) ?>" class="<?= $clientView === 'tecnico' ? 'is-active' : '' ?>">Tecnico</a>
+      </nav>
     <?php endif; ?>
 
     <div class="license-ops-grid">
@@ -163,7 +177,7 @@ if ($schemaReady) {
     </div>
 
     <?php if (!$selectedClient): ?>
-          <div class="section-header section-header--spaced">
+      <div class="section-header section-header--spaced">
         <div>
           <div class="section-title">Clientes cloud</div>
           <div class="section-meta">Estado de plan, sucursales e instalaciones. Los datos comerciales se ven al entrar al cliente.</div>
@@ -204,7 +218,7 @@ if ($schemaReady) {
           <?php endforeach; ?>
         <?php endif; ?>
       </div>
-    <?php else: ?>
+    <?php elseif ($clientView === 'operacion'): ?>
       <div class="section-header section-header--spaced">
         <div>
           <div class="section-title">Sucursales del cliente</div>
@@ -236,7 +250,7 @@ if ($schemaReady) {
       </div>
     <?php endif; ?>
 
-    <?php if ($selectedClient): ?>
+    <?php if ($selectedClient && $clientView === 'ventas'): ?>
       <div class="section-header section-header--spaced">
         <div>
           <div class="section-title">Actividad comercial sincronizada</div>
@@ -328,67 +342,69 @@ if ($schemaReady) {
       </div>
     <?php endif; ?>
 
-    <div class="section-header">
-      <div>
-        <div class="section-title">Instalaciones recientes</div>
-        <div class="section-meta">Cada fila pertenece a un cliente y licencia. No se mezclan datos entre negocios.</div>
+    <?php if ($selectedClient && $clientView === 'operacion'): ?>
+      <div class="section-header">
+        <div>
+          <div class="section-title">Instalaciones recientes</div>
+          <div class="section-meta">PCs del cliente que reportaron contra FLUS Web.</div>
+        </div>
       </div>
-    </div>
 
-    <div class="table-wrapper table-wrap--mobile-cards section-table">
-      <table>
-        <thead>
-          <tr>
-            <th>Cliente</th>
-            <th>Sucursal</th>
-            <th>Instalacion</th>
-            <th>Licencia</th>
-            <th>Plan</th>
-            <th>Version</th>
-            <th>Ultimo contacto</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if (!$installations): ?>
-            <tr class="empty-row"><td colspan="8">Todavia no hay instalaciones sincronizadas.</td></tr>
-          <?php else: ?>
-            <?php foreach ($installations as $row): ?>
-              <?php
-                $lastSeen = !empty($row['last_seen_at'])
-                    ? DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string) $row['last_seen_at'], $utc)
-                    : false;
-                $isOnline = $lastSeen && $lastSeen >= $onlineCutoff;
-              ?>
-              <tr>
-                <td data-label="Cliente">
-                  <a href="<?= admin_url('client-view.php?id=' . (int) $row['client_id']) ?>" class="table-link">
-                    <?= e($row['trade_name'] ?: $row['legal_name']) ?>
-                  </a>
-                </td>
-                <td data-label="Sucursal"><?= e($row['branch_name'] ?: 'Sin sucursal') ?></td>
-                <td data-label="Instalacion" class="td-mono td-mono--compact"><?= e($row['installation_uid']) ?></td>
-                <td data-label="Licencia" class="td-mono td-mono--compact"><?= e($row['license_key']) ?></td>
-                <td data-label="Plan">
-                  <?php if (admin_license_plan_cloud_enabled($row)): ?>
-                    <span class="badge badge-blue"><?= e(plan_type_label((string) $row['plan_type'])) ?></span>
-                  <?php else: ?>
-                    <span class="badge badge-gray">Local</span>
-                  <?php endif; ?>
-                </td>
-                <td data-label="Version"><?= e($row['app_version'] ?: '-') ?></td>
-                <td data-label="Ultimo contacto"><?= e(format_datetime($row['last_seen_at'] ?? null)) ?></td>
-                <td data-label="Estado">
-                  <span class="badge <?= $isOnline ? 'badge-green' : 'badge-yellow' ?>"><?= $isOnline ? 'Online' : 'Sin contacto' ?></span>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
+      <div class="table-wrapper table-wrap--mobile-cards section-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Sucursal</th>
+              <th>Instalacion</th>
+              <th>Licencia</th>
+              <th>Plan</th>
+              <th>Version</th>
+              <th>Ultimo contacto</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (!$installations): ?>
+              <tr class="empty-row"><td colspan="8">Todavia no hay instalaciones sincronizadas.</td></tr>
+            <?php else: ?>
+              <?php foreach ($installations as $row): ?>
+                <?php
+                  $lastSeen = !empty($row['last_seen_at'])
+                      ? DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string) $row['last_seen_at'], $utc)
+                      : false;
+                  $isOnline = $lastSeen && $lastSeen >= $onlineCutoff;
+                ?>
+                <tr>
+                  <td data-label="Cliente">
+                    <a href="<?= admin_url('client-view.php?id=' . (int) $row['client_id']) ?>" class="table-link">
+                      <?= e($row['trade_name'] ?: $row['legal_name']) ?>
+                    </a>
+                  </td>
+                  <td data-label="Sucursal"><?= e($row['branch_name'] ?: 'Sin sucursal') ?></td>
+                  <td data-label="Instalacion" class="td-mono td-mono--compact"><?= e($row['installation_uid']) ?></td>
+                  <td data-label="Licencia" class="td-mono td-mono--compact"><?= e($row['license_key']) ?></td>
+                  <td data-label="Plan">
+                    <?php if (admin_license_plan_cloud_enabled($row)): ?>
+                      <span class="badge badge-blue"><?= e(plan_type_label((string) $row['plan_type'])) ?></span>
+                    <?php else: ?>
+                      <span class="badge badge-gray">Local</span>
+                    <?php endif; ?>
+                  </td>
+                  <td data-label="Version"><?= e($row['app_version'] ?: '-') ?></td>
+                  <td data-label="Ultimo contacto"><?= e(format_datetime($row['last_seen_at'] ?? null)) ?></td>
+                  <td data-label="Estado">
+                    <span class="badge <?= $isOnline ? 'badge-green' : 'badge-yellow' ?>"><?= $isOnline ? 'Online' : 'Sin contacto' ?></span>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
 
-    <?php if ($selectedClient): ?>
+    <?php if ($selectedClient && $clientView === 'tecnico'): ?>
       <div class="section-header">
         <div>
           <div class="section-title">Eventos recientes</div>

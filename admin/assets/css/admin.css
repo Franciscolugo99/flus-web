@@ -1270,6 +1270,37 @@ body.login-page {
   justify-content: flex-end;
 }
 
+.cloud-client-tabs {
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 4px;
+}
+
+.cloud-client-tabs a {
+  border-radius: calc(var(--radius-sm) - 2px);
+  color: var(--text-secondary);
+  font-size: .78rem;
+  font-weight: 800;
+  padding: 7px 12px;
+  text-decoration: none;
+  transition: background var(--transition), color var(--transition);
+}
+
+.cloud-client-tabs a:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.cloud-client-tabs a.is-active {
+  background: var(--accent);
+  color: #04140f;
+}
+
 .cloud-client-list,
 .cloud-branch-list,
 .client-cloud-branches {
@@ -2109,6 +2140,14 @@ button.button--danger:hover {
   }
   .cloud-focus-actions {
     justify-content: flex-start;
+  }
+  .cloud-client-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+  }
+  .cloud-client-tabs a {
+    text-align: center;
   }
   .cloud-client-row,
   .cloud-branch-row,
