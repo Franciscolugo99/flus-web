@@ -64,6 +64,8 @@ $events = $request['events'] ?? [];
 if (!is_array($events)) {
     cloud_sync_json_response(400, ['ok' => false, 'error' => 'EVENTS_INVALID']);
 }
+$eventsCount = count($events);
+$isPreflight = !empty($request['preflight']) || !empty($request['dry_run']);
 
 try {
     $pdo = admin_db();
@@ -79,6 +81,18 @@ try {
     if (!admin_cloud_sync_license_accepts_events($license)) {
         $reason = admin_cloud_sync_license_reject_reason($license);
         cloud_sync_json_response(403, ['ok' => false, 'error' => $reason !== '' ? $reason : 'LICENSE_NOT_ACTIVE']);
+    }
+
+    if ($isPreflight || $eventsCount <= 0) {
+        cloud_sync_json_response(200, [
+            'ok' => true,
+            'accepted' => 0,
+            'duplicates' => 0,
+            'rejected' => 0,
+            'stock_items' => 0,
+            'preflight' => true,
+            'next_push_after_sec' => 60,
+        ]);
     }
 
     $pdo->beginTransaction();

@@ -86,6 +86,13 @@ php admin/tools/production_preflight.php
    - consulta cloud desde una PC FLUS de prueba;
    - portal cliente con usuario de prueba.
 
+### Pruebas de sincronizacion sin ensuciar instalaciones
+
+`admin/api/sync-ingest.php` acepta `preflight` o `dry_run`, o un cuerpo con
+`events: []`, para validar token/licencia sin crear una instalacion nueva.
+Las instalaciones solo deben registrarse cuando llegan eventos reales de venta
+o stock desde FLUS local.
+
 ## Configuracion Minima De `admin/config/config.local.php`
 
 No copiar valores literales de desarrollo. Completar con datos reales de Wiroos.
