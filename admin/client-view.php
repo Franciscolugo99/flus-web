@@ -394,6 +394,9 @@ require_once __DIR__ . '/includes/layout-header.php';
   <a href="<?= admin_url('client-edit.php?id=' . $id) ?>" class="btn btn-primary btn-sm">Editar</a>
   <a href="<?= admin_url('license-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">Nueva licencia</a>
   <a href="<?= admin_url('payment-edit.php?client_id=' . $id) ?>" class="btn btn-secondary btn-sm">Nuevo pago</a>
+  <?php if (($client['status'] ?? '') !== 'inactivo'): ?>
+    <a href="<?= admin_url('client-merge.php?source_id=' . $id) ?>" class="btn btn-secondary btn-sm">Fusionar</a>
+  <?php endif; ?>
   <form method="POST" action="" class="action-bar__end">
     <?= csrf_field() ?>
     <button type="submit" name="delete_client" value="1" class="btn btn-ghost btn-sm"

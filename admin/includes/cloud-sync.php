@@ -228,8 +228,9 @@ if (!function_exists('admin_cloud_sync_parse_datetime')) {
 }
 
 if (!function_exists('admin_cloud_sync_find_license')) {
-    function admin_cloud_sync_find_license(PDO $pdo, string $licenseKey): ?array
+    function admin_cloud_sync_find_license(PDO $pdo, string $licenseKey, bool $forUpdate = false): ?array
     {
+        $lockClause = $forUpdate ? ' FOR UPDATE' : '';
         $stmt = $pdo->prepare('
             SELECT
                 l.*,
@@ -240,7 +241,7 @@ if (!function_exists('admin_cloud_sync_find_license')) {
             INNER JOIN clients c ON c.id = l.client_id
             WHERE l.license_key = :license_key
             LIMIT 1
-        ');
+        ' . $lockClause);
         $stmt->execute(['license_key' => $licenseKey]);
         $license = $stmt->fetch();
 

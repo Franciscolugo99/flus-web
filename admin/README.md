@@ -152,6 +152,35 @@ lectura en:
 La ficha `admin/client-view.php` tambien muestra las sucursales cloud activas
 del cliente y enlaza al detalle filtrado de sus datos.
 
+## Fusion de clientes y sucursales
+
+Cuando dos instalaciones del mismo comercio quedaron creadas como clientes
+separados, usar `Clientes > Ver > Fusionar` desde el cliente duplicado.
+
+La operacion:
+
+- exige sesion administrativa, POST, CSRF y la confirmacion `FUSIONAR`;
+- crea o reutiliza una sucursal para cada instalacion;
+- mueve licencias, pagos, notificaciones, eventos, stock y accesos dentro de
+  una unica transaccion;
+- bloquea clientes y licencias mientras se actualizan las relaciones;
+- conserva el cliente de origen como `inactivo`, sin borrarlo;
+- registra el estado previo y el resumen en `client_merge_events`;
+- se cancela si detecta identificadores o relaciones que no puede resolver de
+  forma segura.
+
+En instalaciones existentes, la tabla de auditoria se crea de forma
+compatible al abrir el flujo. Tambien puede prepararse manualmente con
+`admin/database/client_merge_events.sql`.
+
+Prueba de integracion con una base temporal cuyo nombre comience con
+`flus_admin_it_`:
+
+```powershell
+$env:FLUS_ADMIN_TEST_DB='1'
+& "C:\xampp\php\php.exe" admin\tests\client_merge_integration.php
+```
+
 ## Portal de clientes
 
 El portal de clientes vive en `portal/` y permite que cada comercio vea solo
