@@ -1064,7 +1064,7 @@ if (!function_exists('admin_cloud_sync_decode_json')) {
 }
 
 if (!function_exists('admin_cloud_sync_recent_sales')) {
-    function admin_cloud_sync_recent_sales(PDO $pdo, int $limit = 12, ?int $clientId = null): array
+    function admin_cloud_sync_recent_sales(PDO $pdo, int $limit = 12, ?int $clientId = null, ?int $branchId = null): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
             return [];
@@ -1076,6 +1076,10 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
         if ($clientId !== null && $clientId > 0) {
             $where .= ' AND e.client_id = :client_id';
             $params['client_id'] = $clientId;
+        }
+        if ($branchId !== null && $branchId > 0) {
+            $where .= ' AND e.branch_id = :branch_id';
+            $params['branch_id'] = $branchId;
         }
 
         $stmt = $pdo->prepare("
@@ -1110,7 +1114,7 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
 }
 
 if (!function_exists('admin_cloud_sync_sales_overview')) {
-    function admin_cloud_sync_sales_overview(PDO $pdo, ?int $clientId = null): array
+    function admin_cloud_sync_sales_overview(PDO $pdo, ?int $clientId = null, ?int $branchId = null): array
     {
         $overview = [
             'sales_24h' => 0,
@@ -1132,6 +1136,10 @@ if (!function_exists('admin_cloud_sync_sales_overview')) {
         if ($clientId !== null && $clientId > 0) {
             $where .= ' AND client_id = :client_id';
             $params['client_id'] = $clientId;
+        }
+        if ($branchId !== null && $branchId > 0) {
+            $where .= ' AND branch_id = :branch_id';
+            $params['branch_id'] = $branchId;
         }
 
         $stmt = $pdo->prepare("
@@ -1173,7 +1181,7 @@ if (!function_exists('admin_cloud_sync_sales_overview')) {
 }
 
 if (!function_exists('admin_cloud_sync_stock_overview')) {
-    function admin_cloud_sync_stock_overview(PDO $pdo, int $clientId): array
+    function admin_cloud_sync_stock_overview(PDO $pdo, int $clientId, ?int $branchId = null): array
     {
         $overview = [
             'total' => 0,
@@ -1187,6 +1195,13 @@ if (!function_exists('admin_cloud_sync_stock_overview')) {
             return $overview;
         }
 
+        $where = 'WHERE client_id = :client_id AND activo = 1';
+        $params = ['client_id' => $clientId];
+        if ($branchId !== null && $branchId > 0) {
+            $where .= ' AND branch_id = :branch_id';
+            $params['branch_id'] = $branchId;
+        }
+
         $stmt = $pdo->prepare("
             SELECT
                 COUNT(*) AS total,
@@ -1195,10 +1210,9 @@ if (!function_exists('admin_cloud_sync_stock_overview')) {
                 SUM(CASE WHEN estado_stock = 'ok' AND stock > 0 THEN 1 ELSE 0 END) AS ok_count,
                 MAX(synced_at) AS last_synced_at
             FROM cloud_sync_stock_items
-            WHERE client_id = :client_id
-              AND activo = 1
+            {$where}
         ");
-        $stmt->execute(['client_id' => $clientId]);
+        $stmt->execute($params);
         $row = $stmt->fetch();
         if (!is_array($row)) {
             return $overview;

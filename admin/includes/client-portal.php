@@ -320,10 +320,17 @@ if (!function_exists('portal_authenticate')) {
 }
 
 if (!function_exists('portal_client_installations_summary')) {
-    function portal_client_installations_summary(PDO $pdo, int $clientId): array
+    function portal_client_installations_summary(PDO $pdo, int $clientId, ?int $branchId = null): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
             return ['total' => 0, 'online' => 0, 'offline' => 0, 'last_seen_at' => null, 'rows' => []];
+        }
+
+        $where = 'WHERE i.client_id = :client_id';
+        $params = ['client_id' => $clientId];
+        if ($branchId !== null && $branchId > 0) {
+            $where .= ' AND i.branch_id = :branch_id';
+            $params['branch_id'] = $branchId;
         }
 
         $stmt = $pdo->prepare("
@@ -336,11 +343,11 @@ if (!function_exists('portal_client_installations_summary')) {
                 b.name AS branch_name
             FROM client_installations i
             LEFT JOIN client_branches b ON b.id = i.branch_id
-            WHERE i.client_id = :client_id
+            {$where}
             ORDER BY i.last_seen_at DESC, i.id DESC
             LIMIT 20
         ");
-        $stmt->execute(['client_id' => $clientId]);
+        $stmt->execute($params);
         $rows = $stmt->fetchAll();
 
         $utc = new DateTimeZone('UTC');

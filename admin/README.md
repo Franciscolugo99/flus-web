@@ -199,6 +199,16 @@ sus datos sincronizados:
 - licencia vigente;
 - ultimas ventas recibidas.
 
+El selector `Vista actual` aplica un unico alcance a todo el portal. El usuario
+puede consultar `Todas las sucursales` o una sede concreta; Inicio, ventas,
+medios de pago, stock e instalaciones usan la misma seleccion y la conservan
+al cambiar de seccion. El backend valida que la sucursal pertenezca al cliente
+autenticado antes de aplicar el filtro.
+
+La seccion `Proximamente en FLUS` es solo una demostracion visual de funciones
+proyectadas. No expone endpoints ni ejecuta acciones hasta que cada capacidad
+sea implementada en FLUS local y en el contrato cloud correspondiente.
+
 El portal no importa historico automaticamente. Las ventas, stock y estados se
 muestran desde que la instalacion local queda actualizada, con Cloud activo y
 empieza a enviar eventos. Para traer datos anteriores haria falta una carga

@@ -132,6 +132,42 @@ try {
     test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_events WHERE event_uid = 'stock-after-merge-1'")->fetchColumn() === $centralBranchId, 'A new event lost the preserved branch.');
     test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_stock_items WHERE product_uid = 'product-after-merge-1'")->fetchColumn() === $centralBranchId, 'A stock snapshot lost the preserved branch.');
 
+    $saleInsert = $pdo->prepare("
+        INSERT INTO cloud_sync_events
+            (client_id, branch_id, installation_id, license_id, event_uid, event_type, occurred_at, received_at, summary_json)
+        VALUES
+            (1, :branch_id, :installation_id, :license_id, :event_uid, 'sale.created', UTC_TIMESTAMP(), UTC_TIMESTAMP(), :summary_json)
+    ");
+    $saleInsert->execute([
+        'branch_id' => $centralBranchId,
+        'installation_id' => 10,
+        'license_id' => 8,
+        'event_uid' => 'sale-central-filter-1',
+        'summary_json' => json_encode(['venta_id' => 101, 'total' => 1200, 'items_count' => 2, 'medio_pago' => 'efectivo']),
+    ]);
+    $saleInsert->execute([
+        'branch_id' => $branch247Id,
+        'installation_id' => 20,
+        'license_id' => 7,
+        'event_uid' => 'sale-247-filter-1',
+        'summary_json' => json_encode(['venta_id' => 202, 'total' => 3400, 'items_count' => 3, 'medio_pago' => 'debito']),
+    ]);
+
+    $allSales = admin_cloud_sync_sales_overview($pdo, 1);
+    $centralSales = admin_cloud_sync_sales_overview($pdo, 1, $centralBranchId);
+    $branch247Sales = admin_cloud_sync_sales_overview($pdo, 1, $branch247Id);
+    test_assert((int) $allSales['sales_24h'] === 2 && (float) $allSales['amount_24h'] === 4600.0, 'The global sales overview did not combine both branches.');
+    test_assert((int) $centralSales['sales_24h'] === 1 && (float) $centralSales['amount_24h'] === 1200.0, 'The central branch sales filter leaked data.');
+    test_assert((int) $branch247Sales['sales_24h'] === 1 && (float) $branch247Sales['amount_24h'] === 3400.0, 'The 24/7 branch sales filter leaked data.');
+    test_assert((string) (admin_cloud_sync_recent_sales($pdo, 5, 1, $centralBranchId)[0]['event_uid'] ?? '') === 'sale-central-filter-1', 'Recent sales ignored the selected branch.');
+
+    $centralStock = admin_cloud_sync_stock_overview($pdo, 1, $centralBranchId);
+    $branch247Stock = admin_cloud_sync_stock_overview($pdo, 1, $branch247Id);
+    test_assert((int) $centralStock['total'] === 1, 'The central branch stock overview leaked data.');
+    test_assert((int) $branch247Stock['total'] === 1, 'The 24/7 branch stock overview leaked data.');
+    test_assert((int) portal_client_installations_summary($pdo, 1, $centralBranchId)['total'] === 1, 'The installation overview ignored the central branch.');
+    test_assert((int) portal_client_installations_summary($pdo, 1, $branch247Id)['total'] === 1, 'The installation overview ignored the 24/7 branch.');
+
     $pdo->exec("INSERT INTO client_installations (id, client_id, license_id, installation_uid, display_name, status) VALUES (30, 1, 8, 'unassigned-installation', 'Unassigned PC', 'online')");
     $pdo->exec("INSERT INTO cloud_sync_events (client_id, installation_id, license_id, event_uid, event_type, occurred_at) VALUES (1, 30, 8, 'unassigned-event-1', 'sale.created', UTC_TIMESTAMP())");
     $pdo->exec("INSERT INTO cloud_sync_stock_items (client_id, installation_id, license_id, product_uid, nombre, stock) VALUES (1, 30, 8, 'unassigned-product-1', 'Unassigned Product', 2)");

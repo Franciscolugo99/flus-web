@@ -15,14 +15,30 @@ $portalRole = portal_current_role();
 $canViewSales = portal_role_can('view_sales', $portalRole);
 $canViewFinancials = portal_role_can('view_financials', $portalRole);
 
-$salesOverview = $canViewSales ? admin_cloud_sync_sales_overview($pdo, $clientId) : [];
-$recentSales = $canViewSales ? admin_cloud_sync_recent_sales($pdo, 6, $clientId) : [];
-$installations = portal_client_installations_summary($pdo, $clientId);
 $portalBranches = portal_client_branches_summary($pdo, $clientId);
+$selectedBranchId = max(0, (int) ($_GET['sucursal'] ?? 0));
+$selectedBranchName = 'Todo el negocio';
+$validBranchIds = [];
+foreach ($portalBranches as $portalBranch) {
+    $portalBranchId = (int) ($portalBranch['branch_id'] ?? 0);
+    if ($portalBranchId <= 0) {
+        continue;
+    }
+    $validBranchIds[$portalBranchId] = (string) ($portalBranch['branch_name'] ?? 'Sucursal');
+}
+if ($selectedBranchId > 0 && !isset($validBranchIds[$selectedBranchId])) {
+    $selectedBranchId = 0;
+}
+if ($selectedBranchId > 0) {
+    $selectedBranchName = $validBranchIds[$selectedBranchId];
+}
+$branchFilterId = $selectedBranchId > 0 ? $selectedBranchId : null;
+$salesOverview = $canViewSales ? admin_cloud_sync_sales_overview($pdo, $clientId, $branchFilterId) : [];
+$recentSales = $canViewSales ? admin_cloud_sync_recent_sales($pdo, 6, $clientId, $branchFilterId) : [];
+$installations = portal_client_installations_summary($pdo, $clientId, $branchFilterId);
 $license = portal_client_license_summary($pdo, $clientId);
 $stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
 $stockState = trim((string) ($_GET['stock_estado'] ?? 'attention'));
-$stockBranchId = max(0, (int) ($_GET['stock_sucursal'] ?? 0));
 $stockStateLabels = [
     'attention' => 'Atencion',
     'sin_stock' => 'Sin stock',
@@ -33,20 +49,19 @@ $stockStateLabels = [
 if (!array_key_exists($stockState, $stockStateLabels)) {
     $stockState = 'attention';
 }
-$stockOverview = admin_cloud_sync_stock_overview($pdo, $clientId);
-$stockBranches = admin_cloud_sync_stock_branches($pdo, $clientId);
+$stockOverview = admin_cloud_sync_stock_overview($pdo, $clientId, $branchFilterId);
 $stockItems = admin_cloud_sync_stock_items($pdo, $clientId, [
     'q' => $stockQuery,
     'state' => $stockState,
-    'branch_id' => $stockBranchId,
+    'branch_id' => $selectedBranchId,
     'limit' => 24,
 ]);
 $cloudStartedLabel = format_datetime($installations['first_seen_at'] ?? null, 'Pendiente de primera sincronizacion');
 $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin sincronizacion');
 $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
 $stockFilterBase = [
+    'sucursal' => $selectedBranchId,
     'stock_q' => $stockQuery,
-    'stock_sucursal' => $stockBranchId,
 ];
 $stockResultContext = $stockStateLabels[$stockState] . ($stockQuery !== '' ? ' con busqueda "' . $stockQuery . '"' : '');
 $sales24h = (int) ($salesOverview['sales_24h'] ?? 0);
@@ -139,6 +154,22 @@ if ($installTotal === 0) {
         <a href="#ventas" data-view="sales"><span aria-hidden="true">$</span><strong>Ventas</strong></a>
       <?php endif; ?>
     </nav>
+
+    <form id="portalScopeForm" class="portal-scope-bar" method="get" action="<?= e(portal_url('index.php')) ?>">
+      <label for="portalBranchScope">
+        <span>Vista actual</span>
+        <strong><?= e($selectedBranchName) ?></strong>
+      </label>
+      <div class="portal-scope-control">
+        <select id="portalBranchScope" name="sucursal" aria-label="Elegir sucursal">
+          <option value="0">Todas las sucursales</option>
+          <?php foreach ($validBranchIds as $branchId => $branchName): ?>
+            <option value="<?= $branchId ?>" <?= $selectedBranchId === $branchId ? 'selected' : '' ?>><?= e($branchName) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <button class="button" type="submit">Aplicar</button>
+      </div>
+    </form>
 
     <section class="portal-sync-note" aria-label="Alcance de los datos cloud" data-portal-view="summary">
       <div>
@@ -255,6 +286,22 @@ if ($installTotal === 0) {
         </div>
       </article>
 
+      <article class="portal-panel portal-panel--wide portal-preview" data-portal-view="summary">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Proximamente en FLUS</div>
+            <div class="section-meta">Vista previa de funciones previstas. Todavia no ejecutan acciones ni modifican datos.</div>
+          </div>
+          <span class="portal-preview-label">Demostracion</span>
+        </div>
+        <div class="portal-preview-list">
+          <div><strong>Alertas inteligentes</strong><span>Avisos de stock, cierres y ventas inusuales por email, WhatsApp o notificacion.</span><small>En preparacion</small></div>
+          <div><strong>Comparar sucursales</strong><span>Ventas, tickets y productos destacados por periodo, respetando permisos.</span><small>Proxima version</small></div>
+          <div><strong>Metas del negocio</strong><span>Objetivos diarios y mensuales con avance visible para cada sucursal.</span><small>Vista previa</small></div>
+          <div><strong>Sugerencias de reposicion</strong><span>Recomendaciones basadas en stock minimo y movimiento reciente.</span><small>En estudio</small></div>
+        </div>
+      </article>
+
       <article id="sucursales" class="portal-panel portal-panel--wide" data-portal-view="branches">
         <div class="section-header">
           <div>
@@ -303,7 +350,7 @@ if ($installTotal === 0) {
       <div class="section-header section-header--spaced">
         <div>
           <div class="section-title">Stock por sucursal</div>
-          <div class="section-meta">Solo lectura. Ultima actualizacion: <?= e($lastStockLabel) ?>.</div>
+          <div class="section-meta"><?= e($selectedBranchName) ?>. Solo lectura. Ultima actualizacion: <?= e($lastStockLabel) ?>.</div>
         </div>
         <div class="portal-stock-current">
           <span><?= e($stockStateLabels[$stockState]) ?></span>
@@ -339,21 +386,10 @@ if ($installTotal === 0) {
       </nav>
 
       <form class="portal-stock-filters" method="get" action="<?= e(portal_url('index.php')) ?>#stock">
+        <input type="hidden" name="sucursal" value="<?= $selectedBranchId ?>">
         <label>
           <span>Buscar</span>
           <input type="search" name="stock_q" value="<?= e($stockQuery) ?>" placeholder="Producto, codigo o categoria">
-        </label>
-        <label>
-          <span>Sucursal</span>
-          <select name="stock_sucursal">
-            <option value="0">Todas</option>
-            <?php foreach ($portalBranches as $branch): ?>
-              <?php $branchId = (int) ($branch['branch_id'] ?? 0); ?>
-              <?php if ($branchId > 0): ?>
-                <option value="<?= $branchId ?>" <?= $stockBranchId === $branchId ? 'selected' : '' ?>><?= e((string) $branch['branch_name']) ?></option>
-              <?php endif; ?>
-            <?php endforeach; ?>
-          </select>
         </label>
         <label>
           <span>Estado</span>
@@ -409,7 +445,7 @@ if ($installTotal === 0) {
         <div class="section-header">
           <div>
             <div class="section-title">Ultimas ventas recibidas</div>
-            <div class="section-meta">Listado de control para confirmar que la informacion llega desde caja.</div>
+            <div class="section-meta"><?= e($selectedBranchName) ?>. Listado de control para confirmar que la informacion llega desde caja.</div>
           </div>
         </div>
 
@@ -452,6 +488,7 @@ if ($installTotal === 0) {
 
       const links = Array.from(nav.querySelectorAll('[data-view]'));
       const availableViews = links.map(function(link) { return link.dataset.view; });
+      const scopeForm = document.getElementById('portalScopeForm');
 
       function viewFromLocation() {
         if (window.location.hash === '#sucursales') return 'branches';
@@ -486,6 +523,14 @@ if ($installTotal === 0) {
           activate(link.dataset.view || 'summary', true);
         });
       });
+
+      if (scopeForm) {
+        scopeForm.addEventListener('submit', function() {
+          const view = document.body.dataset.portalView || viewFromLocation();
+          const activeLink = links.find(function(link) { return link.dataset.view === view; });
+          scopeForm.action = '<?= e(portal_url('index.php')) ?>' + (activeLink ? activeLink.getAttribute('href') : '#resumen');
+        });
+      }
 
       document.body.classList.add('portal-app-ready');
       activate(viewFromLocation(), false);
