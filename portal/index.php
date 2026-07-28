@@ -51,7 +51,6 @@ $stockFilterBase = [
 $stockResultContext = $stockStateLabels[$stockState] . ($stockQuery !== '' ? ' con busqueda "' . $stockQuery . '"' : '');
 $sales24h = (int) ($salesOverview['sales_24h'] ?? 0);
 $amount24h = (float) ($salesOverview['amount_24h'] ?? 0);
-$avgTicket24h = (float) ($salesOverview['avg_ticket_24h'] ?? 0);
 $stockTotal = (int) ($stockOverview['total'] ?? 0);
 $stockWithoutUnits = (int) ($stockOverview['sin_stock'] ?? 0);
 $stockLow = (int) ($stockOverview['bajo_minimo'] ?? 0);
@@ -107,36 +106,29 @@ if ($installTotal === 0) {
       <span>FLUS</span>
     </a>
     <div class="portal-topbar-actions">
-      <button class="portal-menu-button" type="button" aria-expanded="false" aria-controls="portalNav">
-        <span></span>
-        <span></span>
-        <span></span>
-        <strong>Menu</strong>
-      </button>
       <a class="button button--ghost" href="<?= e(portal_url('logout.php')) ?>">Salir</a>
     </div>
   </header>
-  <div class="portal-nav-backdrop" hidden></div>
-
   <main class="portal-shell">
     <section class="portal-hero">
-      <div>
+      <div class="portal-hero-copy">
         <span class="section-eyebrow">Panel del comercio</span>
         <h1><?= e($clientName) ?></h1>
         <p>Ventas, sucursales y stock sincronizados desde tus instalaciones FLUS.</p>
       </div>
-      <div class="portal-status-box">
+      <div class="portal-hero-meta">
+        <div class="portal-status-box">
         <span>Acceso</span>
         <strong><?= e(['owner' => 'Dueño', 'manager' => 'Encargado', 'viewer' => 'Consulta'][$portalRole] ?? 'Consulta') ?></strong>
-      </div>
-      <div class="portal-status-box">
+        </div>
+        <div class="portal-status-box">
         <span>Ultima sincronizacion</span>
         <strong><?= e($lastSyncLabel) ?></strong>
+        </div>
       </div>
     </section>
 
     <nav id="portalNav" class="portal-nav" aria-label="Secciones del panel">
-      <button class="portal-nav-close" type="button">Cerrar</button>
       <a href="#resumen">Resumen</a>
       <a href="#sucursales">Sucursales</a>
       <a href="#stock">Stock</a>
@@ -150,7 +142,7 @@ if ($installTotal === 0) {
         <span>Datos disponibles desde</span>
         <strong><?= e($cloudStartedLabel) ?></strong>
       </div>
-      <p>Este portal muestra la informacion recibida desde que Cloud esta activo en cada instalacion. Las ventas anteriores de FLUS local no se importan automaticamente.</p>
+      <p>Incluye lo recibido desde la activacion Cloud; no incorpora ventas anteriores de FLUS local.</p>
     </section>
 
     <section id="resumen" class="portal-overview <?= e($portalHealthClass) ?>" aria-label="Vista general del negocio">
@@ -176,6 +168,15 @@ if ($installTotal === 0) {
               <strong><?= e(format_money($amount24h)) ?></strong>
             </div>
           <?php endif; ?>
+        <?php else: ?>
+          <div>
+            <span>Productos</span>
+            <strong><?= $stockTotal ?></strong>
+          </div>
+          <div>
+            <span>Sin stock</span>
+            <strong><?= $stockWithoutUnits ?></strong>
+          </div>
         <?php endif; ?>
         <div>
           <span>Stock atencion</span>
@@ -186,49 +187,6 @@ if ($installTotal === 0) {
           <strong><?= $installOnline ?>/<?= $installTotal ?></strong>
         </div>
       </div>
-    </section>
-
-    <section class="portal-kpi-grid" aria-label="Resumen de las ultimas 24 horas">
-      <?php if ($canViewSales): ?>
-        <article class="portal-kpi">
-          <span>Ventas 24 hs</span>
-          <strong><?= $sales24h ?></strong>
-          <small>Comprobantes recibidos</small>
-        </article>
-        <?php if ($canViewFinancials): ?>
-          <article class="portal-kpi">
-            <span>Importe 24 hs</span>
-            <strong><?= e(format_money($amount24h)) ?></strong>
-            <small>Total sincronizado</small>
-          </article>
-          <article class="portal-kpi">
-            <span>Ticket promedio</span>
-            <strong><?= e(format_money($avgTicket24h)) ?></strong>
-            <small>Sobre ventas recibidas</small>
-          </article>
-        <?php endif; ?>
-      <?php else: ?>
-        <article class="portal-kpi">
-          <span>Productos</span>
-          <strong><?= $stockTotal ?></strong>
-          <small>Stock sincronizado</small>
-        </article>
-        <article class="portal-kpi">
-          <span>Sin stock</span>
-          <strong><?= $stockWithoutUnits ?></strong>
-          <small>Requiere reposicion</small>
-        </article>
-        <article class="portal-kpi">
-          <span>Bajo minimo</span>
-          <strong><?= $stockLow ?></strong>
-          <small>Atencion operativa</small>
-        </article>
-      <?php endif; ?>
-      <article class="portal-kpi">
-        <span>Instalaciones</span>
-        <strong><?= $installOnline ?>/<?= $installTotal ?></strong>
-        <small>Online ahora</small>
-      </article>
     </section>
 
     <section class="portal-grid">
@@ -483,32 +441,5 @@ if ($installTotal === 0) {
       </section>
     <?php endif; ?>
   </main>
-  <script>
-    (function() {
-      const button = document.querySelector('.portal-menu-button');
-      const nav = document.getElementById('portalNav');
-      const close = document.querySelector('.portal-nav-close');
-      const backdrop = document.querySelector('.portal-nav-backdrop');
-      if (!button || !nav || !backdrop) return;
-
-      function setOpen(open) {
-        document.body.classList.toggle('portal-nav-open', open);
-        button.setAttribute('aria-expanded', open ? 'true' : 'false');
-        backdrop.hidden = !open;
-      }
-
-      button.addEventListener('click', function() {
-        setOpen(!document.body.classList.contains('portal-nav-open'));
-      });
-      if (close) close.addEventListener('click', function() { setOpen(false); });
-      backdrop.addEventListener('click', function() { setOpen(false); });
-      nav.querySelectorAll('a').forEach(function(link) {
-        link.addEventListener('click', function() { setOpen(false); });
-      });
-      document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') setOpen(false);
-      });
-    })();
-  </script>
 </body>
 </html>

@@ -6,6 +6,8 @@ if (getenv('FLUS_ADMIN_TEST_DB') !== '1') {
     exit(0);
 }
 
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/client-merge.php';
 require_once __DIR__ . '/../includes/cloud-sync.php';
 require_once __DIR__ . '/../includes/client-portal.php';
@@ -87,6 +89,68 @@ try {
     test_assert((int) $pdo->query("SELECT COUNT(*) FROM client_merge_events WHERE source_client_id = 3 AND target_client_id = 1")->fetchColumn() === 1, 'Merge audit was not stored.');
     test_assert((int) $pdo->query("SELECT COUNT(*) FROM client_portal_memberships WHERE client_id = 1 AND is_active = 1")->fetchColumn() === 1, 'Target portal access changed unexpectedly.');
     test_assert((int) $pdo->query("SELECT COUNT(*) FROM client_portal_memberships WHERE client_id = 3 AND is_active = 0")->fetchColumn() === 1, 'Duplicate portal access was not archived.');
+
+    $centralBranchId = (int) $pdo->query("SELECT id FROM client_branches WHERE client_id = 1 AND code = 'canaan_central'")->fetchColumn();
+    $branch247Id = (int) $pdo->query("SELECT id FROM client_branches WHERE client_id = 1 AND code = 'canaan_247'")->fetchColumn();
+    test_assert($centralBranchId > 0 && $branch247Id > 0, 'Expected branch ids were not created.');
+
+    $centralInstallationId = admin_cloud_sync_upsert_installation(
+        $pdo,
+        ['id' => 8, 'client_id' => 1],
+        'central-installation',
+        null,
+        ['display_name' => 'Central PC', 'app_version' => '4.2.5']
+    );
+    test_assert(
+        admin_cloud_sync_installation_branch_id($pdo, 1, $centralInstallationId) === $centralBranchId,
+        'A sync without branch erased the existing installation branch.'
+    );
+    admin_cloud_sync_upsert_installation(
+        $pdo,
+        ['id' => 8, 'client_id' => 1],
+        'central-installation',
+        $branch247Id,
+        ['display_name' => 'Central PC', 'app_version' => '4.2.5']
+    );
+    test_assert(
+        admin_cloud_sync_installation_branch_id($pdo, 1, $centralInstallationId) === $centralBranchId,
+        'A stale kiosk branch replaced the server-side assignment.'
+    );
+
+    $effectiveBranchId = admin_cloud_sync_installation_branch_id($pdo, 1, $centralInstallationId);
+    admin_cloud_sync_store_events($pdo, ['id' => 8, 'client_id' => 1], $centralInstallationId, $effectiveBranchId, [[
+        'event_uid' => 'stock-after-merge-1',
+        'event_type' => 'stock.snapshot',
+        'payload' => [
+            'products' => [[
+                'product_uid' => 'product-after-merge-1',
+                'nombre' => 'Product after merge',
+                'stock' => 3,
+            ]],
+        ],
+    ]]);
+    test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_events WHERE event_uid = 'stock-after-merge-1'")->fetchColumn() === $centralBranchId, 'A new event lost the preserved branch.');
+    test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_stock_items WHERE product_uid = 'product-after-merge-1'")->fetchColumn() === $centralBranchId, 'A stock snapshot lost the preserved branch.');
+
+    $pdo->exec("INSERT INTO client_installations (id, client_id, license_id, installation_uid, display_name, status) VALUES (30, 1, 8, 'unassigned-installation', 'Unassigned PC', 'online')");
+    $pdo->exec("INSERT INTO cloud_sync_events (client_id, installation_id, license_id, event_uid, event_type, occurred_at) VALUES (1, 30, 8, 'unassigned-event-1', 'sale.created', UTC_TIMESTAMP())");
+    $pdo->exec("INSERT INTO cloud_sync_stock_items (client_id, installation_id, license_id, product_uid, nombre, stock) VALUES (1, 30, 8, 'unassigned-product-1', 'Unassigned Product', 2)");
+    $assignment = admin_cloud_sync_assign_installation_branch($pdo, 1, 30, $branch247Id);
+    test_assert((int) $assignment['branch_id'] === $branch247Id, 'The manual branch assignment returned the wrong branch.');
+    test_assert((int) $pdo->query('SELECT branch_id FROM client_installations WHERE id = 30')->fetchColumn() === $branch247Id, 'The installation branch was not assigned.');
+    test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_events WHERE event_uid = 'unassigned-event-1'")->fetchColumn() === $branch247Id, 'Unassigned historical events were not repaired.');
+    test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_stock_items WHERE product_uid = 'unassigned-product-1'")->fetchColumn() === $branch247Id, 'Current stock was not moved with the installation.');
+
+    $pdo->exec("INSERT INTO clients (id, legal_name, trade_name, status) VALUES (4, 'Other Owner', 'Other Client', 'activo')");
+    $pdo->exec("INSERT INTO client_branches (client_id, name, code, status) VALUES (4, 'Other Branch', 'other_branch', 'active')");
+    $foreignBranchId = (int) $pdo->lastInsertId();
+    $foreignAssignmentBlocked = false;
+    try {
+        admin_cloud_sync_assign_installation_branch($pdo, 1, 30, $foreignBranchId);
+    } catch (RuntimeException $e) {
+        $foreignAssignmentBlocked = true;
+    }
+    test_assert($foreignAssignmentBlocked, 'A branch from another client was accepted.');
 
     $_SESSION['client_portal_user'] = [
         'id' => 1,

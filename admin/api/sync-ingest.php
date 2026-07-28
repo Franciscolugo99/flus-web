@@ -111,7 +111,12 @@ try {
     }
 
     $installationId = admin_cloud_sync_upsert_installation($pdo, $license, $installationUid, $branchId, $request);
-    $result = admin_cloud_sync_store_events($pdo, $license, $installationId, $branchId, $events);
+    $effectiveBranchId = admin_cloud_sync_installation_branch_id(
+        $pdo,
+        (int) $license['client_id'],
+        $installationId
+    );
+    $result = admin_cloud_sync_store_events($pdo, $license, $installationId, $effectiveBranchId, $events);
     $pdo->commit();
 
     cloud_sync_json_response(200, [

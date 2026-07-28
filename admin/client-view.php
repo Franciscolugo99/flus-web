@@ -49,6 +49,10 @@ $license_events = admin_license_events_for_client($pdo, $id, 10);
 $cloud_schema_ready = admin_cloud_sync_ensure_schema($pdo);
 $cloud_overview = $cloud_schema_ready ? admin_cloud_sync_client_overview($pdo, $id) : [];
 $cloud_branches = $cloud_schema_ready ? admin_cloud_sync_client_branches($pdo, $id) : [];
+$cloud_installations = $cloud_schema_ready ? admin_cloud_sync_client_installations($pdo, $id) : [];
+$cloud_active_branches = array_values(array_filter($cloud_branches, static function (array $branch): bool {
+    return (int) ($branch['branch_id'] ?? 0) > 0 && (string) ($branch['branch_status'] ?? '') === 'active';
+}));
 $cloud_stock_overview = $cloud_schema_ready ? admin_cloud_sync_stock_overview($pdo, $id) : [];
 $cloud_started_label = format_datetime($cloud_overview['first_seen_at'] ?? null, 'Pendiente');
 $cloud_last_seen_label = format_datetime($cloud_overview['last_seen_at'] ?? null, 'Sin contacto');
@@ -66,6 +70,7 @@ $portal_access_roles = [
 ];
 $client_view_url = admin_url('client-view.php?id=' . $id);
 $portal_access_url = $client_view_url . '#portal-access';
+$cloud_installations_url = $client_view_url . '#cloud-installations';
 $has_cloud_plan = false;
 foreach ($licenses as $lic) {
     if (admin_license_plan_cloud_enabled($lic)) {
@@ -109,6 +114,59 @@ if ($has_cloud_plan && !$cloud_schema_ready) {
     $cloud_health_text = 'El cliente tiene portal y datos sincronizados disponibles.';
     $cloud_next_action = 'Controlar portal';
     $cloud_next_text = 'Mantener accesos y revisar actividad cuando el cliente consulte.';
+}
+
+if (request_is_post() && isset($_POST['cloud_action'])) {
+    verify_csrf();
+
+    if (!$cloud_schema_ready) {
+        redirect_with_flash($cloud_installations_url, 'error', 'No se pudo preparar el esquema cloud.');
+    }
+
+    $cloudAction = (string) ($_POST['cloud_action'] ?? '');
+    if ($cloudAction !== 'assign_installation_branch') {
+        redirect_with_flash($cloud_installations_url, 'error', 'Accion cloud no reconocida.');
+    }
+
+    $installationId = (int) ($_POST['installation_id'] ?? 0);
+    $branchId = (int) ($_POST['branch_id'] ?? 0);
+    if ($installationId <= 0 || $branchId <= 0) {
+        redirect_with_flash($cloud_installations_url, 'error', 'Selecciona una instalacion y una sucursal validas.');
+    }
+
+    try {
+        $pdo->beginTransaction();
+        $assignment = admin_cloud_sync_assign_installation_branch($pdo, $id, $installationId, $branchId);
+        admin_license_event_log(
+            $pdo,
+            (int) $assignment['license_id'],
+            $id,
+            'branch_assignment',
+            null,
+            null,
+            'Asignacion manual de sucursal',
+            sprintf(
+                'Instalacion #%d (%s) asignada a %s. Eventos recuperados: %d. Productos actualizados: %d.',
+                (int) $assignment['installation_id'],
+                (string) $assignment['installation_name'],
+                (string) $assignment['branch_name'],
+                (int) $assignment['events_updated'],
+                (int) $assignment['stock_updated']
+            )
+        );
+        $pdo->commit();
+
+        redirect_with_flash(
+            $cloud_installations_url,
+            'success',
+            (string) $assignment['installation_name'] . ' vinculada a ' . (string) $assignment['branch_name'] . '.'
+        );
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        redirect_with_flash($cloud_installations_url, 'error', admin_public_error($e, 'No se pudo asignar la sucursal.'));
+    }
 }
 
 if (request_is_post() && isset($_POST['portal_action'])) {
@@ -595,6 +653,44 @@ require_once __DIR__ . '/includes/layout-header.php';
       <span class="<?= $cloud_stock_attention > 0 ? 'is-warn-text' : '' ?>">
         <strong><?= $cloud_stock_attention ?></strong>Alertas stock
       </span>
+    </div>
+
+    <div class="client-cloud-installations" id="cloud-installations">
+      <div class="client-cloud-installations__header">
+        <div>
+          <strong>Instalaciones vinculadas</strong>
+          <span>Asigna cada PC a su sucursal. Los proximos envios conservaran esta seleccion.</span>
+        </div>
+        <span><?= count($cloud_installations) ?> PC<?= count($cloud_installations) === 1 ? '' : 's' ?></span>
+      </div>
+
+      <?php foreach ($cloud_installations as $installation): ?>
+        <?php
+          $installationName = trim((string) ($installation['display_name'] ?: $installation['device_label'] ?: 'Instalacion FLUS'));
+          $licenseSuffix = substr((string) ($installation['license_key'] ?? ''), -4);
+        ?>
+        <form method="POST" action="<?= e($cloud_installations_url) ?>" class="client-cloud-installation-row">
+          <?= csrf_field() ?>
+          <input type="hidden" name="cloud_action" value="assign_installation_branch">
+          <input type="hidden" name="installation_id" value="<?= (int) $installation['installation_id'] ?>">
+          <div class="client-cloud-installation-row__identity">
+            <strong><?= e($installationName) ?></strong>
+            <span>v<?= e((string) ($installation['app_version'] ?: 'sin dato')) ?> · licencia terminada en <?= e($licenseSuffix !== '' ? $licenseSuffix : '----') ?></span>
+            <small>Ultimo contacto: <?= e(format_datetime($installation['last_seen_at'] ?? null, 'Sin contacto')) ?></small>
+          </div>
+          <label>
+            <span>Sucursal</span>
+            <select name="branch_id" required>
+              <option value="">Seleccionar</option>
+              <?php foreach ($cloud_active_branches as $branch): ?>
+                <?php $optionBranchId = (int) ($branch['branch_id'] ?? 0); ?>
+                <option value="<?= $optionBranchId ?>" <?= (int) ($installation['branch_id'] ?? 0) === $optionBranchId ? 'selected' : '' ?>><?= e((string) $branch['branch_name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+          <button type="submit" class="button button--ghost" <?= !$cloud_active_branches ? 'disabled' : '' ?>>Guardar</button>
+        </form>
+      <?php endforeach; ?>
     </div>
 
     <div class="client-cloud-branches">

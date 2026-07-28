@@ -150,7 +150,12 @@ lectura en:
 - `Tecnico`: eventos recibidos para auditoria de sincronizacion.
 
 La ficha `admin/client-view.php` tambien muestra las sucursales cloud activas
-del cliente y enlaza al detalle filtrado de sus datos.
+del cliente y enlaza al detalle filtrado de sus datos. En `Instalaciones
+vinculadas`, un administrador puede asignar cada PC a una sucursal activa. La
+asignacion corrige el stock actual y los eventos historicos que aun no tenian
+sucursal; no reescribe eventos ya clasificados. Los envios posteriores del
+kiosco conservan esta seleccion aunque omitan la sucursal o informen una
+configuracion local desactualizada.
 
 ## Fusion de clientes y sucursales
 

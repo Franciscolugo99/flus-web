@@ -345,7 +345,7 @@ if (!function_exists('admin_cloud_sync_upsert_installation')) {
                 :device_label, :status, UTC_TIMESTAMP(), UTC_TIMESTAMP(), :last_ip_hash
             )
             ON DUPLICATE KEY UPDATE
-                branch_id = VALUES(branch_id),
+                branch_id = COALESCE(branch_id, VALUES(branch_id)),
                 license_id = VALUES(license_id),
                 display_name = VALUES(display_name),
                 app_version = VALUES(app_version),
@@ -385,6 +385,24 @@ if (!function_exists('admin_cloud_sync_upsert_installation')) {
     }
 }
 
+if (!function_exists('admin_cloud_sync_installation_branch_id')) {
+    function admin_cloud_sync_installation_branch_id(PDO $pdo, int $clientId, int $installationId): ?int
+    {
+        if ($clientId <= 0 || $installationId <= 0) {
+            return null;
+        }
+
+        $stmt = $pdo->prepare('SELECT branch_id FROM client_installations WHERE id = :installation_id AND client_id = :client_id LIMIT 1');
+        $stmt->execute([
+            'installation_id' => $installationId,
+            'client_id' => $clientId,
+        ]);
+        $branchId = $stmt->fetchColumn();
+
+        return $branchId !== false && $branchId !== null ? (int) $branchId : null;
+    }
+}
+
 if (!function_exists('admin_cloud_sync_store_stock_event')) {
     function admin_cloud_sync_store_stock_event(PDO $pdo, array $license, int $installationId, ?int $branchId, string $eventUid, string $eventType, array $payload): int
     {
@@ -408,7 +426,7 @@ if (!function_exists('admin_cloud_sync_store_stock_event')) {
                 :unidad_venta, :es_pesable, :activo, :product_updated_at, :last_event_uid, UTC_TIMESTAMP()
             )
             ON DUPLICATE KEY UPDATE
-                branch_id = VALUES(branch_id),
+                branch_id = COALESCE(branch_id, VALUES(branch_id)),
                 license_id = VALUES(license_id),
                 local_product_id = VALUES(local_product_id),
                 codigo = VALUES(codigo),
@@ -472,6 +490,147 @@ if (!function_exists('admin_cloud_sync_store_stock_event')) {
         }
 
         return $stored;
+    }
+}
+
+if (!function_exists('admin_cloud_sync_client_installations')) {
+    function admin_cloud_sync_client_installations(PDO $pdo, int $clientId): array
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $stmt = $pdo->prepare(<<<'SQL'
+            SELECT
+                i.id AS installation_id,
+                i.branch_id,
+                i.license_id,
+                i.installation_uid,
+                i.display_name,
+                i.device_label,
+                i.app_version,
+                i.last_seen_at,
+                b.name AS branch_name,
+                l.license_key
+            FROM client_installations i
+            INNER JOIN licenses l ON l.id = i.license_id AND l.client_id = i.client_id
+            LEFT JOIN client_branches b ON b.id = i.branch_id AND b.client_id = i.client_id
+            WHERE i.client_id = :client_id
+            ORDER BY i.branch_id IS NULL DESC, b.name ASC, i.last_seen_at DESC, i.id DESC
+SQL
+        );
+        $stmt->execute(['client_id' => $clientId]);
+
+        return $stmt->fetchAll();
+    }
+}
+
+if (!function_exists('admin_cloud_sync_assign_installation_branch')) {
+    function admin_cloud_sync_assign_installation_branch(PDO $pdo, int $clientId, int $installationId, int $branchId): array
+    {
+        if ($clientId <= 0 || $installationId <= 0 || $branchId <= 0) {
+            throw new InvalidArgumentException('Instalacion o sucursal invalida.');
+        }
+
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+
+        try {
+            $installationStmt = $pdo->prepare(<<<'SQL'
+                SELECT id, license_id, branch_id, installation_uid, display_name, device_label
+                FROM client_installations
+                WHERE id = :installation_id AND client_id = :client_id
+                LIMIT 1
+                FOR UPDATE
+SQL
+            );
+            $installationStmt->execute([
+                'installation_id' => $installationId,
+                'client_id' => $clientId,
+            ]);
+            $installation = $installationStmt->fetch();
+            if (!is_array($installation)) {
+                throw new RuntimeException('La instalacion no pertenece a este cliente.');
+            }
+
+            $branchStmt = $pdo->prepare(<<<'SQL'
+                SELECT id, name
+                FROM client_branches
+                WHERE id = :branch_id AND client_id = :client_id AND status = 'active'
+                LIMIT 1
+                FOR UPDATE
+SQL
+            );
+            $branchStmt->execute([
+                'branch_id' => $branchId,
+                'client_id' => $clientId,
+            ]);
+            $branch = $branchStmt->fetch();
+            if (!is_array($branch)) {
+                throw new RuntimeException('La sucursal no pertenece a este cliente o no esta activa.');
+            }
+
+            $updateInstallation = $pdo->prepare(<<<'SQL'
+                UPDATE client_installations
+                SET branch_id = :branch_id, updated_at = CURRENT_TIMESTAMP
+                WHERE id = :installation_id AND client_id = :client_id
+SQL
+            );
+            $updateInstallation->execute([
+                'branch_id' => $branchId,
+                'installation_id' => $installationId,
+                'client_id' => $clientId,
+            ]);
+
+            $updateEvents = $pdo->prepare(<<<'SQL'
+                UPDATE cloud_sync_events
+                SET branch_id = :branch_id
+                WHERE installation_id = :installation_id
+                  AND client_id = :client_id
+                  AND branch_id IS NULL
+SQL
+            );
+            $updateEvents->execute([
+                'branch_id' => $branchId,
+                'installation_id' => $installationId,
+                'client_id' => $clientId,
+            ]);
+
+            $updateStock = $pdo->prepare(<<<'SQL'
+                UPDATE cloud_sync_stock_items
+                SET branch_id = :branch_id, updated_at = CURRENT_TIMESTAMP
+                WHERE installation_id = :installation_id AND client_id = :client_id
+SQL
+            );
+            $updateStock->execute([
+                'branch_id' => $branchId,
+                'installation_id' => $installationId,
+                'client_id' => $clientId,
+            ]);
+
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+
+            return [
+                'installation_id' => $installationId,
+                'installation_uid' => (string) ($installation['installation_uid'] ?? ''),
+                'installation_name' => (string) ($installation['display_name'] ?: $installation['device_label'] ?: 'Instalacion FLUS'),
+                'license_id' => (int) $installation['license_id'],
+                'previous_branch_id' => $installation['branch_id'] !== null ? (int) $installation['branch_id'] : null,
+                'branch_id' => $branchId,
+                'branch_name' => (string) $branch['name'],
+                'events_updated' => $updateEvents->rowCount(),
+                'stock_updated' => $updateStock->rowCount(),
+            ];
+        } catch (Throwable $e) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 }
 
