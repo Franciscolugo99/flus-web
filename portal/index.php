@@ -15,6 +15,52 @@ $portalRole = portal_current_role();
 $canViewSales = portal_role_can('view_sales', $portalRole);
 $canViewFinancials = portal_role_can('view_financials', $portalRole);
 
+$periodKey = trim((string) ($_GET['periodo'] ?? 'today'));
+$validPeriods = ['today', 'yesterday', '7d', '30d', 'custom'];
+if (!in_array($periodKey, $validPeriods, true)) {
+    $periodKey = 'today';
+}
+$localTimezone = new DateTimeZone((string) admin_config('timezone', 'America/Argentina/Mendoza'));
+$utcTimezone = new DateTimeZone('UTC');
+$todayLocal = new DateTimeImmutable('today', $localTimezone);
+$fromLocal = $todayLocal;
+$toLocal = $todayLocal->modify('+1 day');
+$customFrom = trim((string) ($_GET['desde'] ?? ''));
+$customTo = trim((string) ($_GET['hasta'] ?? ''));
+$periodLabel = 'Hoy';
+if ($periodKey === 'yesterday') {
+    $fromLocal = $todayLocal->modify('-1 day');
+    $toLocal = $todayLocal;
+    $periodLabel = 'Ayer';
+} elseif ($periodKey === '7d') {
+    $fromLocal = $todayLocal->modify('-6 days');
+    $periodLabel = 'Ultimos 7 dias';
+} elseif ($periodKey === '30d') {
+    $fromLocal = $todayLocal->modify('-29 days');
+    $periodLabel = 'Ultimos 30 dias';
+} elseif ($periodKey === 'custom') {
+    $parsedFrom = DateTimeImmutable::createFromFormat('!Y-m-d', $customFrom, $localTimezone);
+    $parsedTo = DateTimeImmutable::createFromFormat('!Y-m-d', $customTo, $localTimezone);
+    $validCustomRange = $parsedFrom instanceof DateTimeImmutable
+        && $parsedTo instanceof DateTimeImmutable
+        && $parsedFrom->format('Y-m-d') === $customFrom
+        && $parsedTo->format('Y-m-d') === $customTo
+        && $parsedFrom <= $parsedTo
+        && $parsedTo <= $todayLocal
+        && $parsedFrom->diff($parsedTo)->days <= 366;
+    if ($validCustomRange) {
+        $fromLocal = $parsedFrom;
+        $toLocal = $parsedTo->modify('+1 day');
+        $periodLabel = $parsedFrom->format('d/m/Y') . ' al ' . $parsedTo->format('d/m/Y');
+    } else {
+        $periodKey = 'today';
+        $customFrom = '';
+        $customTo = '';
+    }
+}
+$fromUtc = $fromLocal->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
+$toUtc = $toLocal->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
+
 $portalBranches = portal_client_branches_summary($pdo, $clientId);
 $selectedBranchId = max(0, (int) ($_GET['sucursal'] ?? 0));
 $selectedBranchName = 'Todo el negocio';
@@ -33,8 +79,32 @@ if ($selectedBranchId > 0) {
     $selectedBranchName = $validBranchIds[$selectedBranchId];
 }
 $branchFilterId = $selectedBranchId > 0 ? $selectedBranchId : null;
-$salesOverview = $canViewSales ? admin_cloud_sync_sales_overview($pdo, $clientId, $branchFilterId) : [];
-$recentSales = $canViewSales ? admin_cloud_sync_recent_sales($pdo, 6, $clientId, $branchFilterId) : [];
+$salesOverview = $canViewSales
+    ? admin_cloud_sync_sales_period_overview($pdo, $clientId, $fromUtc, $toUtc, $branchFilterId)
+    : [];
+$recentSales = $canViewSales
+    ? admin_cloud_sync_recent_sales($pdo, 6, $clientId, $branchFilterId, $fromUtc, $toUtc)
+    : [];
+$branchSalesData = $canViewSales
+    ? admin_cloud_sync_branch_sales_comparison($pdo, $clientId, $fromUtc, $toUtc)
+    : [];
+$branchComparison = [];
+foreach ($validBranchIds as $branchId => $branchName) {
+    $branchComparison[] = $branchSalesData[$branchId] ?? [
+        'branch_id' => $branchId,
+        'branch_name' => $branchName,
+        'sales' => 0,
+        'amount' => 0.0,
+        'avg_ticket' => 0.0,
+    ];
+}
+usort($branchComparison, static function (array $a, array $b): int {
+    return ((float) $b['amount'] <=> (float) $a['amount']) ?: ((int) $b['sales'] <=> (int) $a['sales']);
+});
+$comparisonMaxAmount = 0.0;
+foreach ($branchComparison as $branchMetrics) {
+    $comparisonMaxAmount = max($comparisonMaxAmount, (float) ($branchMetrics['amount'] ?? 0));
+}
 $installations = portal_client_installations_summary($pdo, $clientId, $branchFilterId);
 $license = portal_client_license_summary($pdo, $clientId);
 $stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
@@ -61,11 +131,14 @@ $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin si
 $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
 $stockFilterBase = [
     'sucursal' => $selectedBranchId,
+    'periodo' => $periodKey,
+    'desde' => $customFrom,
+    'hasta' => $customTo,
     'stock_q' => $stockQuery,
 ];
 $stockResultContext = $stockStateLabels[$stockState] . ($stockQuery !== '' ? ' con busqueda "' . $stockQuery . '"' : '');
-$sales24h = (int) ($salesOverview['sales_24h'] ?? 0);
-$amount24h = (float) ($salesOverview['amount_24h'] ?? 0);
+$salesCount = (int) ($salesOverview['sales'] ?? 0);
+$amountPeriod = (float) ($salesOverview['amount'] ?? 0);
 $stockTotal = (int) ($stockOverview['total'] ?? 0);
 $stockWithoutUnits = (int) ($stockOverview['sin_stock'] ?? 0);
 $stockLow = (int) ($stockOverview['bajo_minimo'] ?? 0);
@@ -97,9 +170,9 @@ if ($installTotal === 0) {
     $portalHealthText = $stockAttention . ' producto' . ($stockAttention === 1 ? '' : 's') . ' requiere reposicion o revision.';
     $portalNextAction = 'Resolver faltantes';
     $portalNextText = 'Prioriza productos sin stock y bajo minimo.';
-} elseif ($canViewSales && $sales24h > 0) {
+} elseif ($canViewSales && $salesCount > 0) {
     $portalHealthTitle = 'Ventas sincronizadas';
-    $portalHealthText = $sales24h . ' venta' . ($sales24h === 1 ? '' : 's') . ' recibida' . ($sales24h === 1 ? '' : 's') . ' en las ultimas 24 hs.';
+    $portalHealthText = $salesCount . ' venta' . ($salesCount === 1 ? '' : 's') . ' recibida' . ($salesCount === 1 ? '' : 's') . ' en el periodo seleccionado.';
     $portalNextAction = 'Control rapido';
     $portalNextText = 'Mira medios de pago y ultimas ventas para confirmar la operacion.';
 }
@@ -156,17 +229,39 @@ if ($installTotal === 0) {
     </nav>
 
     <form id="portalScopeForm" class="portal-scope-bar" method="get" action="<?= e(portal_url('index.php')) ?>">
-      <label for="portalBranchScope">
+      <div class="portal-scope-summary">
         <span>Vista actual</span>
         <strong><?= e($selectedBranchName) ?></strong>
-      </label>
+        <small><?= e($periodLabel) ?></small>
+      </div>
       <div class="portal-scope-control">
-        <select id="portalBranchScope" name="sucursal" aria-label="Elegir sucursal">
-          <option value="0">Todas las sucursales</option>
-          <?php foreach ($validBranchIds as $branchId => $branchName): ?>
-            <option value="<?= $branchId ?>" <?= $selectedBranchId === $branchId ? 'selected' : '' ?>><?= e($branchName) ?></option>
-          <?php endforeach; ?>
-        </select>
+        <label>
+          <span>Sucursal</span>
+          <select id="portalBranchScope" name="sucursal" aria-label="Elegir sucursal">
+            <option value="0">Todas las sucursales</option>
+            <?php foreach ($validBranchIds as $branchId => $branchName): ?>
+              <option value="<?= $branchId ?>" <?= $selectedBranchId === $branchId ? 'selected' : '' ?>><?= e($branchName) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>
+          <span>Periodo de ventas</span>
+          <select id="portalPeriodScope" name="periodo" aria-label="Elegir periodo de ventas">
+            <option value="today" <?= $periodKey === 'today' ? 'selected' : '' ?>>Hoy</option>
+            <option value="yesterday" <?= $periodKey === 'yesterday' ? 'selected' : '' ?>>Ayer</option>
+            <option value="7d" <?= $periodKey === '7d' ? 'selected' : '' ?>>Ultimos 7 dias</option>
+            <option value="30d" <?= $periodKey === '30d' ? 'selected' : '' ?>>Ultimos 30 dias</option>
+            <option value="custom" <?= $periodKey === 'custom' ? 'selected' : '' ?>>Elegir fechas</option>
+          </select>
+        </label>
+        <label class="portal-custom-date" data-custom-date>
+          <span>Desde</span>
+          <input type="date" name="desde" value="<?= e($customFrom) ?>" max="<?= e($todayLocal->format('Y-m-d')) ?>">
+        </label>
+        <label class="portal-custom-date" data-custom-date>
+          <span>Hasta</span>
+          <input type="date" name="hasta" value="<?= e($customTo) ?>" max="<?= e($todayLocal->format('Y-m-d')) ?>">
+        </label>
         <button class="button" type="submit">Aplicar</button>
       </div>
     </form>
@@ -193,13 +288,13 @@ if ($installTotal === 0) {
       <div class="portal-overview-strip">
         <?php if ($canViewSales): ?>
           <div>
-            <span>Ventas 24 hs</span>
-            <strong><?= $sales24h ?></strong>
+            <span>Ventas - <?= e($periodLabel) ?></span>
+            <strong><?= $salesCount ?></strong>
           </div>
           <?php if ($canViewFinancials): ?>
             <div>
               <span>Importe</span>
-              <strong><?= e(format_money($amount24h)) ?></strong>
+              <strong><?= e(format_money($amountPeriod)) ?></strong>
             </div>
           <?php endif; ?>
         <?php else: ?>
@@ -229,16 +324,16 @@ if ($installTotal === 0) {
           <div class="section-header">
             <div>
               <div class="section-title">Medios de pago</div>
-              <div class="section-meta">Ventas recibidas durante las ultimas 24 hs.</div>
+              <div class="section-meta"><?= e($selectedBranchName) ?> - <?= e($periodLabel) ?>.</div>
             </div>
           </div>
 
-          <?php $payments24h = $salesOverview['payments_24h'] ?? []; ?>
-          <?php if (!$payments24h): ?>
-            <div class="empty-panel">Todavia no hay ventas sincronizadas hoy.</div>
+          <?php $periodPayments = $salesOverview['payments'] ?? []; ?>
+          <?php if (!$periodPayments): ?>
+            <div class="empty-panel">No hay ventas sincronizadas en este periodo.</div>
           <?php else: ?>
             <div class="cloud-payment-list">
-              <?php foreach ($payments24h as $paymentName => $paymentStats): ?>
+              <?php foreach ($periodPayments as $paymentName => $paymentStats): ?>
                 <div class="cloud-payment-row">
                   <span><?= e((string) $paymentName) ?></span>
                   <?php if ($canViewFinancials): ?>
@@ -296,7 +391,7 @@ if ($installTotal === 0) {
         </div>
         <div class="portal-preview-list">
           <div><strong>Alertas inteligentes</strong><span>Avisos de stock, cierres y ventas inusuales por email, WhatsApp o notificacion.</span><small>En preparacion</small></div>
-          <div><strong>Comparar sucursales</strong><span>Ventas, tickets y productos destacados por periodo, respetando permisos.</span><small>Proxima version</small></div>
+          <div><strong>Productos destacados</strong><span>Ranking de los productos mas vendidos por periodo y sucursal.</span><small>Proxima version</small></div>
           <div><strong>Metas del negocio</strong><span>Objetivos diarios y mensuales con avance visible para cada sucursal.</span><small>Vista previa</small></div>
           <div><strong>Sugerencias de reposicion</strong><span>Recomendaciones basadas en stock minimo y movimiento reciente.</span><small>En estudio</small></div>
         </div>
@@ -387,6 +482,11 @@ if ($installTotal === 0) {
 
       <form class="portal-stock-filters" method="get" action="<?= e(portal_url('index.php')) ?>#stock">
         <input type="hidden" name="sucursal" value="<?= $selectedBranchId ?>">
+        <input type="hidden" name="periodo" value="<?= e($periodKey) ?>">
+        <?php if ($periodKey === 'custom'): ?>
+          <input type="hidden" name="desde" value="<?= e($customFrom) ?>">
+          <input type="hidden" name="hasta" value="<?= e($customTo) ?>">
+        <?php endif; ?>
         <label>
           <span>Buscar</span>
           <input type="search" name="stock_q" value="<?= e($stockQuery) ?>" placeholder="Producto, codigo o categoria">
@@ -478,6 +578,45 @@ if ($installTotal === 0) {
           </div>
         <?php endif; ?>
       </section>
+
+      <section class="portal-panel portal-branch-comparison" data-portal-view="sales">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Comparar sucursales</div>
+            <div class="section-meta"><?= e($periodLabel) ?>. Importes calculados con las ventas sincronizadas.</div>
+          </div>
+        </div>
+        <?php if (!$branchComparison): ?>
+          <div class="empty-panel">Todavia no hay sucursales para comparar.</div>
+        <?php else: ?>
+          <div class="portal-comparison-list">
+            <?php foreach ($branchComparison as $branchMetrics): ?>
+              <?php
+                $metricsBranchId = (int) ($branchMetrics['branch_id'] ?? 0);
+                $barAmount = (float) ($branchMetrics['amount'] ?? 0);
+                $barPercent = $comparisonMaxAmount > 0 && $barAmount > 0
+                    ? max(2, (int) round(((float) ($branchMetrics['amount'] ?? 0) / $comparisonMaxAmount) * 100))
+                    : 0;
+              ?>
+              <article class="portal-comparison-row <?= $selectedBranchId === $metricsBranchId ? 'is-selected' : '' ?>">
+                <div class="portal-comparison-heading">
+                  <strong><?= e((string) ($branchMetrics['branch_name'] ?? 'Sucursal')) ?></strong>
+                  <span><?= (int) ($branchMetrics['sales'] ?? 0) ?> venta<?= (int) ($branchMetrics['sales'] ?? 0) === 1 ? '' : 's' ?></span>
+                </div>
+                <div class="portal-comparison-track" aria-hidden="true"><span style="width: <?= $barPercent ?>%"></span></div>
+                <div class="portal-comparison-values">
+                  <?php if ($canViewFinancials): ?>
+                    <strong><?= e(format_money($branchMetrics['amount'] ?? 0)) ?></strong>
+                    <small>Ticket prom. <?= e(format_money($branchMetrics['avg_ticket'] ?? 0)) ?></small>
+                  <?php else: ?>
+                    <small>Importes no disponibles para este acceso.</small>
+                  <?php endif; ?>
+                </div>
+              </article>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </section>
     <?php endif; ?>
   </main>
   <script>
@@ -489,6 +628,16 @@ if ($installTotal === 0) {
       const links = Array.from(nav.querySelectorAll('[data-view]'));
       const availableViews = links.map(function(link) { return link.dataset.view; });
       const scopeForm = document.getElementById('portalScopeForm');
+      const periodSelect = document.getElementById('portalPeriodScope');
+      const customDateFields = Array.from(document.querySelectorAll('[data-custom-date]'));
+
+      function updateCustomDates() {
+        const showCustom = periodSelect && periodSelect.value === 'custom';
+        customDateFields.forEach(function(field) {
+          field.hidden = !showCustom;
+          field.querySelectorAll('input').forEach(function(input) { input.disabled = !showCustom; });
+        });
+      }
 
       function viewFromLocation() {
         if (window.location.hash === '#sucursales') return 'branches';
@@ -531,6 +680,8 @@ if ($installTotal === 0) {
           scopeForm.action = '<?= e(portal_url('index.php')) ?>' + (activeLink ? activeLink.getAttribute('href') : '#resumen');
         });
       }
+      if (periodSelect) periodSelect.addEventListener('change', updateCustomDates);
+      updateCustomDates();
 
       document.body.classList.add('portal-app-ready');
       activate(viewFromLocation(), false);

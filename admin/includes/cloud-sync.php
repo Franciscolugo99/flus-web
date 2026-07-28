@@ -1064,7 +1064,14 @@ if (!function_exists('admin_cloud_sync_decode_json')) {
 }
 
 if (!function_exists('admin_cloud_sync_recent_sales')) {
-    function admin_cloud_sync_recent_sales(PDO $pdo, int $limit = 12, ?int $clientId = null, ?int $branchId = null): array
+    function admin_cloud_sync_recent_sales(
+        PDO $pdo,
+        int $limit = 12,
+        ?int $clientId = null,
+        ?int $branchId = null,
+        ?string $fromUtc = null,
+        ?string $toUtc = null
+    ): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
             return [];
@@ -1080,6 +1087,14 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
         if ($branchId !== null && $branchId > 0) {
             $where .= ' AND e.branch_id = :branch_id';
             $params['branch_id'] = $branchId;
+        }
+        if ($fromUtc !== null && $fromUtc !== '') {
+            $where .= ' AND e.occurred_at >= :from_utc';
+            $params['from_utc'] = $fromUtc;
+        }
+        if ($toUtc !== null && $toUtc !== '') {
+            $where .= ' AND e.occurred_at < :to_utc';
+            $params['to_utc'] = $toUtc;
         }
 
         $stmt = $pdo->prepare("
@@ -1110,6 +1125,125 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
         }
 
         return $rows;
+    }
+}
+
+if (!function_exists('admin_cloud_sync_sales_period_overview')) {
+    function admin_cloud_sync_sales_period_overview(
+        PDO $pdo,
+        int $clientId,
+        string $fromUtc,
+        string $toUtc,
+        ?int $branchId = null
+    ): array {
+        $overview = [
+            'sales' => 0,
+            'amount' => 0.0,
+            'avg_ticket' => 0.0,
+            'items' => 0,
+            'payments' => [],
+        ];
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return $overview;
+        }
+
+        $where = "
+            WHERE event_type IN ('sale.created', 'sale_created')
+              AND client_id = :client_id
+              AND occurred_at >= :from_utc
+              AND occurred_at < :to_utc
+        ";
+        $params = [
+            'client_id' => $clientId,
+            'from_utc' => $fromUtc,
+            'to_utc' => $toUtc,
+        ];
+        if ($branchId !== null && $branchId > 0) {
+            $where .= ' AND branch_id = :branch_id';
+            $params['branch_id'] = $branchId;
+        }
+
+        $stmt = $pdo->prepare("SELECT summary_json FROM cloud_sync_events {$where}");
+        $stmt->execute($params);
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $summaryJson) {
+            $summary = admin_cloud_sync_decode_json($summaryJson);
+            $total = (float) ($summary['total'] ?? 0);
+            $items = (int) ($summary['items_count'] ?? 0);
+            $payment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
+            if ($payment === '') {
+                $payment = 'SIN_DATO';
+            }
+
+            $overview['sales']++;
+            $overview['amount'] += $total;
+            $overview['items'] += $items;
+            if (!isset($overview['payments'][$payment])) {
+                $overview['payments'][$payment] = ['count' => 0, 'amount' => 0.0];
+            }
+            $overview['payments'][$payment]['count']++;
+            $overview['payments'][$payment]['amount'] += $total;
+        }
+        if ($overview['sales'] > 0) {
+            $overview['avg_ticket'] = $overview['amount'] / $overview['sales'];
+        }
+        uasort($overview['payments'], static function (array $a, array $b): int {
+            return ($b['amount'] <=> $a['amount']) ?: ($b['count'] <=> $a['count']);
+        });
+
+        return $overview;
+    }
+}
+
+if (!function_exists('admin_cloud_sync_branch_sales_comparison')) {
+    function admin_cloud_sync_branch_sales_comparison(PDO $pdo, int $clientId, string $fromUtc, string $toUtc): array
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT e.branch_id, b.name AS branch_name, e.summary_json
+            FROM cloud_sync_events e
+            LEFT JOIN client_branches b ON b.id = e.branch_id AND b.client_id = e.client_id
+            WHERE e.event_type IN ('sale.created', 'sale_created')
+              AND e.client_id = :client_id
+              AND e.occurred_at >= :from_utc
+              AND e.occurred_at < :to_utc
+            ORDER BY e.occurred_at DESC, e.id DESC
+        ");
+        $stmt->execute([
+            'client_id' => $clientId,
+            'from_utc' => $fromUtc,
+            'to_utc' => $toUtc,
+        ]);
+
+        $comparison = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $branchId = (int) ($row['branch_id'] ?? 0);
+            if ($branchId <= 0) {
+                continue;
+            }
+            if (!isset($comparison[$branchId])) {
+                $comparison[$branchId] = [
+                    'branch_id' => $branchId,
+                    'branch_name' => (string) ($row['branch_name'] ?? 'Sucursal'),
+                    'sales' => 0,
+                    'amount' => 0.0,
+                    'avg_ticket' => 0.0,
+                ];
+            }
+            $summary = admin_cloud_sync_decode_json($row['summary_json'] ?? null);
+            $comparison[$branchId]['sales']++;
+            $comparison[$branchId]['amount'] += (float) ($summary['total'] ?? 0);
+        }
+        foreach ($comparison as &$branch) {
+            if ($branch['sales'] > 0) {
+                $branch['avg_ticket'] = $branch['amount'] / $branch['sales'];
+            }
+        }
+        unset($branch);
+
+        return $comparison;
     }
 }
 

@@ -205,6 +205,12 @@ medios de pago, stock e instalaciones usan la misma seleccion y la conservan
 al cambiar de seccion. El backend valida que la sucursal pertenezca al cliente
 autenticado antes de aplicar el filtro.
 
+El mismo control permite consultar ventas de hoy, ayer, los ultimos 7 o 30 dias
+y un rango personalizado de hasta 366 dias. Las fechas del comercio se
+convierten a limites UTC en el servidor. La vista `Ventas` compara sucursales
+con cantidad, importe y ticket promedio; los accesos `viewer` no reciben esa
+seccion ni sus importes.
+
 La seccion `Proximamente en FLUS` es solo una demostracion visual de funciones
 proyectadas. No expone endpoints ni ejecuta acciones hasta que cada capacidad
 sea implementada en FLUS local y en el contrato cloud correspondiente.

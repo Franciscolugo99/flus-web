@@ -152,6 +152,13 @@ try {
         'event_uid' => 'sale-247-filter-1',
         'summary_json' => json_encode(['venta_id' => 202, 'total' => 3400, 'items_count' => 3, 'medio_pago' => 'debito']),
     ]);
+    $pdo->exec("
+        INSERT INTO cloud_sync_events
+            (client_id, branch_id, installation_id, license_id, event_uid, event_type, occurred_at, received_at, summary_json)
+        VALUES
+            (1, {$centralBranchId}, 10, 8, 'sale-outside-period-1', 'sale.created', DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 DAY), DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 DAY),
+             '{\"venta_id\":99,\"total\":9000,\"items_count\":1,\"medio_pago\":\"efectivo\"}')
+    ");
 
     $allSales = admin_cloud_sync_sales_overview($pdo, 1);
     $centralSales = admin_cloud_sync_sales_overview($pdo, 1, $centralBranchId);
@@ -160,6 +167,17 @@ try {
     test_assert((int) $centralSales['sales_24h'] === 1 && (float) $centralSales['amount_24h'] === 1200.0, 'The central branch sales filter leaked data.');
     test_assert((int) $branch247Sales['sales_24h'] === 1 && (float) $branch247Sales['amount_24h'] === 3400.0, 'The 24/7 branch sales filter leaked data.');
     test_assert((string) (admin_cloud_sync_recent_sales($pdo, 5, 1, $centralBranchId)[0]['event_uid'] ?? '') === 'sale-central-filter-1', 'Recent sales ignored the selected branch.');
+
+    $periodFrom = gmdate('Y-m-d H:i:s', time() - 3600);
+    $periodTo = gmdate('Y-m-d H:i:s', time() + 3600);
+    $periodSales = admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo);
+    $centralPeriodSales = admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo, $centralBranchId);
+    test_assert((int) $periodSales['sales'] === 2 && (float) $periodSales['amount'] === 4600.0, 'The period overview included a sale outside its UTC boundaries.');
+    test_assert((int) $centralPeriodSales['sales'] === 1 && (float) $centralPeriodSales['avg_ticket'] === 1200.0, 'The period and branch filters were not combined.');
+    test_assert(count(admin_cloud_sync_recent_sales($pdo, 5, 1, null, $periodFrom, $periodTo)) === 2, 'Recent sales ignored the selected period.');
+    $branchComparison = admin_cloud_sync_branch_sales_comparison($pdo, 1, $periodFrom, $periodTo);
+    test_assert((int) ($branchComparison[$centralBranchId]['sales'] ?? 0) === 1, 'The comparison returned the wrong central sales count.');
+    test_assert((float) ($branchComparison[$branch247Id]['amount'] ?? 0) === 3400.0, 'The comparison returned the wrong 24/7 amount.');
 
     $centralStock = admin_cloud_sync_stock_overview($pdo, 1, $centralBranchId);
     $branch247Stock = admin_cloud_sync_stock_overview($pdo, 1, $branch247Id);
