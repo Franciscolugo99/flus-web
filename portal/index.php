@@ -101,16 +101,19 @@ if ($installTotal === 0) {
 </head>
 <body class="portal-page">
   <header class="portal-topbar">
-    <a class="portal-brand portal-brand--compact" href="<?= e(portal_url('index.php')) ?>">
-      <img src="<?= e(portal_public_asset_url('img/flus-mark.webp')) ?>" alt="" aria-hidden="true">
-      <span>FLUS</span>
-    </a>
+    <div class="portal-topbar-identity">
+      <a class="portal-brand portal-brand--compact" href="<?= e(portal_url('index.php')) ?>">
+        <img src="<?= e(portal_public_asset_url('img/flus-mark.webp')) ?>" alt="" aria-hidden="true">
+        <span>FLUS</span>
+      </a>
+      <span class="portal-topbar-client"><?= e($clientName) ?></span>
+    </div>
     <div class="portal-topbar-actions">
       <a class="button button--ghost" href="<?= e(portal_url('logout.php')) ?>">Salir</a>
     </div>
   </header>
   <main class="portal-shell">
-    <section class="portal-hero">
+    <section class="portal-hero" data-portal-view="summary">
       <div class="portal-hero-copy">
         <span class="section-eyebrow">Panel del comercio</span>
         <h1><?= e($clientName) ?></h1>
@@ -128,16 +131,16 @@ if ($installTotal === 0) {
       </div>
     </section>
 
-    <nav id="portalNav" class="portal-nav" aria-label="Secciones del panel">
-      <a href="#resumen">Resumen</a>
-      <a href="#sucursales">Sucursales</a>
-      <a href="#stock">Stock</a>
+    <nav id="portalNav" class="portal-nav" aria-label="Secciones del panel" style="--portal-nav-items: <?= $canViewSales ? 4 : 3 ?>">
+      <a href="#resumen" data-view="summary" aria-current="page"><span aria-hidden="true">⌂</span><strong>Inicio</strong></a>
+      <a href="#sucursales" data-view="branches"><span aria-hidden="true">⌖</span><strong>Sucursales</strong></a>
+      <a href="#stock" data-view="stock"><span aria-hidden="true">▦</span><strong>Stock</strong></a>
       <?php if ($canViewSales): ?>
-        <a href="#ventas">Ventas</a>
+        <a href="#ventas" data-view="sales"><span aria-hidden="true">$</span><strong>Ventas</strong></a>
       <?php endif; ?>
     </nav>
 
-    <section class="portal-sync-note" aria-label="Alcance de los datos cloud">
+    <section class="portal-sync-note" aria-label="Alcance de los datos cloud" data-portal-view="summary">
       <div>
         <span>Datos disponibles desde</span>
         <strong><?= e($cloudStartedLabel) ?></strong>
@@ -145,7 +148,7 @@ if ($installTotal === 0) {
       <p>Incluye lo recibido desde la activacion Cloud; no incorpora ventas anteriores de FLUS local.</p>
     </section>
 
-    <section id="resumen" class="portal-overview <?= e($portalHealthClass) ?>" aria-label="Vista general del negocio">
+    <section id="resumen" class="portal-overview <?= e($portalHealthClass) ?>" aria-label="Vista general del negocio" data-portal-view="summary">
       <div class="portal-overview-main">
         <span>Vista general</span>
         <h2><?= e($portalHealthTitle) ?></h2>
@@ -191,7 +194,7 @@ if ($installTotal === 0) {
 
     <section class="portal-grid">
       <?php if ($canViewSales): ?>
-        <article class="portal-panel">
+        <article class="portal-panel" data-portal-view="sales">
           <div class="section-header">
             <div>
               <div class="section-title">Medios de pago</div>
@@ -217,7 +220,7 @@ if ($installTotal === 0) {
           <?php endif; ?>
         </article>
       <?php else: ?>
-        <article class="portal-panel">
+        <article class="portal-panel" data-portal-view="summary">
           <div class="section-header">
             <div>
               <div class="section-title">Consulta operativa</div>
@@ -228,7 +231,7 @@ if ($installTotal === 0) {
         </article>
       <?php endif; ?>
 
-      <article class="portal-panel">
+      <article class="portal-panel" data-portal-view="summary">
         <div class="section-header">
           <div>
             <div class="section-title">Estado operativo</div>
@@ -252,7 +255,7 @@ if ($installTotal === 0) {
         </div>
       </article>
 
-      <article id="sucursales" class="portal-panel portal-panel--wide">
+      <article id="sucursales" class="portal-panel portal-panel--wide" data-portal-view="branches">
         <div class="section-header">
           <div>
             <div class="section-title">Sucursales e instalaciones</div>
@@ -296,7 +299,7 @@ if ($installTotal === 0) {
       </article>
     </section>
 
-    <section id="stock" class="portal-panel">
+    <section id="stock" class="portal-panel" data-portal-view="stock">
       <div class="section-header section-header--spaced">
         <div>
           <div class="section-title">Stock por sucursal</div>
@@ -335,7 +338,7 @@ if ($installTotal === 0) {
         <?php endforeach; ?>
       </nav>
 
-      <form class="portal-stock-filters" method="get">
+      <form class="portal-stock-filters" method="get" action="<?= e(portal_url('index.php')) ?>#stock">
         <label>
           <span>Buscar</span>
           <input type="search" name="stock_q" value="<?= e($stockQuery) ?>" placeholder="Producto, codigo o categoria">
@@ -344,7 +347,7 @@ if ($installTotal === 0) {
           <span>Sucursal</span>
           <select name="stock_sucursal">
             <option value="0">Todas</option>
-            <?php foreach ($stockBranches as $branch): ?>
+            <?php foreach ($portalBranches as $branch): ?>
               <?php $branchId = (int) ($branch['branch_id'] ?? 0); ?>
               <?php if ($branchId > 0): ?>
                 <option value="<?= $branchId ?>" <?= $stockBranchId === $branchId ? 'selected' : '' ?>><?= e((string) $branch['branch_name']) ?></option>
@@ -402,7 +405,7 @@ if ($installTotal === 0) {
     </section>
 
     <?php if ($canViewSales): ?>
-      <section id="ventas" class="portal-panel">
+      <section id="ventas" class="portal-panel" data-portal-view="sales">
         <div class="section-header">
           <div>
             <div class="section-title">Ultimas ventas recibidas</div>
@@ -441,5 +444,54 @@ if ($installTotal === 0) {
       </section>
     <?php endif; ?>
   </main>
+  <script>
+    (function() {
+      const mobileQuery = window.matchMedia('(max-width: 600px)');
+      const nav = document.getElementById('portalNav');
+      if (!nav) return;
+
+      const links = Array.from(nav.querySelectorAll('[data-view]'));
+      const availableViews = links.map(function(link) { return link.dataset.view; });
+
+      function viewFromLocation() {
+        if (window.location.hash === '#sucursales') return 'branches';
+        if (window.location.hash === '#stock') return 'stock';
+        if (window.location.hash === '#ventas') return 'sales';
+        return 'summary';
+      }
+
+      function activate(view, updateHistory) {
+        if (!availableViews.includes(view)) view = 'summary';
+        document.body.dataset.portalView = view;
+        document.querySelectorAll('[data-portal-view]').forEach(function(panel) {
+          panel.hidden = mobileQuery.matches && panel.dataset.portalView !== view;
+        });
+        links.forEach(function(link) {
+          const active = link.dataset.view === view;
+          link.classList.toggle('is-active', active);
+          link.setAttribute('aria-current', active ? 'page' : 'false');
+        });
+
+        if (updateHistory) {
+          const activeLink = links.find(function(link) { return link.dataset.view === view; });
+          if (activeLink) history.replaceState(null, '', activeLink.getAttribute('href'));
+        }
+        if (mobileQuery.matches) window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+
+      links.forEach(function(link) {
+        link.addEventListener('click', function(event) {
+          if (!mobileQuery.matches) return;
+          event.preventDefault();
+          activate(link.dataset.view || 'summary', true);
+        });
+      });
+
+      document.body.classList.add('portal-app-ready');
+      activate(viewFromLocation(), false);
+      window.addEventListener('hashchange', function() { activate(viewFromLocation(), false); });
+      mobileQuery.addEventListener('change', function() { activate(document.body.dataset.portalView || 'summary', false); });
+    })();
+  </script>
 </body>
 </html>

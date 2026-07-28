@@ -1741,6 +1741,10 @@ body.login-page {
   min-height: 100vh;
 }
 
+.portal-page [hidden] {
+  display: none !important;
+}
+
 .portal-login-page {
   display: grid;
   place-items: center;
@@ -1847,6 +1851,24 @@ body.login-page {
   gap: 8px;
 }
 
+.portal-topbar-identity {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.portal-topbar-client {
+  border-left: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: .8rem;
+  font-weight: 700;
+  overflow: hidden;
+  padding-left: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .portal-menu-button,
 .portal-nav-close {
   align-items: center;
@@ -1949,6 +1971,14 @@ body.login-page {
   padding: 7px 11px;
   text-decoration: none;
   text-transform: uppercase;
+}
+
+.portal-nav a > span {
+  display: none;
+}
+
+.portal-nav a > strong {
+  font: inherit;
 }
 
 .portal-nav a:hover,
@@ -2999,56 +3029,117 @@ button.button--danger:hover {
     padding: 20px;
   }
   .portal-topbar {
-    min-height: 54px;
-    padding: 9px 14px;
-    position: static;
+    min-height: 58px;
+    padding: 8px 12px;
+    position: sticky;
+    top: 0;
+  }
+  .portal-brand--compact img {
+    height: 36px;
+    width: 36px;
+  }
+  .portal-brand--compact > span {
+    display: none;
+  }
+  .portal-topbar-identity {
+    gap: 9px;
+  }
+  .portal-topbar-client {
+    border-left: 0;
+    color: var(--text-primary);
+    font-size: .92rem;
+    max-width: 190px;
+    padding-left: 0;
+  }
+  .portal-topbar-actions .button {
+    min-height: 36px;
+    padding: 7px 11px;
   }
   .portal-shell {
     gap: 10px;
-    padding: 10px 12px 22px;
+    padding: 10px 12px calc(82px + env(safe-area-inset-bottom));
   }
   .portal-hero {
     align-items: stretch;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    gap: 10px;
     grid-template-columns: 1fr;
-    padding: 14px;
+    padding: 4px 2px 2px;
   }
+  .portal-hero-copy .section-eyebrow,
   .portal-hero-copy p {
-    font-size: .84rem;
+    display: none;
+  }
+  .portal-hero h1 {
+    font-size: 1.35rem;
   }
   .portal-hero-meta {
-    grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr);
+    grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
   }
   .portal-status-box {
+    background: var(--bg-surface);
     min-width: 0;
     padding: 9px 10px;
   }
   .portal-nav {
-    border-radius: var(--radius);
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    padding: 5px;
-    position: sticky;
-    top: 0;
+    background: rgba(17,21,32,.98);
+    border: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--border);
+    bottom: 0;
+    box-shadow: 0 -8px 24px rgba(0,0,0,.24);
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(var(--portal-nav-items, 4), minmax(0, 1fr));
+    left: 0;
+    overflow: visible;
+    padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+    position: fixed;
     width: 100%;
-    z-index: 9;
+    z-index: 30;
   }
   .portal-nav a {
-    border-color: transparent;
+    align-items: center;
+    border: 0;
     border-radius: var(--radius);
-    flex: 1 0 auto;
-    font-size: .7rem;
-    padding: 9px 10px;
+    display: grid;
+    font-size: .62rem;
+    gap: 2px;
+    justify-items: center;
+    min-height: 52px;
+    padding: 5px 3px;
     text-align: center;
   }
+  .portal-nav a > span {
+    color: var(--text-muted);
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .portal-nav a > strong {
+    color: var(--text-secondary);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .portal-nav a.is-active,
+  .portal-nav a[aria-current="page"] {
+    background: rgba(0,200,150,.1);
+  }
+  .portal-nav a.is-active > span,
+  .portal-nav a.is-active > strong,
+  .portal-nav a[aria-current="page"] > span,
+  .portal-nav a[aria-current="page"] > strong {
+    color: var(--accent);
+  }
   .portal-sync-note {
-    align-items: stretch;
-    grid-template-columns: 1fr;
-    padding: 12px;
+    display: none;
   }
   .portal-overview {
     grid-template-columns: 1fr;
-    padding: 14px;
+    padding: 13px;
   }
   .portal-overview-main h2 {
     font-size: 1.18rem;
@@ -3068,9 +3159,11 @@ button.button--danger:hover {
     padding-bottom: 3px;
   }
   .portal-grid {
+    gap: 10px;
     grid-template-columns: 1fr;
   }
   .portal-panel {
+    border-radius: var(--radius);
     padding: 13px;
   }
   .portal-branch-row {
@@ -3082,7 +3175,9 @@ button.button--danger:hover {
     text-align: left;
   }
   .portal-contained-list {
-    max-height: 330px;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
   }
   .portal-stock-summary {
     gap: 6px;
