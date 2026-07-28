@@ -4,10 +4,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/../admin/includes/bootstrap.php';
 require_once __DIR__ . '/../admin/includes/client-portal.php';
 
-require_portal_login();
-
 $pdo = admin_db();
 admin_cloud_sync_ensure_schema($pdo);
+require_portal_login($pdo);
 
 $portalUser = portal_current_user() ?? [];
 $clientId = (int) ($portalUser['client_id'] ?? 0);
@@ -19,6 +18,7 @@ $canViewFinancials = portal_role_can('view_financials', $portalRole);
 $salesOverview = $canViewSales ? admin_cloud_sync_sales_overview($pdo, $clientId) : [];
 $recentSales = $canViewSales ? admin_cloud_sync_recent_sales($pdo, 6, $clientId) : [];
 $installations = portal_client_installations_summary($pdo, $clientId);
+$portalBranches = portal_client_branches_summary($pdo, $clientId);
 $license = portal_client_license_summary($pdo, $clientId);
 $stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
 $stockState = trim((string) ($_GET['stock_estado'] ?? 'attention'));
@@ -44,8 +44,6 @@ $stockItems = admin_cloud_sync_stock_items($pdo, $clientId, [
 $cloudStartedLabel = format_datetime($installations['first_seen_at'] ?? null, 'Pendiente de primera sincronizacion');
 $lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin sincronizacion');
 $lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
-$installationRows = is_array($installations['rows'] ?? null) ? $installations['rows'] : [];
-$onlineCutoff = new DateTimeImmutable('-10 minutes', new DateTimeZone('UTC'));
 $stockFilterBase = [
     'stock_q' => $stockQuery,
     'stock_sucursal' => $stockBranchId,
@@ -304,28 +302,34 @@ if ($installTotal === 0) {
           </div>
         </div>
 
-        <?php if (!$installationRows): ?>
-          <div class="empty-panel">Todavia no hay instalaciones sincronizadas.</div>
+        <?php if (!$portalBranches): ?>
+          <div class="empty-panel">Todavia no hay sucursales configuradas.</div>
         <?php else: ?>
           <div class="portal-branch-list portal-contained-list">
-            <?php foreach ($installationRows as $installation): ?>
+            <?php foreach ($portalBranches as $branch): ?>
               <?php
-                $lastSeenRaw = (string) ($installation['last_seen_at'] ?? '');
-                $lastSeen = $lastSeenRaw !== ''
-                    ? DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $lastSeenRaw, new DateTimeZone('UTC'))
-                    : false;
-                $isOnline = $lastSeen && $lastSeen >= $onlineCutoff;
-                $branchName = trim((string) ($installation['branch_name'] ?? ''));
-                $deviceName = trim((string) ($installation['display_name'] ?: $installation['device_label'] ?: 'Instalacion FLUS'));
+                $branchInstallations = is_array($branch['installations'] ?? null) ? $branch['installations'] : [];
+                $branchOnline = (int) ($branch['online'] ?? 0);
+                $branchIsOnline = $branchOnline > 0;
+                $branchStatus = !$branchInstallations
+                    ? 'Sin instalacion'
+                    : ($branchIsOnline ? $branchOnline . ' online' : 'Sin contacto');
               ?>
               <div class="portal-branch-row">
-                <div>
-                  <strong><?= e($branchName !== '' ? $branchName : 'Sin sucursal') ?></strong>
-                  <span><?= e($deviceName) ?><?= !empty($installation['app_version']) ? ' - v' . e((string) $installation['app_version']) : '' ?></span>
+                <div class="portal-branch-row__identity">
+                  <strong><?= e((string) ($branch['branch_name'] ?? 'Sin sucursal')) ?></strong>
+                  <?php if (!$branchInstallations): ?>
+                    <span>Lista para vincular una instalacion FLUS.</span>
+                  <?php else: ?>
+                    <?php foreach ($branchInstallations as $installation): ?>
+                      <?php $deviceName = trim((string) ($installation['display_name'] ?: $installation['device_label'] ?: 'Instalacion FLUS')); ?>
+                      <span><?= e($deviceName) ?><?= !empty($installation['app_version']) ? ' - v' . e((string) $installation['app_version']) : '' ?></span>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
                 </div>
                 <div>
-                  <span class="portal-presence <?= $isOnline ? 'is-online' : 'is-offline' ?>"><?= $isOnline ? 'Online' : 'Sin contacto' ?></span>
-                  <small><?= e(format_datetime($installation['last_seen_at'] ?? null, 'Sin registro')) ?></small>
+                  <span class="portal-presence <?= $branchIsOnline ? 'is-online' : 'is-offline' ?>"><?= e($branchStatus) ?></span>
+                  <small><?= e(format_datetime($branch['last_seen_at'] ?? null, 'Sin sincronizacion')) ?></small>
                 </div>
               </div>
             <?php endforeach; ?>

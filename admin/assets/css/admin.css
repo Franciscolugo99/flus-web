@@ -2122,12 +2122,19 @@ body.login-page {
 
 .portal-branch-row strong {
   color: var(--text-primary);
+  font-size: .94rem;
 }
 
 .portal-branch-row span,
 .portal-branch-row small {
   color: var(--text-secondary);
   font-size: .8rem;
+}
+
+.portal-branch-row__identity > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .portal-presence {

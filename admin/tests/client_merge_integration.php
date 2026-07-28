@@ -7,6 +7,8 @@ if (getenv('FLUS_ADMIN_TEST_DB') !== '1') {
 }
 
 require_once __DIR__ . '/../includes/client-merge.php';
+require_once __DIR__ . '/../includes/cloud-sync.php';
+require_once __DIR__ . '/../includes/client-portal.php';
 
 function test_assert(bool $condition, string $message): void
 {
@@ -85,6 +87,28 @@ try {
     test_assert((int) $pdo->query("SELECT COUNT(*) FROM client_merge_events WHERE source_client_id = 3 AND target_client_id = 1")->fetchColumn() === 1, 'Merge audit was not stored.');
     test_assert((int) $pdo->query("SELECT COUNT(*) FROM client_portal_memberships WHERE client_id = 1 AND is_active = 1")->fetchColumn() === 1, 'Target portal access changed unexpectedly.');
     test_assert((int) $pdo->query("SELECT COUNT(*) FROM client_portal_memberships WHERE client_id = 3 AND is_active = 0")->fetchColumn() === 1, 'Duplicate portal access was not archived.');
+
+    $_SESSION['client_portal_user'] = [
+        'id' => 1,
+        'email' => 'owner@example.test',
+        'full_name' => '',
+        'client_id' => 3,
+        'client_name' => 'CANAAN 24/7',
+        'role' => 'owner',
+    ];
+    test_assert(portal_refresh_current_session($pdo), 'The stale portal session was not recovered.');
+    test_assert((int) ($_SESSION['client_portal_user']['client_id'] ?? 0) === 1, 'The portal session did not move to the active client.');
+
+    $portalBranches = portal_client_branches_summary($pdo, 1);
+    test_assert(count($portalBranches) === 2, 'The portal did not return both client branches.');
+    $portalBranchNames = array_column($portalBranches, 'branch_name');
+    sort($portalBranchNames);
+    test_assert($portalBranchNames === ['CANAAN 24/7', 'CANAAN Central'], 'The portal branch names are not the expected ones.');
+
+    $inactiveUserInsert = $pdo->prepare("INSERT INTO client_portal_users (id, email, password_hash) VALUES (2, 'inactive@example.test', :hash)");
+    $inactiveUserInsert->execute(['hash' => $hash]);
+    $pdo->exec("INSERT INTO client_portal_memberships (user_id, client_id, role, is_active) VALUES (2, 3, 'viewer', 1)");
+    test_assert(portal_find_user_membership($pdo, 'inactive@example.test') === null, 'An archived client remained available in the portal.');
 
     $retryBlocked = false;
     try {

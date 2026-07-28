@@ -203,6 +203,12 @@ El aislamiento se hace por `client_portal_memberships.client_id`. El admin ve
 todos los clientes desde `admin/cloud-sync.php`, pero un cliente del portal solo
 consulta el negocio asociado a su membresia activa.
 
+Cada request autenticado revalida que el usuario, la membresia y el cliente
+sigan activos. Si un cliente fue fusionado, una sesion anterior adopta la
+membresia activa resultante; si no existe una membresia valida, el acceso se
+cierra por defecto. La vista de sucursales lista tambien sedes activas sin una
+instalacion conectada, para distinguir configuracion pendiente de falta de red.
+
 Para crear o actualizar un acceso de cliente desde consola:
 
 ```powershell

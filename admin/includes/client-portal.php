@@ -103,13 +103,65 @@ if (!function_exists('portal_logout_user')) {
 }
 
 if (!function_exists('require_portal_login')) {
-    function require_portal_login(): void
+    function require_portal_login(PDO $pdo): void
     {
         admin_start_session();
-        if (!portal_is_logged_in()) {
+        if (!portal_is_logged_in() || !portal_refresh_current_session($pdo)) {
+            portal_logout_user();
             set_flash('error', 'Inicia sesion para ver tu negocio.');
             redirect_to(portal_url('login.php'));
         }
+    }
+}
+
+if (!function_exists('portal_refresh_current_session')) {
+    function portal_refresh_current_session(PDO $pdo): bool
+    {
+        $current = portal_current_user();
+        $userId = is_array($current) ? (int) ($current['id'] ?? 0) : 0;
+        $currentClientId = is_array($current) ? (int) ($current['client_id'] ?? 0) : 0;
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT
+                u.id,
+                u.email,
+                u.full_name,
+                m.client_id,
+                m.role,
+                c.legal_name,
+                c.trade_name
+            FROM client_portal_users u
+            INNER JOIN client_portal_memberships m ON m.user_id = u.id
+            INNER JOIN clients c ON c.id = m.client_id
+            WHERE u.id = :user_id
+              AND u.is_active = 1
+              AND m.is_active = 1
+              AND c.status = 'activo'
+            ORDER BY CASE WHEN m.client_id = :current_client_id THEN 0 ELSE 1 END, m.id ASC
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'user_id' => $userId,
+            'current_client_id' => $currentClientId,
+        ]);
+        $row = $stmt->fetch();
+        if (!is_array($row)) {
+            return false;
+        }
+
+        $_SESSION['client_portal_user'] = [
+            'id' => (int) $row['id'],
+            'email' => (string) $row['email'],
+            'full_name' => (string) ($row['full_name'] ?? ''),
+            'client_id' => (int) $row['client_id'],
+            'client_name' => (string) ($row['trade_name'] ?: $row['legal_name']),
+            'role' => (string) ($row['role'] ?? 'viewer'),
+        ];
+
+        return true;
     }
 }
 
@@ -135,6 +187,7 @@ if (!function_exists('portal_find_user_membership')) {
             WHERE u.email = :email
               AND u.is_active = 1
               AND m.is_active = 1
+              AND c.status = 'activo'
             ORDER BY m.id ASC
             LIMIT 1
         ");
@@ -142,6 +195,94 @@ if (!function_exists('portal_find_user_membership')) {
         $row = $stmt->fetch();
 
         return is_array($row) ? $row : null;
+    }
+}
+
+if (!function_exists('portal_client_branches_summary')) {
+    function portal_client_branches_summary(PDO $pdo, int $clientId): array
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT
+                b.id AS branch_id,
+                b.name AS branch_name,
+                b.code AS branch_code,
+                i.id AS installation_id,
+                i.display_name,
+                i.device_label,
+                i.app_version,
+                i.last_seen_at
+            FROM client_branches b
+            LEFT JOIN client_installations i
+              ON i.client_id = b.client_id
+             AND i.branch_id = b.id
+            WHERE b.client_id = :client_id
+              AND b.status = 'active'
+            UNION ALL
+            SELECT
+                0 AS branch_id,
+                'Sin sucursal' AS branch_name,
+                '' AS branch_code,
+                i.id AS installation_id,
+                i.display_name,
+                i.device_label,
+                i.app_version,
+                i.last_seen_at
+            FROM client_installations i
+            WHERE i.client_id = :unassigned_client_id
+              AND i.branch_id IS NULL
+            ORDER BY branch_name ASC, last_seen_at DESC
+        ");
+        $stmt->execute([
+            'client_id' => $clientId,
+            'unassigned_client_id' => $clientId,
+        ]);
+
+        $utc = new DateTimeZone('UTC');
+        $onlineCutoff = new DateTimeImmutable('-10 minutes', $utc);
+        $branches = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $branchId = (int) ($row['branch_id'] ?? 0);
+            $key = $branchId > 0 ? 'branch-' . $branchId : 'unassigned';
+            if (!isset($branches[$key])) {
+                $branches[$key] = [
+                    'branch_id' => $branchId,
+                    'branch_name' => (string) ($row['branch_name'] ?? 'Sin sucursal'),
+                    'branch_code' => (string) ($row['branch_code'] ?? ''),
+                    'installations' => [],
+                    'online' => 0,
+                    'offline' => 0,
+                    'last_seen_at' => null,
+                ];
+            }
+
+            if (empty($row['installation_id'])) {
+                continue;
+            }
+
+            $lastSeenRaw = (string) ($row['last_seen_at'] ?? '');
+            $lastSeen = $lastSeenRaw !== ''
+                ? DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $lastSeenRaw, $utc)
+                : false;
+            $isOnline = $lastSeen && $lastSeen >= $onlineCutoff;
+            $branches[$key]['installations'][] = [
+                'installation_id' => (int) $row['installation_id'],
+                'display_name' => (string) ($row['display_name'] ?? ''),
+                'device_label' => (string) ($row['device_label'] ?? ''),
+                'app_version' => (string) ($row['app_version'] ?? ''),
+                'last_seen_at' => $lastSeenRaw !== '' ? $lastSeenRaw : null,
+                'is_online' => (bool) $isOnline,
+            ];
+            $branches[$key][$isOnline ? 'online' : 'offline']++;
+            if ($lastSeenRaw !== '' && ($branches[$key]['last_seen_at'] === null || $lastSeenRaw > $branches[$key]['last_seen_at'])) {
+                $branches[$key]['last_seen_at'] = $lastSeenRaw;
+            }
+        }
+
+        return array_values($branches);
     }
 }
 
