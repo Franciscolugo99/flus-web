@@ -154,6 +154,23 @@ $stockAttention = $stockWithoutUnits + $stockLow;
 $installOnline = (int) ($installations['online'] ?? 0);
 $installTotal = (int) ($installations['total'] ?? 0);
 $installOffline = (int) ($installations['offline'] ?? 0);
+$alertBranches = $portalBranches;
+if ($selectedBranchId > 0) {
+    $alertBranches = array_values(array_filter($portalBranches, static function (array $branch) use ($selectedBranchId): bool {
+        return (int) ($branch['branch_id'] ?? 0) === $selectedBranchId;
+    }));
+}
+$operationalAlerts = portal_operational_alerts($alertBranches, $installations, $stockOverview, $license, $todayLocal);
+$criticalAlerts = count(array_filter($operationalAlerts, static fn (array $alert): bool => ($alert['severity'] ?? '') === 'critical'));
+$warningAlerts = count(array_filter($operationalAlerts, static fn (array $alert): bool => ($alert['severity'] ?? '') === 'warning'));
+$alertScopeQuery = [
+    'sucursal' => $selectedBranchId,
+    'periodo' => $periodKey,
+];
+if ($periodKey === 'custom') {
+    $alertScopeQuery['desde'] = $customFrom;
+    $alertScopeQuery['hasta'] = $customTo;
+}
 
 $portalHealthClass = 'is-ok';
 $portalHealthTitle = 'Operacion normal';
@@ -227,10 +244,11 @@ if ($installTotal === 0) {
       </div>
     </section>
 
-    <nav id="portalNav" class="portal-nav" aria-label="Secciones del panel" style="--portal-nav-items: <?= $canViewSales ? 4 : 3 ?>">
+    <nav id="portalNav" class="portal-nav" aria-label="Secciones del panel" style="--portal-nav-items: <?= $canViewSales ? 5 : 4 ?>">
       <a href="#resumen" data-view="summary" aria-current="page"><span aria-hidden="true">⌂</span><strong>Inicio</strong></a>
       <a href="#sucursales" data-view="branches"><span aria-hidden="true">⌖</span><strong>Sucursales</strong></a>
       <a href="#stock" data-view="stock"><span aria-hidden="true">▦</span><strong>Stock</strong></a>
+      <a href="#alertas" data-view="alerts"><span aria-hidden="true">!</span><strong>Alertas</strong><?php if ($operationalAlerts): ?><em><?= count($operationalAlerts) ?></em><?php endif; ?></a>
       <?php if ($canViewSales): ?>
         <a href="#ventas" data-view="sales"><span aria-hidden="true">$</span><strong>Ventas</strong></a>
       <?php endif; ?>
@@ -326,6 +344,64 @@ if ($installTotal === 0) {
       </div>
     </section>
 
+    <section id="alertas" class="portal-panel portal-alert-center" data-portal-view="alerts">
+      <div class="section-header section-header--spaced">
+        <div>
+          <div class="section-title">Centro de alertas</div>
+          <div class="section-meta"><?= e($selectedBranchName) ?>. Prioridades calculadas con la ultima informacion recibida.</div>
+        </div>
+        <div class="portal-alert-count" aria-label="<?= count($operationalAlerts) ?> alertas activas">
+          <strong><?= count($operationalAlerts) ?></strong>
+          <span>activas</span>
+        </div>
+      </div>
+
+      <div class="portal-alert-summary" aria-label="Resumen de alertas">
+        <div><span>Criticas</span><strong><?= $criticalAlerts ?></strong></div>
+        <div><span>Atencion</span><strong><?= $warningAlerts ?></strong></div>
+        <div><span>Estado</span><strong><?= $operationalAlerts ? 'Revisar' : 'Normal' ?></strong></div>
+      </div>
+
+      <?php if (!$operationalAlerts): ?>
+        <div class="portal-alert-empty">
+          <strong>Todo en orden</strong>
+          <span>No hay alertas operativas para la sucursal seleccionada.</span>
+        </div>
+      <?php else: ?>
+        <div class="portal-alert-list">
+          <?php foreach ($operationalAlerts as $alert): ?>
+            <?php
+              $alertAction = (string) ($alert['action'] ?? 'summary');
+              $alertQuery = $alertScopeQuery;
+              $alertHash = '#resumen';
+              if ($alertAction === 'branches') {
+                  $alertHash = '#sucursales';
+              } elseif ($alertAction === 'stock_empty') {
+                  $alertQuery['stock_estado'] = 'sin_stock';
+                  $alertHash = '#stock';
+              } elseif ($alertAction === 'stock_low') {
+                  $alertQuery['stock_estado'] = 'bajo_minimo';
+                  $alertHash = '#stock';
+              }
+              $alertUrl = portal_url('index.php?' . http_build_query($alertQuery) . $alertHash);
+              $severity = in_array((string) ($alert['severity'] ?? ''), ['critical', 'warning', 'info'], true)
+                  ? (string) $alert['severity']
+                  : 'info';
+            ?>
+            <article class="portal-alert-row portal-alert-row--<?= e($severity) ?>">
+              <span class="portal-alert-marker" aria-hidden="true">!</span>
+              <div class="portal-alert-copy">
+                <strong><?= e((string) ($alert['title'] ?? 'Alerta')) ?></strong>
+                <span><?= e((string) ($alert['message'] ?? '')) ?></span>
+                <?php if (!empty($alert['meta'])): ?><small><?= e((string) $alert['meta']) ?></small><?php endif; ?>
+              </div>
+              <a class="button button--ghost button--compact" href="<?= e($alertUrl) ?>"><?= e((string) ($alert['actionLabel'] ?? 'Revisar')) ?></a>
+            </article>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </section>
+
     <section class="portal-grid">
       <?php if ($canViewSales): ?>
         <article class="portal-panel" data-portal-view="sales">
@@ -398,7 +474,7 @@ if ($installTotal === 0) {
           <span class="portal-preview-label">Demostracion</span>
         </div>
         <div class="portal-preview-list">
-          <div><strong>Alertas inteligentes</strong><span>Avisos de stock, cierres y ventas inusuales por email, WhatsApp o notificacion.</span><small>En preparacion</small></div>
+          <div><strong>Notificaciones push</strong><span>Avisos importantes aunque el portal no este abierto.</span><small>En preparacion</small></div>
           <div><strong>Productos destacados</strong><span>Ranking de los productos mas vendidos por periodo y sucursal.</span><small>Proxima version</small></div>
           <div><strong>Metas del negocio</strong><span>Objetivos diarios y mensuales con avance visible para cada sucursal.</span><small>Vista previa</small></div>
           <div><strong>Sugerencias de reposicion</strong><span>Recomendaciones basadas en stock minimo y movimiento reciente.</span><small>En estudio</small></div>
@@ -649,6 +725,7 @@ if ($installTotal === 0) {
 
       function viewFromLocation() {
         if (window.location.hash === '#sucursales') return 'branches';
+        if (window.location.hash === '#alertas') return 'alerts';
         if (window.location.hash === '#stock') return 'stock';
         if (window.location.hash === '#ventas') return 'sales';
         return 'summary';

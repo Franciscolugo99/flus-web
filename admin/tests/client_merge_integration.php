@@ -213,6 +213,32 @@ try {
     test_assert(portal_membership_branch_ids($pdo, 30, 1, 'manager', 'selected') === [], 'A selected scope without active mappings must deny every branch.');
     test_assert((int) admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo, null, [])['sales'] === 0, 'An empty selected scope expanded to every branch.');
 
+    $alertToday = new DateTimeImmutable('2026-07-28', new DateTimeZone('America/Argentina/Mendoza'));
+    $alertRows = portal_operational_alerts(
+        [[
+            'branch_name' => 'CANAAN 24/7',
+            'online' => 0,
+            'installations' => [['id' => 20]],
+        ]],
+        ['total' => 1, 'online' => 0, 'offline' => 1],
+        ['sin_stock' => 2, 'bajo_minimo' => 3],
+        ['effective_status' => 'activa', 'expires_at' => '2026-08-02'],
+        $alertToday
+    );
+    $alertIds = array_column($alertRows, 'id');
+    test_assert(in_array('installations-offline', $alertIds, true), 'The alert center missed an offline installation.');
+    test_assert(in_array('stock-empty', $alertIds, true) && in_array('stock-low', $alertIds, true), 'The alert center missed stock alerts.');
+    test_assert(in_array('license-expiring', $alertIds, true), 'The alert center missed an expiring license.');
+    test_assert(strpos(implode(' ', array_map(static fn (array $alert): string => (string) ($alert['meta'] ?? ''), $alertRows)), 'Central') === false, 'The alert center leaked another branch name.');
+    $healthyAlerts = portal_operational_alerts(
+        [['branch_name' => 'CANAAN 24/7', 'online' => 1, 'installations' => [['id' => 20]]]],
+        ['total' => 1, 'online' => 1, 'offline' => 0],
+        ['sin_stock' => 0, 'bajo_minimo' => 0],
+        ['effective_status' => 'activa', 'expires_at' => '2026-09-30'],
+        $alertToday
+    );
+    test_assert($healthyAlerts === [], 'The alert center reported a healthy branch.');
+
     $centralStock = admin_cloud_sync_stock_overview($pdo, 1, $centralBranchId);
     $branch247Stock = admin_cloud_sync_stock_overview($pdo, 1, $branch247Id);
     test_assert((int) $centralStock['total'] === 1, 'The central branch stock overview leaked data.');

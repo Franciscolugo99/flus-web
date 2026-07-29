@@ -199,6 +199,12 @@ sus datos sincronizados:
 - licencia vigente;
 - ultimas ventas recibidas.
 
+La pestaña `Alertas` resume, por el alcance de sucursal elegido, instalaciones
+sin contacto, sucursales pendientes de vincular, productos sin stock, stock
+bajo minimo y observaciones de licencia. Las alertas son de solo lectura y sus
+acciones abren el filtro o la seccion correspondiente; no modifican ventas,
+stock ni configuraciones desde el portal.
+
 El selector `Vista actual` aplica un unico alcance a todo el portal. El usuario
 puede consultar `Todas las sucursales` o una sede concreta; Inicio, ventas,
 medios de pago, stock e instalaciones usan la misma seleccion y la conservan

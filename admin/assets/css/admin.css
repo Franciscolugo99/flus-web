@@ -2046,6 +2046,25 @@ body.login-page {
   padding: 7px 11px;
   text-decoration: none;
   text-transform: uppercase;
+  position: relative;
+}
+
+.portal-nav a > em {
+  align-items: center;
+  background: var(--red);
+  border: 2px solid var(--bg-surface);
+  border-radius: 999px;
+  color: #fff5f5;
+  display: inline-flex;
+  font-size: .62rem;
+  font-style: normal;
+  font-weight: 800;
+  height: 19px;
+  justify-content: center;
+  line-height: 1;
+  margin-left: 5px;
+  min-width: 19px;
+  padding: 0 5px;
 }
 
 .portal-nav a > span {
@@ -2257,6 +2276,153 @@ body.login-page {
   font-size: 1.08rem;
   line-height: 1.1;
   overflow-wrap: anywhere;
+}
+
+.portal-alert-center {
+  display: grid;
+  gap: 14px;
+}
+
+.portal-alert-count {
+  align-items: baseline;
+  display: flex;
+  gap: 5px;
+}
+
+.portal-alert-count strong {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.portal-alert-count span {
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.portal-alert-summary {
+  border-bottom: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-light);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portal-alert-summary > div {
+  border-right: 1px solid var(--border-light);
+  display: grid;
+  gap: 4px;
+  padding: 11px 13px;
+}
+
+.portal-alert-summary > div:last-child {
+  border-right: 0;
+}
+
+.portal-alert-summary span {
+  color: var(--text-muted);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.portal-alert-summary strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.portal-alert-list {
+  display: grid;
+}
+
+.portal-alert-row {
+  align-items: center;
+  border-bottom: 1px solid var(--border-light);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 12px 0;
+}
+
+.portal-alert-row:first-child {
+  padding-top: 0;
+}
+
+.portal-alert-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.portal-alert-marker {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: .82rem;
+  font-weight: 900;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.portal-alert-row--critical .portal-alert-marker {
+  background: rgba(239,68,68,.14);
+  border-color: rgba(239,68,68,.34);
+  color: #f09898;
+}
+
+.portal-alert-row--warning .portal-alert-marker {
+  background: rgba(245,158,11,.14);
+  border-color: rgba(245,158,11,.34);
+  color: #f0c878;
+}
+
+.portal-alert-row--info .portal-alert-marker {
+  background: rgba(59,130,246,.12);
+  border-color: rgba(59,130,246,.3);
+  color: #88b8f0;
+}
+
+.portal-alert-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.portal-alert-copy strong {
+  color: var(--text-primary);
+  font-size: .9rem;
+}
+
+.portal-alert-copy span {
+  color: var(--text-secondary);
+  font-size: .8rem;
+  line-height: 1.4;
+}
+
+.portal-alert-copy small {
+  color: var(--text-muted);
+  font-size: .72rem;
+}
+
+.portal-alert-empty {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-height: 120px;
+  text-align: center;
+}
+
+.portal-alert-empty strong {
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.portal-alert-empty span {
+  color: var(--text-secondary);
+  font-size: .82rem;
 }
 
 .portal-status-box span,
@@ -3383,6 +3549,16 @@ button.button--danger:hover {
     letter-spacing: 0;
     text-transform: none;
   }
+  .portal-nav a > em {
+    border-color: rgba(17,21,32,.98);
+    height: 17px;
+    margin: 0;
+    min-width: 17px;
+    padding: 0 4px;
+    position: absolute;
+    right: 9px;
+    top: 4px;
+  }
   .portal-nav a.is-active,
   .portal-nav a[aria-current="page"] {
     background: rgba(0,200,150,.1);
@@ -3456,6 +3632,25 @@ button.button--danger:hover {
   .portal-overview-strip div:nth-last-child(-n+2) {
     border-bottom: 0;
     padding-bottom: 3px;
+  }
+  .portal-alert-center {
+    gap: 11px;
+  }
+  .portal-alert-summary > div {
+    padding: 9px 8px;
+  }
+  .portal-alert-summary span {
+    font-size: .61rem;
+  }
+  .portal-alert-row {
+    align-items: start;
+    gap: 9px 10px;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .portal-alert-row .button {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 2px;
   }
   .portal-grid {
     gap: 10px;

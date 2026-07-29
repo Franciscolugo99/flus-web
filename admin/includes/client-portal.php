@@ -475,3 +475,149 @@ if (!function_exists('portal_client_license_summary')) {
         return $row;
     }
 }
+
+if (!function_exists('portal_operational_alerts')) {
+    function portal_operational_alerts(
+        array $branches,
+        array $installations,
+        array $stockOverview,
+        ?array $license,
+        DateTimeImmutable $today
+    ): array {
+        $alerts = [];
+        $addAlert = static function (
+            string $id,
+            string $severity,
+            string $title,
+            string $message,
+            string $action,
+            string $actionLabel,
+            ?string $meta = null
+        ) use (&$alerts): void {
+            $alerts[] = compact('id', 'severity', 'title', 'message', 'action', 'actionLabel', 'meta');
+        };
+
+        $installationTotal = max(0, (int) ($installations['total'] ?? 0));
+        $installationOffline = max(0, (int) ($installations['offline'] ?? 0));
+        if ($installationTotal === 0) {
+            $addAlert(
+                'installations-missing',
+                'critical',
+                'Sin instalaciones conectadas',
+                'Todavia no hay una PC FLUS enviando informacion para este alcance.',
+                'branches',
+                'Ver sucursales'
+            );
+        } elseif ($installationOffline > 0) {
+            $offlineNames = [];
+            foreach ($branches as $branch) {
+                $branchInstallations = is_array($branch['installations'] ?? null) ? $branch['installations'] : [];
+                if ($branchInstallations && (int) ($branch['online'] ?? 0) === 0) {
+                    $offlineNames[] = (string) ($branch['branch_name'] ?? 'Sucursal');
+                }
+            }
+            $offlineLabel = $offlineNames ? implode(', ', array_slice($offlineNames, 0, 3)) : null;
+            $addAlert(
+                'installations-offline',
+                'critical',
+                'Sucursal sin contacto',
+                $installationOffline . ' instalacion' . ($installationOffline === 1 ? '' : 'es') . ' no reporta en los ultimos 10 minutos.',
+                'branches',
+                'Revisar conexion',
+                $offlineLabel
+            );
+        }
+
+        if ($installationTotal > 0) {
+            $unlinkedNames = [];
+            foreach ($branches as $branch) {
+                if (empty($branch['installations'])) {
+                    $unlinkedNames[] = (string) ($branch['branch_name'] ?? 'Sucursal');
+                }
+            }
+            if ($unlinkedNames) {
+                $addAlert(
+                    'branches-unlinked',
+                    'warning',
+                    'Sucursal pendiente de vinculacion',
+                    count($unlinkedNames) . ' sucursal' . (count($unlinkedNames) === 1 ? '' : 'es') . ' todavia no tiene una instalacion FLUS asignada.',
+                    'branches',
+                    'Ver sucursales',
+                    implode(', ', array_slice($unlinkedNames, 0, 3))
+                );
+            }
+        }
+
+        $withoutStock = max(0, (int) ($stockOverview['sin_stock'] ?? 0));
+        if ($withoutStock > 0) {
+            $addAlert(
+                'stock-empty',
+                'critical',
+                'Productos sin stock',
+                $withoutStock . ' producto' . ($withoutStock === 1 ? '' : 's') . ' necesita reposicion o revision.',
+                'stock_empty',
+                'Ver faltantes'
+            );
+        }
+
+        $lowStock = max(0, (int) ($stockOverview['bajo_minimo'] ?? 0));
+        if ($lowStock > 0) {
+            $addAlert(
+                'stock-low',
+                'warning',
+                'Stock bajo minimo',
+                $lowStock . ' producto' . ($lowStock === 1 ? '' : 's') . ' esta por debajo del minimo configurado.',
+                'stock_low',
+                'Revisar reposicion'
+            );
+        }
+
+        if ($license === null) {
+            $addAlert(
+                'license-missing',
+                'critical',
+                'Licencia no disponible',
+                'No se encontro una licencia asociada al comercio.',
+                'summary',
+                'Ver estado'
+            );
+        } else {
+            $effectiveStatus = (string) ($license['effective_status'] ?? '');
+            if ($effectiveStatus !== 'activa') {
+                $addAlert(
+                    'license-status',
+                    'critical',
+                    'Licencia ' . strtolower(status_label($effectiveStatus)),
+                    'El estado actual de la licencia requiere revision administrativa.',
+                    'summary',
+                    'Ver estado',
+                    format_date((string) ($license['expires_at'] ?? ''))
+                );
+            } else {
+                $expiresAt = DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($license['expires_at'] ?? ''), $today->getTimezone());
+                if ($expiresAt instanceof DateTimeImmutable) {
+                    $daysLeft = (int) $today->diff($expiresAt)->format('%r%a');
+                    if ($daysLeft >= 0 && $daysLeft <= 15) {
+                        $addAlert(
+                            'license-expiring',
+                            'warning',
+                            'Licencia proxima a vencer',
+                            $daysLeft === 0 ? 'La licencia vence hoy.' : 'La licencia vence en ' . $daysLeft . ' dias.',
+                            'summary',
+                            'Ver vencimiento',
+                            format_date((string) $license['expires_at'])
+                        );
+                    }
+                }
+            }
+        }
+
+        $weights = ['critical' => 0, 'warning' => 1, 'info' => 2];
+        usort($alerts, static function (array $left, array $right) use ($weights): int {
+            return (($weights[$left['severity']] ?? 9) <=> ($weights[$right['severity']] ?? 9))
+                ?: strcmp((string) $left['title'], (string) $right['title']);
+        });
+
+        return $alerts;
+    }
+}
