@@ -62,6 +62,11 @@ if ($periodKey === 'yesterday') {
 }
 $fromUtc = $fromLocal->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
 $toUtc = $toLocal->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
+$nowLocal = new DateTimeImmutable('now', $localTimezone);
+$effectiveToLocal = $toLocal < $nowLocal ? $toLocal : $nowLocal;
+$periodDays = max(1, (int)$fromLocal->diff($toLocal)->days);
+$previousFromUtc = $fromLocal->modify('-' . $periodDays . ' days')->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
+$previousToUtc = $effectiveToLocal->modify('-' . $periodDays . ' days')->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
 
 $portalBranches = portal_client_branches_summary($pdo, $clientId);
 if ($hasBranchRestriction) {
@@ -89,6 +94,9 @@ $branchFilterId = $selectedBranchId > 0 ? $selectedBranchId : null;
 $salesOverview = $canViewSales
     ? admin_cloud_sync_sales_period_overview($pdo, $clientId, $fromUtc, $toUtc, $branchFilterId, $allowedBranchIds)
     : [];
+$previousSalesOverview = $canViewSales
+    ? admin_cloud_sync_sales_period_overview($pdo, $clientId, $previousFromUtc, $previousToUtc, $branchFilterId, $allowedBranchIds)
+    : [];
 $recentSales = $canViewSales
     ? admin_cloud_sync_recent_sales($pdo, 6, $clientId, $branchFilterId, $fromUtc, $toUtc, $allowedBranchIds)
     : [];
@@ -113,6 +121,15 @@ foreach ($branchComparison as $branchMetrics) {
     $comparisonMaxAmount = max($comparisonMaxAmount, (float) ($branchMetrics['amount'] ?? 0));
 }
 $installations = portal_client_installations_summary($pdo, $clientId, $branchFilterId, $allowedBranchIds);
+$cashSessions = admin_cloud_sync_cash_sessions($pdo, $clientId, $branchFilterId, $allowedBranchIds);
+$openCashSessions = array_values(array_filter($cashSessions, static fn (array $session): bool => ($session['status'] ?? '') === 'open'));
+$lastClosedCashSession = null;
+foreach ($cashSessions as $cashSession) {
+    if (($cashSession['status'] ?? '') === 'closed') {
+        $lastClosedCashSession = $cashSession;
+        break;
+    }
+}
 $license = portal_client_license_summary($pdo, $clientId);
 $stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
 $stockState = trim((string) ($_GET['stock_estado'] ?? 'attention'));
@@ -134,9 +151,9 @@ $stockItems = admin_cloud_sync_stock_items($pdo, $clientId, [
     'branch_ids' => $allowedBranchIds,
     'limit' => 24,
 ]);
-$cloudStartedLabel = format_datetime($installations['first_seen_at'] ?? null, 'Pendiente de primera sincronizacion');
-$lastSyncLabel = format_datetime($installations['last_seen_at'] ?? null, 'Sin sincronizacion');
-$lastStockLabel = format_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
+$cloudStartedLabel = format_utc_datetime($installations['first_seen_at'] ?? null, 'Pendiente de primera sincronizacion');
+$lastSyncLabel = format_utc_datetime($installations['last_seen_at'] ?? null, 'Sin sincronizacion');
+$lastStockLabel = format_utc_datetime($stockOverview['last_synced_at'] ?? null, 'Sin stock sincronizado');
 $stockFilterBase = [
     'sucursal' => $selectedBranchId,
     'periodo' => $periodKey,
@@ -154,6 +171,29 @@ $stockStateCounts = [
 ];
 $salesCount = (int) ($salesOverview['sales'] ?? 0);
 $amountPeriod = (float) ($salesOverview['amount'] ?? 0);
+$averageTicket = (float) ($salesOverview['avg_ticket'] ?? 0);
+$itemsPeriod = (int) ($salesOverview['items'] ?? 0);
+$previousSalesCount = (int) ($previousSalesOverview['sales'] ?? 0);
+$previousAmount = (float) ($previousSalesOverview['amount'] ?? 0);
+$previousAverageTicket = (float) ($previousSalesOverview['avg_ticket'] ?? 0);
+$pulseTrend = static function (float $current, float $previous): array {
+    if (abs($previous) < 0.0001) {
+        return abs($current) < 0.0001
+            ? ['class' => 'is-neutral', 'label' => 'Sin cambios']
+            : ['class' => 'is-new', 'label' => 'Sin movimiento previo'];
+    }
+    $percentage = (($current - $previous) / abs($previous)) * 100;
+    if (abs($percentage) < 0.5) {
+        return ['class' => 'is-neutral', 'label' => 'Sin cambios'];
+    }
+    return [
+        'class' => $percentage > 0 ? 'is-up' : 'is-down',
+        'label' => ($percentage > 0 ? '+' : '') . number_format($percentage, 0, ',', '.') . '% vs anterior',
+    ];
+};
+$amountTrend = $pulseTrend($amountPeriod, $previousAmount);
+$salesTrend = $pulseTrend((float)$salesCount, (float)$previousSalesCount);
+$ticketTrend = $pulseTrend($averageTicket, $previousAverageTicket);
 $stockTotal = (int) ($stockOverview['total'] ?? 0);
 $stockWithoutUnits = (int) ($stockOverview['sin_stock'] ?? 0);
 $stockLow = (int) ($stockOverview['bajo_minimo'] ?? 0);
@@ -351,6 +391,100 @@ if ($installTotal === 0) {
       </div>
     </section>
 
+    <?php if ($canViewSales): ?>
+      <section class="portal-panel portal-pulse" data-portal-view="summary" aria-label="Pulso del negocio">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Pulso del negocio</div>
+            <div class="section-meta"><?= e($selectedBranchName) ?>, <?= e(strtolower($periodLabel)) ?> comparado con el periodo anterior.</div>
+          </div>
+        </div>
+        <div class="portal-pulse-grid">
+          <div class="portal-pulse-metric">
+            <span>Facturacion</span>
+            <?php if ($canViewFinancials): ?>
+              <strong><?= e(format_money($amountPeriod)) ?></strong>
+              <small class="<?= e($amountTrend['class']) ?>"><?= e($amountTrend['label']) ?></small>
+            <?php else: ?>
+              <strong>Restringido</strong>
+              <small class="is-neutral">Solo Dueño o Encargado</small>
+            <?php endif; ?>
+          </div>
+          <div class="portal-pulse-metric">
+            <span>Ventas</span>
+            <strong><?= $salesCount ?></strong>
+            <small class="<?= e($salesTrend['class']) ?>"><?= e($salesTrend['label']) ?></small>
+          </div>
+          <div class="portal-pulse-metric">
+            <span>Ticket promedio</span>
+            <?php if ($canViewFinancials): ?>
+              <strong><?= e(format_money($averageTicket)) ?></strong>
+              <small class="<?= e($ticketTrend['class']) ?>"><?= e($ticketTrend['label']) ?></small>
+            <?php else: ?>
+              <strong>Restringido</strong>
+              <small class="is-neutral">Importe no disponible</small>
+            <?php endif; ?>
+          </div>
+          <div class="portal-pulse-metric">
+            <span>Productos vendidos</span>
+            <strong><?= $itemsPeriod ?></strong>
+            <small class="is-neutral">En <?= $salesCount ?> venta<?= $salesCount === 1 ? '' : 's' ?></small>
+          </div>
+        </div>
+      </section>
+    <?php endif; ?>
+
+    <section class="portal-panel portal-cash-live" data-portal-view="summary" aria-label="Estado de cajas">
+      <div class="section-header section-header--spaced">
+        <div>
+          <div class="section-title">Cajas ahora</div>
+          <div class="section-meta"><?= e($selectedBranchName) ?>. Aperturas y cierres informados por FLUS.</div>
+        </div>
+        <span class="portal-cash-count <?= $openCashSessions ? 'is-open' : '' ?>"><?= count($openCashSessions) ?> abierta<?= count($openCashSessions) === 1 ? '' : 's' ?></span>
+      </div>
+
+      <?php if (!$cashSessions): ?>
+        <div class="portal-cash-empty">
+          <strong>Aun no hay estados de caja sincronizados</strong>
+          <span>Las ventas siguen visibles. Esta seccion se activara cuando FLUS envie la proxima apertura o cierre.</span>
+        </div>
+      <?php else: ?>
+        <div class="portal-cash-list">
+          <?php foreach ($openCashSessions as $cashSession): ?>
+            <?php $cashSummary = is_array($cashSession['summary'] ?? null) ? $cashSession['summary'] : []; ?>
+            <article class="portal-cash-row is-open">
+              <div>
+                <span class="portal-presence is-online">Abierta</span>
+                <strong><?= e((string)(($cashSummary['terminal_name'] ?? '') ?: $cashSession['installation_name'])) ?></strong>
+                <small><?= e((string)$cashSession['branch_name']) ?></small>
+              </div>
+              <div>
+                <strong><?= e($canViewSales ? (string)(($cashSummary['cashier_name'] ?? '') ?: 'Cajero sin informar') : 'En operacion') ?></strong>
+                <small>Desde <?= e(format_utc_datetime($cashSummary['fecha_apertura'] ?? $cashSession['occurred_at'])) ?></small>
+              </div>
+            </article>
+          <?php endforeach; ?>
+
+          <?php if ($lastClosedCashSession): ?>
+            <?php $closedSummary = is_array($lastClosedCashSession['summary'] ?? null) ? $lastClosedCashSession['summary'] : []; ?>
+            <article class="portal-cash-row">
+              <div>
+                <span class="portal-presence is-offline">Ultimo cierre</span>
+                <strong><?= e((string)(($closedSummary['terminal_name'] ?? '') ?: $lastClosedCashSession['installation_name'])) ?></strong>
+                <small><?= e((string)$lastClosedCashSession['branch_name']) ?></small>
+              </div>
+              <div>
+                <?php if ($canViewFinancials): ?>
+                  <strong>Diferencia <?= e(format_money($closedSummary['diferencia'] ?? 0)) ?></strong>
+                <?php endif; ?>
+                <small><?= e(format_utc_datetime($closedSummary['fecha_cierre'] ?? $lastClosedCashSession['occurred_at'])) ?></small>
+              </div>
+            </article>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+    </section>
+
     <section id="alertas" class="portal-panel portal-alert-center" data-portal-view="alerts">
       <div class="section-header section-header--spaced">
         <div>
@@ -523,7 +657,7 @@ if ($installTotal === 0) {
                 </div>
                 <div>
                   <span class="portal-presence <?= $branchIsOnline ? 'is-online' : 'is-offline' ?>"><?= e($branchStatus) ?></span>
-                  <small><?= e(format_datetime($branch['last_seen_at'] ?? null, 'Sin sincronizacion')) ?></small>
+                  <small><?= e(format_utc_datetime($branch['last_seen_at'] ?? null, 'Sin sincronizacion')) ?></small>
                 </div>
               </div>
             <?php endforeach; ?>
@@ -650,7 +784,7 @@ if ($installTotal === 0) {
               <article class="cloud-sale-item">
                 <div>
                   <strong><?= e($branchName) ?> - <?= $saleId > 0 ? 'venta #' . $saleId : 'venta sin numero' ?></strong>
-                  <span><?= e(format_datetime($sale['received_at'] ?? null)) ?></span>
+                  <span><?= e(format_utc_datetime($sale['received_at'] ?? null)) ?></span>
                 </div>
                 <div>
                   <?php if ($canViewFinancials): ?>

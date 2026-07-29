@@ -84,6 +84,23 @@ try {
     }
 
     if ($isPreflight || $eventsCount <= 0) {
+        $pdo->beginTransaction();
+        $license = admin_cloud_sync_find_license($pdo, $licenseKey, true);
+        if (!$license || !admin_cloud_sync_license_accepts_events($license)) {
+            $pdo->rollBack();
+            $reason = $license ? admin_cloud_sync_license_reject_reason($license) : 'LICENSE_NOT_FOUND';
+            cloud_sync_json_response($license ? 403 : 404, [
+                'ok' => false,
+                'error' => $reason !== '' ? $reason : 'LICENSE_NOT_ACTIVE',
+            ]);
+        }
+        $branchId = null;
+        if (isset($request['branch']) && is_array($request['branch'])) {
+            $branchId = admin_cloud_sync_upsert_branch($pdo, (int) $license['client_id'], $request['branch']);
+        }
+        admin_cloud_sync_upsert_installation($pdo, $license, $installationUid, $branchId, $request);
+        $pdo->commit();
+
         cloud_sync_json_response(200, [
             'ok' => true,
             'accepted' => 0,

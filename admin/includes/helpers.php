@@ -331,6 +331,24 @@ if (!function_exists('format_datetime')) {
     }
 }
 
+if (!function_exists('format_utc_datetime')) {
+    function format_utc_datetime(?string $date, string $fallback = 'â€”'): string
+    {
+        if (!$date) {
+            return $fallback;
+        }
+
+        try {
+            $utc = new DateTimeZone('UTC');
+            $local = new DateTimeZone((string) admin_config('timezone', 'America/Argentina/Mendoza'));
+            $value = new DateTimeImmutable($date, $utc);
+            return $value->setTimezone($local)->format('d/m/Y H:i');
+        } catch (Throwable $e) {
+            return $fallback;
+        }
+    }
+}
+
 if (!function_exists('format_money')) {
     function format_money($amount): string
     {

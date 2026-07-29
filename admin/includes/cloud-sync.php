@@ -461,23 +461,23 @@ if (!function_exists('admin_cloud_sync_store_stock_event')) {
             )
             ON DUPLICATE KEY UPDATE
                 branch_id = COALESCE(branch_id, VALUES(branch_id)),
-                license_id = VALUES(license_id),
-                local_product_id = VALUES(local_product_id),
-                codigo = VALUES(codigo),
-                nombre = VALUES(nombre),
-                categoria = VALUES(categoria),
-                marca = VALUES(marca),
-                precio = VALUES(precio),
-                stock = VALUES(stock),
-                stock_minimo = VALUES(stock_minimo),
-                estado_stock = VALUES(estado_stock),
-                unidad_venta = VALUES(unidad_venta),
-                es_pesable = VALUES(es_pesable),
-                activo = VALUES(activo),
-                product_updated_at = VALUES(product_updated_at),
-                last_event_uid = VALUES(last_event_uid),
-                synced_at = UTC_TIMESTAMP(),
-                updated_at = CURRENT_TIMESTAMP
+                license_id = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(license_id), license_id),
+                local_product_id = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(local_product_id), local_product_id),
+                codigo = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(codigo), codigo),
+                nombre = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(nombre), nombre),
+                categoria = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(categoria), categoria),
+                marca = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(marca), marca),
+                precio = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(precio), precio),
+                stock = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(stock), stock),
+                stock_minimo = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(stock_minimo), stock_minimo),
+                estado_stock = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(estado_stock), estado_stock),
+                unidad_venta = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(unidad_venta), unidad_venta),
+                es_pesable = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(es_pesable), es_pesable),
+                activo = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(activo), activo),
+                last_event_uid = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(last_event_uid), last_event_uid),
+                synced_at = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, UTC_TIMESTAMP(), synced_at),
+                updated_at = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, CURRENT_TIMESTAMP, updated_at),
+                product_updated_at = IF(product_updated_at IS NULL OR VALUES(product_updated_at) >= product_updated_at, VALUES(product_updated_at), product_updated_at)
         ');
 
         $stored = 0;
@@ -1324,6 +1324,80 @@ if (!function_exists('admin_cloud_sync_branch_sales_comparison')) {
     }
 }
 
+if (!function_exists('admin_cloud_sync_cash_sessions')) {
+    function admin_cloud_sync_cash_sessions(
+        PDO $pdo,
+        int $clientId,
+        ?int $branchId = null,
+        ?array $allowedBranchIds = null
+    ): array {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+
+        $where = "
+            WHERE e.client_id = :client_id
+              AND e.event_type IN ('cash.opened', 'cash.closed')
+        ";
+        $params = ['client_id' => $clientId];
+        if ($branchId !== null && $branchId > 0) {
+            if ($allowedBranchIds !== null && !in_array($branchId, array_map('intval', $allowedBranchIds), true)) {
+                $where .= ' AND 1 = 0';
+            } else {
+                $where .= ' AND e.branch_id = :branch_id';
+                $params['branch_id'] = $branchId;
+            }
+        } elseif ($allowedBranchIds !== null) {
+            $placeholders = [];
+            foreach (array_values(array_unique(array_map('intval', $allowedBranchIds))) as $index => $allowedBranchId) {
+                if ($allowedBranchId <= 0) {
+                    continue;
+                }
+                $key = 'cash_allowed_branch_' . $index;
+                $placeholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $where .= $placeholders ? ' AND e.branch_id IN (' . implode(',', $placeholders) . ')' : ' AND 1 = 0';
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT e.*, b.name AS branch_name, i.display_name, i.device_label
+            FROM cloud_sync_events e
+            INNER JOIN client_installations i ON i.id = e.installation_id
+            LEFT JOIN client_branches b ON b.id = e.branch_id AND b.client_id = e.client_id
+            {$where}
+            ORDER BY e.occurred_at DESC, e.id DESC
+            LIMIT 500
+        ");
+        $stmt->execute($params);
+
+        $sessions = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $summary = admin_cloud_sync_decode_json($row['summary_json'] ?? null);
+            $cashId = (int)($summary['caja_id'] ?? 0);
+            if ($cashId <= 0) {
+                continue;
+            }
+            $key = (int)$row['installation_id'] . ':' . $cashId;
+            if (isset($sessions[$key])) {
+                continue;
+            }
+            $sessions[$key] = [
+                'caja_id' => $cashId,
+                'branch_id' => (int)($row['branch_id'] ?? 0),
+                'branch_name' => (string)($row['branch_name'] ?: 'Sin sucursal'),
+                'installation_id' => (int)$row['installation_id'],
+                'installation_name' => (string)($row['display_name'] ?: $row['device_label'] ?: 'Instalacion FLUS'),
+                'status' => (string)$row['event_type'] === 'cash.opened' ? 'open' : 'closed',
+                'occurred_at' => (string)($row['occurred_at'] ?? ''),
+                'summary' => $summary,
+            ];
+        }
+
+        return array_values($sessions);
+    }
+}
+
 if (!function_exists('admin_cloud_sync_sales_overview')) {
     function admin_cloud_sync_sales_overview(PDO $pdo, ?int $clientId = null, ?int $branchId = null): array
     {
@@ -1486,7 +1560,12 @@ if (!function_exists('admin_cloud_sync_stock_items')) {
         $query = trim((string) ($filters['q'] ?? ''));
         $branchId = (int) ($filters['branch_id'] ?? 0);
         $branchScopeRestricted = array_key_exists('branch_ids', $filters) && is_array($filters['branch_ids']);
-        $allowedBranchIds = array_values(array_unique(array_filter(array_map('intval', (array) ($filters['branch_ids'] ?? [])), static fn (int $id): bool => $id > 0)));
+        $allowedBranchIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($filters['branch_ids'] ?? [])),
+            static function (int $id): bool {
+                return $id > 0;
+            }
+        )));
 
         $where = ['s.client_id = :client_id', 's.activo = 1'];
         $params = ['client_id' => $clientId];

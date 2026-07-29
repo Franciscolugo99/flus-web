@@ -1,0 +1,6 @@
+Options -Indexes
+
+RewriteEngine On
+RewriteRule ^(?:license-check|sync-ingest)\.php$ - [L]
+RewriteRule ^\.well-known/acme-challenge/ - [L]
+RewriteRule ^ - [F,L]

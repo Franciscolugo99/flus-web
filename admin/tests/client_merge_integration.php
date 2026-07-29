@@ -186,6 +186,77 @@ try {
     test_assert((int) ($branchComparison[$centralBranchId]['sales'] ?? 0) === 1, 'The comparison returned the wrong central sales count.');
     test_assert((float) ($branchComparison[$branch247Id]['amount'] ?? 0) === 3400.0, 'The comparison returned the wrong 24/7 amount.');
 
+    $newerProductAt = gmdate('Y-m-d\TH:i:s\Z', time() - 60);
+    $olderProductAt = gmdate('Y-m-d\TH:i:s\Z', time() - 3600);
+    $newerProductStoredAt = admin_cloud_sync_parse_datetime($newerProductAt);
+    $stockLicense = ['id' => 8, 'client_id' => 1];
+    admin_cloud_sync_store_stock_event($pdo, $stockLicense, 10, $centralBranchId, 'stock-newer', 'stock.updated', [
+        'products' => [[
+            'product_uid' => 'product-order-guard',
+            'producto_id' => 9001,
+            'nombre' => 'Producto orden temporal',
+            'stock' => 9,
+            'stock_minimo' => 2,
+            'updated_at' => $newerProductAt,
+        ]],
+    ]);
+    admin_cloud_sync_store_stock_event($pdo, $stockLicense, 10, $centralBranchId, 'stock-older', 'stock.updated', [
+        'products' => [[
+            'product_uid' => 'product-order-guard',
+            'producto_id' => 9001,
+            'nombre' => 'Producto orden temporal viejo',
+            'stock' => 1,
+            'stock_minimo' => 2,
+            'updated_at' => $olderProductAt,
+        ]],
+    ]);
+    $stockGuard = $pdo->query("SELECT stock, nombre, product_updated_at, last_event_uid FROM cloud_sync_stock_items WHERE product_uid = 'product-order-guard' LIMIT 1")->fetch();
+    test_assert((float)($stockGuard['stock'] ?? 0) === 9.0, 'An older stock event overwrote the latest quantity.');
+    test_assert((string)($stockGuard['nombre'] ?? '') === 'Producto orden temporal', 'An older stock event overwrote current product data.');
+    test_assert((string)($stockGuard['product_updated_at'] ?? '') === $newerProductStoredAt, 'The stock timestamp moved backwards.');
+    test_assert((string)($stockGuard['last_event_uid'] ?? '') === 'stock-newer', 'The stock event audit pointer moved backwards.');
+    $pdo->exec("DELETE FROM cloud_sync_stock_items WHERE product_uid = 'product-order-guard'");
+
+    $cashInsert = $pdo->prepare("
+        INSERT INTO cloud_sync_events
+            (client_id, branch_id, installation_id, license_id, event_uid, event_type, occurred_at, received_at, summary_json)
+        VALUES
+            (1, :branch_id, :installation_id, :license_id, :event_uid, :event_type, :occurred_at, UTC_TIMESTAMP(), :summary_json)
+    ");
+    $cashInsert->execute([
+        'branch_id' => $centralBranchId,
+        'installation_id' => 10,
+        'license_id' => 8,
+        'event_uid' => 'cash-session:501:opened',
+        'event_type' => 'cash.opened',
+        'occurred_at' => gmdate('Y-m-d H:i:s', time() - 120),
+        'summary_json' => json_encode(['caja_id' => 501, 'terminal_name' => 'Caja Central', 'cashier_name' => 'Ana']),
+    ]);
+    $cashInsert->execute([
+        'branch_id' => $branch247Id,
+        'installation_id' => 20,
+        'license_id' => 7,
+        'event_uid' => 'cash-session:701:opened',
+        'event_type' => 'cash.opened',
+        'occurred_at' => gmdate('Y-m-d H:i:s', time() - 600),
+        'summary_json' => json_encode(['caja_id' => 701, 'terminal_name' => 'Caja 24/7', 'cashier_name' => 'Luis']),
+    ]);
+    $cashInsert->execute([
+        'branch_id' => $branch247Id,
+        'installation_id' => 20,
+        'license_id' => 7,
+        'event_uid' => 'cash-session:701:closed',
+        'event_type' => 'cash.closed',
+        'occurred_at' => gmdate('Y-m-d H:i:s', time() - 60),
+        'summary_json' => json_encode(['caja_id' => 701, 'terminal_name' => 'Caja 24/7', 'diferencia' => 0]),
+    ]);
+    $cashSessions = admin_cloud_sync_cash_sessions($pdo, 1);
+    test_assert(count($cashSessions) === 2, 'Cash status did not collapse events by installation and session.');
+    $centralCashSessions = admin_cloud_sync_cash_sessions($pdo, 1, $centralBranchId);
+    test_assert(count($centralCashSessions) === 1 && ($centralCashSessions[0]['status'] ?? '') === 'open', 'Open cash status was not preserved.');
+    $restrictedCashSessions = admin_cloud_sync_cash_sessions($pdo, 1, null, [$branch247Id]);
+    test_assert(count($restrictedCashSessions) === 1 && ($restrictedCashSessions[0]['status'] ?? '') === 'closed', 'Cash status leaked another branch or ignored the latest close.');
+
     $restrictedUserInsert = $pdo->prepare("INSERT INTO client_portal_users (id, email, password_hash) VALUES (3, 'manager@example.test', :hash)");
     $restrictedUserInsert->execute(['hash' => $hash]);
     $pdo->exec("INSERT INTO client_portal_memberships (id, user_id, client_id, role, branch_scope, is_active) VALUES (30, 3, 1, 'manager', 'selected', 1)");
