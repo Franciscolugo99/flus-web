@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS client_portal_memberships (
     user_id INT UNSIGNED NOT NULL,
     client_id INT UNSIGNED NOT NULL,
     role VARCHAR(30) NOT NULL DEFAULT 'owner',
+    branch_scope VARCHAR(20) NOT NULL DEFAULT 'all',
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -39,6 +40,16 @@ CREATE TABLE IF NOT EXISTS client_branches (
     KEY idx_client_branches_client_id (client_id),
     KEY idx_client_branches_status (status),
     CONSTRAINT fk_client_branches_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS client_portal_membership_branches (
+    membership_id INT UNSIGNED NOT NULL,
+    branch_id INT UNSIGNED NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (membership_id, branch_id),
+    KEY idx_portal_membership_branches_branch (branch_id),
+    CONSTRAINT fk_portal_membership_branches_membership FOREIGN KEY (membership_id) REFERENCES client_portal_memberships(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_portal_membership_branches_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS client_installations (

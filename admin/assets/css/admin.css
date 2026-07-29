@@ -1672,6 +1672,81 @@ body.login-page {
   padding: 7px 9px;
 }
 
+.portal-branch-scope {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 11px;
+}
+
+.portal-branch-scope legend {
+  color: var(--text-primary);
+  font-size: .76rem;
+  font-weight: 800;
+  padding: 0 5px;
+}
+
+.portal-branch-scope > small {
+  color: var(--text-muted);
+  font-size: .72rem;
+}
+
+.portal-branch-scope > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+}
+
+.portal-branch-scope label {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.portal-branch-scope label span {
+  color: var(--text-secondary);
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.portal-access-permissions {
+  position: relative;
+}
+
+.portal-access-permissions summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.portal-access-permissions > form {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 9px;
+  margin-top: 8px;
+  min-width: 290px;
+  padding: 10px;
+}
+
+.portal-access-permissions > form > label {
+  display: grid;
+  gap: 5px;
+}
+
+.portal-access-permissions > form > label span {
+  color: var(--text-muted);
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .cloud-payment-list,
 .cloud-sales-list {
   display: grid;
@@ -3342,6 +3417,11 @@ button.button--danger:hover {
   .portal-scope-control label:first-child,
   .portal-scope-control label:nth-child(2),
   .portal-scope-control .portal-custom-date {
+    width: 100%;
+  }
+  .portal-access-permissions,
+  .portal-access-permissions > form {
+    min-width: 0;
     width: 100%;
   }
   .portal-scope-control .portal-custom-date {

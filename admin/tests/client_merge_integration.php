@@ -47,6 +47,13 @@ try {
         throw new RuntimeException('Could not read admin/database/schema.sql.');
     }
     $pdo->exec($schema);
+    $pdo->exec('ALTER TABLE client_portal_memberships DROP COLUMN branch_scope');
+    $branchScopeMigration = file_get_contents(__DIR__ . '/../database/client_portal_membership_branches.sql');
+    if (!is_string($branchScopeMigration) || $branchScopeMigration === '') {
+        throw new RuntimeException('Could not read the portal branch scope migration.');
+    }
+    $pdo->exec($branchScopeMigration);
+    $pdo->exec($branchScopeMigration);
 
     $pdo->exec("INSERT INTO clients (id, legal_name, trade_name, status) VALUES
         (1, 'Owner Test', 'CANAAN', 'activo'),
@@ -178,6 +185,33 @@ try {
     $branchComparison = admin_cloud_sync_branch_sales_comparison($pdo, 1, $periodFrom, $periodTo);
     test_assert((int) ($branchComparison[$centralBranchId]['sales'] ?? 0) === 1, 'The comparison returned the wrong central sales count.');
     test_assert((float) ($branchComparison[$branch247Id]['amount'] ?? 0) === 3400.0, 'The comparison returned the wrong 24/7 amount.');
+
+    $restrictedUserInsert = $pdo->prepare("INSERT INTO client_portal_users (id, email, password_hash) VALUES (3, 'manager@example.test', :hash)");
+    $restrictedUserInsert->execute(['hash' => $hash]);
+    $pdo->exec("INSERT INTO client_portal_memberships (id, user_id, client_id, role, branch_scope, is_active) VALUES (30, 3, 1, 'manager', 'selected', 1)");
+    $pdo->exec("INSERT INTO client_portal_membership_branches (membership_id, branch_id) VALUES (30, {$branch247Id})");
+    $restrictedBranchIds = portal_membership_branch_ids($pdo, 30, 1, 'manager', 'selected');
+    test_assert($restrictedBranchIds === [$branch247Id], 'The manager branch scope was not loaded.');
+    $restrictedSales = admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo, null, $restrictedBranchIds);
+    $forbiddenSales = admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo, $centralBranchId, $restrictedBranchIds);
+    test_assert((int) $restrictedSales['sales'] === 1 && (float) $restrictedSales['amount'] === 3400.0, 'The restricted manager received sales from another branch.');
+    test_assert((int) $forbiddenSales['sales'] === 0, 'A manipulated branch id bypassed the manager scope.');
+    test_assert(count(admin_cloud_sync_recent_sales($pdo, 5, 1, null, $periodFrom, $periodTo, $restrictedBranchIds)) === 1, 'Recent sales leaked another branch.');
+    test_assert((int) admin_cloud_sync_stock_overview($pdo, 1, null, $restrictedBranchIds)['total'] === 1, 'Stock overview leaked another branch.');
+    $restrictedStockItems = admin_cloud_sync_stock_items($pdo, 1, ['state' => 'all', 'branch_ids' => $restrictedBranchIds]);
+    test_assert(count($restrictedStockItems) === 1 && (int) $restrictedStockItems[0]['branch_id'] === $branch247Id, 'Stock items leaked another branch.');
+    test_assert((int) portal_client_installations_summary($pdo, 1, null, $restrictedBranchIds)['total'] === 1, 'Installations leaked another branch.');
+    $restrictedComparison = admin_cloud_sync_branch_sales_comparison($pdo, 1, $periodFrom, $periodTo, $restrictedBranchIds);
+    test_assert(array_keys($restrictedComparison) === [$branch247Id], 'Branch comparison leaked an unauthorized branch.');
+
+    $_SESSION['client_portal_user'] = ['id' => 3, 'client_id' => 1, 'role' => 'manager'];
+    test_assert(portal_refresh_current_session($pdo), 'The restricted manager session could not be refreshed.');
+    test_assert(portal_current_branch_ids() === [$branch247Id], 'The refreshed session lost its branch scope.');
+    test_assert(portal_current_branch_scope() === [$branch247Id], 'The refreshed session lost its restricted mode.');
+    test_assert(portal_membership_branch_ids($pdo, 30, 1, 'owner', 'selected') === null, 'An owner was incorrectly restricted by branch mappings.');
+    $pdo->exec("DELETE FROM client_portal_membership_branches WHERE membership_id = 30");
+    test_assert(portal_membership_branch_ids($pdo, 30, 1, 'manager', 'selected') === [], 'A selected scope without active mappings must deny every branch.');
+    test_assert((int) admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo, null, [])['sales'] === 0, 'An empty selected scope expanded to every branch.');
 
     $centralStock = admin_cloud_sync_stock_overview($pdo, 1, $centralBranchId);
     $branch247Stock = admin_cloud_sync_stock_overview($pdo, 1, $branch247Id);

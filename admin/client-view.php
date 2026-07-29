@@ -68,6 +68,26 @@ $portal_access_roles = [
     'manager' => 'Encargado',
     'viewer' => 'Consulta operativa',
 ];
+$normalize_portal_branch_scope = static function (string $role, array $requestedIds) use ($pdo, $id): array {
+    if ($role === 'owner') {
+        return [];
+    }
+    $requestedIds = array_values(array_unique(array_filter(array_map('intval', $requestedIds), static fn (int $branchId): bool => $branchId > 0)));
+    if (!$requestedIds) {
+        return [];
+    }
+    $placeholders = implode(',', array_fill(0, count($requestedIds), '?'));
+    $stmt = $pdo->prepare("SELECT id FROM client_branches WHERE client_id = ? AND status = 'active' AND id IN ({$placeholders})");
+    $stmt->execute(array_merge([$id], $requestedIds));
+    $validIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    sort($validIds);
+    $expectedIds = $requestedIds;
+    sort($expectedIds);
+    if ($validIds !== $expectedIds) {
+        throw new RuntimeException('Una de las sucursales seleccionadas no pertenece a este cliente.');
+    }
+    return $validIds;
+};
 $client_view_url = admin_url('client-view.php?id=' . $id);
 $portal_access_url = $client_view_url . '#portal-access';
 $cloud_installations_url = $client_view_url . '#cloud-installations';
@@ -191,6 +211,8 @@ if (request_is_post() && isset($_POST['portal_action'])) {
             if (!array_key_exists($role, $portal_access_roles)) {
                 $role = 'viewer';
             }
+            $branchScopeIds = $normalize_portal_branch_scope($role, (array) ($_POST['portal_branch_ids'] ?? []));
+            $branchScopeMode = $role !== 'owner' && $branchScopeIds ? 'selected' : 'all';
 
             if ($email === '' || $fullName === '' || $password === '') {
                 throw new RuntimeException('Email, nombre y contraseña son obligatorios.');
@@ -249,10 +271,11 @@ if (request_is_post() && isset($_POST['portal_action'])) {
                 }
 
                 $membershipStmt = $pdo->prepare('
-                    INSERT INTO client_portal_memberships (user_id, client_id, role, is_active)
-                    VALUES (:user_id, :client_id, :role, 1)
+                    INSERT INTO client_portal_memberships (user_id, client_id, role, branch_scope, is_active)
+                    VALUES (:user_id, :client_id, :role, :branch_scope, 1)
                     ON DUPLICATE KEY UPDATE
                         role = VALUES(role),
+                        branch_scope = VALUES(branch_scope),
                         is_active = 1,
                         updated_at = NOW()
                 ');
@@ -260,7 +283,23 @@ if (request_is_post() && isset($_POST['portal_action'])) {
                     'user_id' => $portalUserId,
                     'client_id' => $id,
                     'role' => $role,
+                    'branch_scope' => $branchScopeMode,
                 ]);
+
+                $membershipLookup = $pdo->prepare('SELECT id FROM client_portal_memberships WHERE user_id = :user_id AND client_id = :client_id LIMIT 1');
+                $membershipLookup->execute(['user_id' => $portalUserId, 'client_id' => $id]);
+                $savedMembershipId = (int) $membershipLookup->fetchColumn();
+                if ($savedMembershipId <= 0) {
+                    throw new RuntimeException('No se pudo obtener el acceso guardado.');
+                }
+                $pdo->prepare('DELETE FROM client_portal_membership_branches WHERE membership_id = :membership_id')
+                    ->execute(['membership_id' => $savedMembershipId]);
+                if ($branchScopeIds) {
+                    $branchInsert = $pdo->prepare('INSERT INTO client_portal_membership_branches (membership_id, branch_id) VALUES (:membership_id, :branch_id)');
+                    foreach ($branchScopeIds as $branchScopeId) {
+                        $branchInsert->execute(['membership_id' => $savedMembershipId, 'branch_id' => $branchScopeId]);
+                    }
+                }
 
                 $pdo->commit();
             } catch (Throwable $e) {
@@ -269,6 +308,40 @@ if (request_is_post() && isset($_POST['portal_action'])) {
             }
 
             redirect_with_flash($portal_access_url, 'success', 'Acceso del portal guardado correctamente.');
+        }
+
+        if ($portalAction === 'update_access_scope') {
+            $membershipId = (int) ($_POST['membership_id'] ?? 0);
+            $role = (string) ($_POST['portal_role'] ?? 'viewer');
+            if (!array_key_exists($role, $portal_access_roles)) {
+                throw new RuntimeException('Rol de portal invalido.');
+            }
+            $branchScopeIds = $normalize_portal_branch_scope($role, (array) ($_POST['portal_branch_ids'] ?? []));
+            $branchScopeMode = $role !== 'owner' && $branchScopeIds ? 'selected' : 'all';
+            $lookup = $pdo->prepare('SELECT id FROM client_portal_memberships WHERE id = :membership_id AND client_id = :client_id LIMIT 1');
+            $lookup->execute(['membership_id' => $membershipId, 'client_id' => $id]);
+            if (!$lookup->fetchColumn()) {
+                throw new RuntimeException('Acceso del portal no encontrado para este cliente.');
+            }
+
+            $pdo->beginTransaction();
+            try {
+                $pdo->prepare('UPDATE client_portal_memberships SET role = :role, branch_scope = :branch_scope, updated_at = NOW() WHERE id = :membership_id AND client_id = :client_id')
+                    ->execute(['role' => $role, 'branch_scope' => $branchScopeMode, 'membership_id' => $membershipId, 'client_id' => $id]);
+                $pdo->prepare('DELETE FROM client_portal_membership_branches WHERE membership_id = :membership_id')
+                    ->execute(['membership_id' => $membershipId]);
+                if ($branchScopeIds) {
+                    $branchInsert = $pdo->prepare('INSERT INTO client_portal_membership_branches (membership_id, branch_id) VALUES (:membership_id, :branch_id)');
+                    foreach ($branchScopeIds as $branchScopeId) {
+                        $branchInsert->execute(['membership_id' => $membershipId, 'branch_id' => $branchScopeId]);
+                    }
+                }
+                $pdo->commit();
+            } catch (Throwable $e) {
+                $pdo->rollBack();
+                throw $e;
+            }
+            redirect_with_flash($portal_access_url, 'success', 'Permisos y sucursales actualizados.');
         }
 
         if ($portalAction === 'activate_access' || $portalAction === 'deactivate_access') {
@@ -342,10 +415,11 @@ if (request_is_post() && isset($_POST['portal_action'])) {
 
 $portal_accesses = [];
 if ($cloud_schema_ready) {
-    $portalAccessStmt = $pdo->prepare('
+    $portalAccessStmt = $pdo->prepare("
         SELECT
             m.id AS membership_id,
             m.role,
+            m.branch_scope,
             m.is_active AS membership_active,
             m.created_at AS membership_created_at,
             m.updated_at AS membership_updated_at,
@@ -353,12 +427,14 @@ if ($cloud_schema_ready) {
             u.email,
             u.full_name,
             u.is_active AS user_active,
-            u.last_login_at
+            u.last_login_at,
+            (SELECT GROUP_CONCAT(mb.branch_id ORDER BY mb.branch_id SEPARATOR ',') FROM client_portal_membership_branches mb WHERE mb.membership_id = m.id) AS branch_ids_csv,
+            (SELECT GROUP_CONCAT(b.name ORDER BY b.name SEPARATOR ', ') FROM client_portal_membership_branches mb INNER JOIN client_branches b ON b.id = mb.branch_id WHERE mb.membership_id = m.id) AS branch_names
         FROM client_portal_memberships m
         INNER JOIN client_portal_users u ON u.id = m.user_id
         WHERE m.client_id = :client_id
         ORDER BY m.is_active DESC, u.full_name ASC, u.email ASC
-    ');
+    ");
     $portalAccessStmt->execute(['client_id' => $id]);
     $portal_accesses = $portalAccessStmt->fetchAll();
 }
@@ -755,6 +831,18 @@ require_once __DIR__ . '/includes/layout-header.php';
           <?php endforeach; ?>
         </select>
       </label>
+      <fieldset class="portal-branch-scope">
+        <legend>Sucursales permitidas</legend>
+        <small>Sin seleccionar significa todas. El Dueño siempre ve todo el negocio.</small>
+        <div>
+          <?php foreach ($cloud_active_branches as $branch): ?>
+            <label>
+              <input type="checkbox" name="portal_branch_ids[]" value="<?= (int) $branch['branch_id'] ?>" <?= !$has_cloud_plan ? 'disabled' : '' ?>>
+              <span><?= e((string) $branch['branch_name']) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+      </fieldset>
       <label>
         <span>Contraseña inicial</span>
         <input type="password" name="portal_password" minlength="10" placeholder="Mínimo 10 caracteres" <?= !$has_cloud_plan ? 'disabled' : '' ?> required>
@@ -781,6 +869,10 @@ require_once __DIR__ . '/includes/layout-header.php';
             $membershipId = (int) ($access['membership_id'] ?? 0);
             $accessActive = (int) ($access['membership_active'] ?? 0) === 1 && (int) ($access['user_active'] ?? 0) === 1;
             $roleLabel = $portal_access_roles[(string) ($access['role'] ?? '')] ?? ucfirst((string) ($access['role'] ?? 'Consulta'));
+            $accessBranchIds = array_values(array_filter(array_map('intval', explode(',', (string) ($access['branch_ids_csv'] ?? '')))));
+            $accessScopeLabel = (string) ($access['role'] ?? '') === 'owner' || (string) ($access['branch_scope'] ?? 'all') !== 'selected'
+                ? 'Todas las sucursales'
+                : ((string) ($access['branch_names'] ?? '') !== '' ? (string) $access['branch_names'] : 'Sin sucursales activas');
           ?>
           <article class="portal-access-row">
             <div class="portal-access-row__main">
@@ -791,8 +883,39 @@ require_once __DIR__ . '/includes/layout-header.php';
             <div class="portal-access-row__state">
               <span class="badge <?= $accessActive ? 'badge-green' : 'badge-gray' ?>"><?= $accessActive ? 'Activo' : 'Inactivo' ?></span>
               <small><?= e($roleLabel) ?></small>
+              <small><?= e($accessScopeLabel) ?></small>
             </div>
             <div class="portal-access-row__actions">
+              <details class="portal-access-permissions">
+                <summary>Editar permisos</summary>
+                <form method="POST" action="<?= e($portal_access_url) ?>">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="portal_action" value="update_access_scope">
+                  <input type="hidden" name="membership_id" value="<?= $membershipId ?>">
+                  <label>
+                    <span>Rol</span>
+                    <select name="portal_role">
+                      <?php foreach ($portal_access_roles as $roleKey => $roleName): ?>
+                        <option value="<?= e($roleKey) ?>" <?= (string) ($access['role'] ?? '') === $roleKey ? 'selected' : '' ?>><?= e($roleName) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </label>
+                  <fieldset class="portal-branch-scope">
+                    <legend>Sucursales</legend>
+                    <small>Sin seleccionar significa todas.</small>
+                    <div>
+                      <?php foreach ($cloud_active_branches as $branch): ?>
+                        <?php $branchId = (int) $branch['branch_id']; ?>
+                        <label>
+                          <input type="checkbox" name="portal_branch_ids[]" value="<?= $branchId ?>" <?= in_array($branchId, $accessBranchIds, true) ? 'checked' : '' ?>>
+                          <span><?= e((string) $branch['branch_name']) ?></span>
+                        </label>
+                      <?php endforeach; ?>
+                    </div>
+                  </fieldset>
+                  <button type="submit" class="button button--ghost button--compact">Guardar permisos</button>
+                </form>
+              </details>
               <form method="POST" action="<?= e($portal_access_url) ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="portal_action" value="<?= $accessActive ? 'deactivate_access' : 'activate_access' ?>">

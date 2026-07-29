@@ -12,6 +12,7 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
         $requiredTables = [
             'client_portal_users',
             'client_portal_memberships',
+            'client_portal_membership_branches',
             'client_branches',
             'client_installations',
             'cloud_sync_events',
@@ -29,8 +30,17 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
             $stmt->execute($requiredTables);
             $existing = $stmt->fetchAll(PDO::FETCH_COLUMN);
             if (count(array_unique($existing)) === count($requiredTables)) {
-                $ready = true;
-                return true;
+                $columnStmt = $pdo->query("
+                    SELECT COUNT(*)
+                    FROM information_schema.COLUMNS
+                    WHERE table_schema = DATABASE()
+                      AND table_name = 'client_portal_memberships'
+                      AND column_name = 'branch_scope'
+                ");
+                if ((int) $columnStmt->fetchColumn() === 1) {
+                    $ready = true;
+                    return true;
+                }
             }
         } catch (Throwable $e) {
             error_log('[FLUS Admin] cloud sync schema check: ' . $e->getMessage());
@@ -58,6 +68,7 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
                     user_id INT UNSIGNED NOT NULL,
                     client_id INT UNSIGNED NOT NULL,
                     role VARCHAR(30) NOT NULL DEFAULT 'owner',
+                    branch_scope VARCHAR(20) NOT NULL DEFAULT 'all',
                     is_active TINYINT(1) NOT NULL DEFAULT 1,
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -83,6 +94,29 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
                     KEY idx_client_branches_client_id (client_id),
                     KEY idx_client_branches_status (status),
                     CONSTRAINT fk_client_branches_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $columnStmt = $pdo->query("
+                SELECT COUNT(*)
+                FROM information_schema.COLUMNS
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'client_portal_memberships'
+                  AND column_name = 'branch_scope'
+            ");
+            if ((int) $columnStmt->fetchColumn() === 0) {
+                $pdo->exec("ALTER TABLE client_portal_memberships ADD COLUMN branch_scope VARCHAR(20) NOT NULL DEFAULT 'all' AFTER role");
+            }
+
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS client_portal_membership_branches (
+                    membership_id INT UNSIGNED NOT NULL,
+                    branch_id INT UNSIGNED NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (membership_id, branch_id),
+                    KEY idx_portal_membership_branches_branch (branch_id),
+                    CONSTRAINT fk_portal_membership_branches_membership FOREIGN KEY (membership_id) REFERENCES client_portal_memberships(id) ON DELETE CASCADE ON UPDATE CASCADE,
+                    CONSTRAINT fk_portal_membership_branches_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE CASCADE ON UPDATE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
@@ -1070,7 +1104,8 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
         ?int $clientId = null,
         ?int $branchId = null,
         ?string $fromUtc = null,
-        ?string $toUtc = null
+        ?string $toUtc = null,
+        ?array $allowedBranchIds = null
     ): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
@@ -1085,8 +1120,23 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
             $params['client_id'] = $clientId;
         }
         if ($branchId !== null && $branchId > 0) {
-            $where .= ' AND e.branch_id = :branch_id';
-            $params['branch_id'] = $branchId;
+            if ($allowedBranchIds !== null && !in_array($branchId, array_map('intval', $allowedBranchIds), true)) {
+                $where .= ' AND 1 = 0';
+            } else {
+                $where .= ' AND e.branch_id = :branch_id';
+                $params['branch_id'] = $branchId;
+            }
+        } elseif ($allowedBranchIds !== null) {
+            $branchPlaceholders = [];
+            foreach (array_values(array_unique(array_map('intval', $allowedBranchIds))) as $index => $allowedBranchId) {
+                if ($allowedBranchId <= 0) {
+                    continue;
+                }
+                $key = 'recent_allowed_branch_' . $index;
+                $branchPlaceholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $where .= $branchPlaceholders ? ' AND e.branch_id IN (' . implode(',', $branchPlaceholders) . ')' : ' AND 1 = 0';
         }
         if ($fromUtc !== null && $fromUtc !== '') {
             $where .= ' AND e.occurred_at >= :from_utc';
@@ -1134,7 +1184,8 @@ if (!function_exists('admin_cloud_sync_sales_period_overview')) {
         int $clientId,
         string $fromUtc,
         string $toUtc,
-        ?int $branchId = null
+        ?int $branchId = null,
+        ?array $allowedBranchIds = null
     ): array {
         $overview = [
             'sales' => 0,
@@ -1159,8 +1210,23 @@ if (!function_exists('admin_cloud_sync_sales_period_overview')) {
             'to_utc' => $toUtc,
         ];
         if ($branchId !== null && $branchId > 0) {
-            $where .= ' AND branch_id = :branch_id';
-            $params['branch_id'] = $branchId;
+            if ($allowedBranchIds !== null && !in_array($branchId, array_map('intval', $allowedBranchIds), true)) {
+                $where .= ' AND 1 = 0';
+            } else {
+                $where .= ' AND branch_id = :branch_id';
+                $params['branch_id'] = $branchId;
+            }
+        } elseif ($allowedBranchIds !== null) {
+            $branchPlaceholders = [];
+            foreach (array_values(array_unique(array_map('intval', $allowedBranchIds))) as $index => $allowedBranchId) {
+                if ($allowedBranchId <= 0) {
+                    continue;
+                }
+                $key = 'period_allowed_branch_' . $index;
+                $branchPlaceholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $where .= $branchPlaceholders ? ' AND branch_id IN (' . implode(',', $branchPlaceholders) . ')' : ' AND 1 = 0';
         }
 
         $stmt = $pdo->prepare("SELECT summary_json FROM cloud_sync_events {$where}");
@@ -1195,12 +1261,26 @@ if (!function_exists('admin_cloud_sync_sales_period_overview')) {
 }
 
 if (!function_exists('admin_cloud_sync_branch_sales_comparison')) {
-    function admin_cloud_sync_branch_sales_comparison(PDO $pdo, int $clientId, string $fromUtc, string $toUtc): array
+    function admin_cloud_sync_branch_sales_comparison(PDO $pdo, int $clientId, string $fromUtc, string $toUtc, ?array $allowedBranchIds = null): array
     {
         if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
             return [];
         }
 
+        $scopeSql = '';
+        $params = ['client_id' => $clientId, 'from_utc' => $fromUtc, 'to_utc' => $toUtc];
+        if ($allowedBranchIds !== null) {
+            $branchPlaceholders = [];
+            foreach (array_values(array_unique(array_map('intval', $allowedBranchIds))) as $index => $allowedBranchId) {
+                if ($allowedBranchId <= 0) {
+                    continue;
+                }
+                $key = 'comparison_allowed_branch_' . $index;
+                $branchPlaceholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $scopeSql = $branchPlaceholders ? ' AND e.branch_id IN (' . implode(',', $branchPlaceholders) . ')' : ' AND 1 = 0';
+        }
         $stmt = $pdo->prepare("
             SELECT e.branch_id, b.name AS branch_name, e.summary_json
             FROM cloud_sync_events e
@@ -1209,13 +1289,10 @@ if (!function_exists('admin_cloud_sync_branch_sales_comparison')) {
               AND e.client_id = :client_id
               AND e.occurred_at >= :from_utc
               AND e.occurred_at < :to_utc
+              {$scopeSql}
             ORDER BY e.occurred_at DESC, e.id DESC
         ");
-        $stmt->execute([
-            'client_id' => $clientId,
-            'from_utc' => $fromUtc,
-            'to_utc' => $toUtc,
-        ]);
+        $stmt->execute($params);
 
         $comparison = [];
         foreach ($stmt->fetchAll() as $row) {
@@ -1315,7 +1392,7 @@ if (!function_exists('admin_cloud_sync_sales_overview')) {
 }
 
 if (!function_exists('admin_cloud_sync_stock_overview')) {
-    function admin_cloud_sync_stock_overview(PDO $pdo, int $clientId, ?int $branchId = null): array
+    function admin_cloud_sync_stock_overview(PDO $pdo, int $clientId, ?int $branchId = null, ?array $allowedBranchIds = null): array
     {
         $overview = [
             'total' => 0,
@@ -1332,8 +1409,21 @@ if (!function_exists('admin_cloud_sync_stock_overview')) {
         $where = 'WHERE client_id = :client_id AND activo = 1';
         $params = ['client_id' => $clientId];
         if ($branchId !== null && $branchId > 0) {
-            $where .= ' AND branch_id = :branch_id';
-            $params['branch_id'] = $branchId;
+            if ($allowedBranchIds !== null && !in_array($branchId, array_map('intval', $allowedBranchIds), true)) {
+                $where .= ' AND 1 = 0';
+            } else {
+                $where .= ' AND branch_id = :branch_id';
+                $params['branch_id'] = $branchId;
+            }
+        } elseif ($allowedBranchIds !== null) {
+            $branchPlaceholders = [];
+            foreach (array_values(array_unique(array_map('intval', $allowedBranchIds))) as $index => $allowedBranchId) {
+                if ($allowedBranchId <= 0) continue;
+                $key = 'stock_overview_allowed_branch_' . $index;
+                $branchPlaceholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $where .= $branchPlaceholders ? ' AND branch_id IN (' . implode(',', $branchPlaceholders) . ')' : ' AND 1 = 0';
         }
 
         $stmt = $pdo->prepare("
@@ -1395,6 +1485,8 @@ if (!function_exists('admin_cloud_sync_stock_items')) {
         $state = trim((string) ($filters['state'] ?? 'attention'));
         $query = trim((string) ($filters['q'] ?? ''));
         $branchId = (int) ($filters['branch_id'] ?? 0);
+        $branchScopeRestricted = array_key_exists('branch_ids', $filters) && is_array($filters['branch_ids']);
+        $allowedBranchIds = array_values(array_unique(array_filter(array_map('intval', (array) ($filters['branch_ids'] ?? [])), static fn (int $id): bool => $id > 0)));
 
         $where = ['s.client_id = :client_id', 's.activo = 1'];
         $params = ['client_id' => $clientId];
@@ -1410,8 +1502,20 @@ if (!function_exists('admin_cloud_sync_stock_items')) {
         }
 
         if ($branchId > 0) {
-            $where[] = 's.branch_id = :branch_id';
-            $params['branch_id'] = $branchId;
+            if ($branchScopeRestricted && !in_array($branchId, $allowedBranchIds, true)) {
+                $where[] = '1 = 0';
+            } else {
+                $where[] = 's.branch_id = :branch_id';
+                $params['branch_id'] = $branchId;
+            }
+        } elseif ($branchScopeRestricted) {
+            $branchPlaceholders = [];
+            foreach ($allowedBranchIds as $index => $allowedBranchId) {
+                $key = 'stock_allowed_branch_' . $index;
+                $branchPlaceholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $where[] = $branchPlaceholders ? 's.branch_id IN (' . implode(',', $branchPlaceholders) . ')' : '1 = 0';
         }
 
         if ($query !== '') {

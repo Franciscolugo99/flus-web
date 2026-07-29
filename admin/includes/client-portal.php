@@ -57,6 +57,46 @@ if (!function_exists('portal_current_role')) {
     }
 }
 
+if (!function_exists('portal_current_branch_ids')) {
+    function portal_current_branch_ids(): array
+    {
+        $user = portal_current_user();
+        $branchIds = is_array($user) && is_array($user['branch_ids'] ?? null) ? $user['branch_ids'] : [];
+        return array_values(array_unique(array_filter(array_map('intval', $branchIds), static fn (int $id): bool => $id > 0)));
+    }
+}
+
+if (!function_exists('portal_current_branch_scope')) {
+    function portal_current_branch_scope(): ?array
+    {
+        $user = portal_current_user();
+        if (!is_array($user) || !($user['branch_restricted'] ?? false)) {
+            return null;
+        }
+        return portal_current_branch_ids();
+    }
+}
+
+if (!function_exists('portal_membership_branch_ids')) {
+    function portal_membership_branch_ids(PDO $pdo, int $membershipId, int $clientId, string $role, string $branchScope = 'all'): ?array
+    {
+        if ($membershipId <= 0 || $clientId <= 0 || $role === 'owner' || $branchScope !== 'selected') {
+            return null;
+        }
+        $stmt = $pdo->prepare("
+            SELECT mb.branch_id
+            FROM client_portal_membership_branches mb
+            INNER JOIN client_branches b ON b.id = mb.branch_id
+            WHERE mb.membership_id = :membership_id
+              AND b.client_id = :client_id
+              AND b.status = 'active'
+            ORDER BY b.name ASC, b.id ASC
+        ");
+        $stmt->execute(['membership_id' => $membershipId, 'client_id' => $clientId]);
+        return array_values(array_unique(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN))));
+    }
+}
+
 if (!function_exists('portal_role_can')) {
     function portal_role_can(string $capability, ?string $role = null): bool
     {
@@ -90,6 +130,8 @@ if (!function_exists('portal_login_user')) {
             'client_id' => (int) $membership['client_id'],
             'client_name' => (string) ($membership['trade_name'] ?: $membership['legal_name']),
             'role' => (string) ($membership['role'] ?? 'owner'),
+            'branch_restricted' => is_array($membership['branch_ids'] ?? null),
+            'branch_ids' => is_array($membership['branch_ids'] ?? null) ? $membership['branch_ids'] : [],
         ];
     }
 }
@@ -129,8 +171,10 @@ if (!function_exists('portal_refresh_current_session')) {
                 u.id,
                 u.email,
                 u.full_name,
+                m.id AS membership_id,
                 m.client_id,
                 m.role,
+                m.branch_scope,
                 c.legal_name,
                 c.trade_name
             FROM client_portal_users u
@@ -152,13 +196,16 @@ if (!function_exists('portal_refresh_current_session')) {
             return false;
         }
 
+        $role = (string) ($row['role'] ?? 'viewer');
         $_SESSION['client_portal_user'] = [
             'id' => (int) $row['id'],
             'email' => (string) $row['email'],
             'full_name' => (string) ($row['full_name'] ?? ''),
             'client_id' => (int) $row['client_id'],
             'client_name' => (string) ($row['trade_name'] ?: $row['legal_name']),
-            'role' => (string) ($row['role'] ?? 'viewer'),
+            'role' => $role,
+            'branch_restricted' => $role !== 'owner' && (string) ($row['branch_scope'] ?? 'all') === 'selected',
+            'branch_ids' => portal_membership_branch_ids($pdo, (int) $row['membership_id'], (int) $row['client_id'], $role, (string) ($row['branch_scope'] ?? 'all')) ?? [],
         ];
 
         return true;
@@ -175,8 +222,10 @@ if (!function_exists('portal_find_user_membership')) {
                 u.full_name,
                 u.password_hash,
                 u.is_active AS user_active,
+                m.id AS membership_id,
                 m.client_id,
                 m.role,
+                m.branch_scope,
                 m.is_active AS membership_active,
                 c.legal_name,
                 c.trade_name,
@@ -309,8 +358,10 @@ if (!function_exists('portal_authenticate')) {
                 'full_name' => (string) ($row['full_name'] ?? ''),
             ],
             'membership' => [
+                'membership_id' => (int) $row['membership_id'],
                 'client_id' => (int) $row['client_id'],
                 'role' => (string) $row['role'],
+                'branch_ids' => portal_membership_branch_ids($pdo, (int) $row['membership_id'], (int) $row['client_id'], (string) $row['role'], (string) ($row['branch_scope'] ?? 'all')),
                 'legal_name' => (string) $row['legal_name'],
                 'trade_name' => (string) ($row['trade_name'] ?? ''),
                 'client_status' => (string) $row['client_status'],
@@ -320,7 +371,7 @@ if (!function_exists('portal_authenticate')) {
 }
 
 if (!function_exists('portal_client_installations_summary')) {
-    function portal_client_installations_summary(PDO $pdo, int $clientId, ?int $branchId = null): array
+    function portal_client_installations_summary(PDO $pdo, int $clientId, ?int $branchId = null, ?array $allowedBranchIds = null): array
     {
         if (!admin_cloud_sync_ensure_schema($pdo)) {
             return ['total' => 0, 'online' => 0, 'offline' => 0, 'last_seen_at' => null, 'rows' => []];
@@ -329,8 +380,21 @@ if (!function_exists('portal_client_installations_summary')) {
         $where = 'WHERE i.client_id = :client_id';
         $params = ['client_id' => $clientId];
         if ($branchId !== null && $branchId > 0) {
-            $where .= ' AND i.branch_id = :branch_id';
-            $params['branch_id'] = $branchId;
+            if ($allowedBranchIds !== null && !in_array($branchId, array_map('intval', $allowedBranchIds), true)) {
+                $where .= ' AND 1 = 0';
+            } else {
+                $where .= ' AND i.branch_id = :branch_id';
+                $params['branch_id'] = $branchId;
+            }
+        } elseif ($allowedBranchIds !== null) {
+            $branchPlaceholders = [];
+            foreach (array_values(array_unique(array_map('intval', $allowedBranchIds))) as $index => $allowedBranchId) {
+                if ($allowedBranchId <= 0) continue;
+                $key = 'installation_allowed_branch_' . $index;
+                $branchPlaceholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $where .= $branchPlaceholders ? ' AND i.branch_id IN (' . implode(',', $branchPlaceholders) . ')' : ' AND 1 = 0';
         }
 
         $stmt = $pdo->prepare("

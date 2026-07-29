@@ -12,6 +12,8 @@ $portalUser = portal_current_user() ?? [];
 $clientId = (int) ($portalUser['client_id'] ?? 0);
 $clientName = (string) ($portalUser['client_name'] ?? 'Mi negocio');
 $portalRole = portal_current_role();
+$allowedBranchIds = portal_current_branch_scope();
+$hasBranchRestriction = $allowedBranchIds !== null;
 $canViewSales = portal_role_can('view_sales', $portalRole);
 $canViewFinancials = portal_role_can('view_financials', $portalRole);
 
@@ -62,6 +64,11 @@ $fromUtc = $fromLocal->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
 $toUtc = $toLocal->setTimezone($utcTimezone)->format('Y-m-d H:i:s');
 
 $portalBranches = portal_client_branches_summary($pdo, $clientId);
+if ($hasBranchRestriction) {
+    $portalBranches = array_values(array_filter($portalBranches, static function (array $branch) use ($allowedBranchIds): bool {
+        return in_array((int) ($branch['branch_id'] ?? 0), $allowedBranchIds, true);
+    }));
+}
 $selectedBranchId = max(0, (int) ($_GET['sucursal'] ?? 0));
 $selectedBranchName = 'Todo el negocio';
 $validBranchIds = [];
@@ -80,13 +87,13 @@ if ($selectedBranchId > 0) {
 }
 $branchFilterId = $selectedBranchId > 0 ? $selectedBranchId : null;
 $salesOverview = $canViewSales
-    ? admin_cloud_sync_sales_period_overview($pdo, $clientId, $fromUtc, $toUtc, $branchFilterId)
+    ? admin_cloud_sync_sales_period_overview($pdo, $clientId, $fromUtc, $toUtc, $branchFilterId, $allowedBranchIds)
     : [];
 $recentSales = $canViewSales
-    ? admin_cloud_sync_recent_sales($pdo, 6, $clientId, $branchFilterId, $fromUtc, $toUtc)
+    ? admin_cloud_sync_recent_sales($pdo, 6, $clientId, $branchFilterId, $fromUtc, $toUtc, $allowedBranchIds)
     : [];
 $branchSalesData = $canViewSales
-    ? admin_cloud_sync_branch_sales_comparison($pdo, $clientId, $fromUtc, $toUtc)
+    ? admin_cloud_sync_branch_sales_comparison($pdo, $clientId, $fromUtc, $toUtc, $allowedBranchIds)
     : [];
 $branchComparison = [];
 foreach ($validBranchIds as $branchId => $branchName) {
@@ -105,7 +112,7 @@ $comparisonMaxAmount = 0.0;
 foreach ($branchComparison as $branchMetrics) {
     $comparisonMaxAmount = max($comparisonMaxAmount, (float) ($branchMetrics['amount'] ?? 0));
 }
-$installations = portal_client_installations_summary($pdo, $clientId, $branchFilterId);
+$installations = portal_client_installations_summary($pdo, $clientId, $branchFilterId, $allowedBranchIds);
 $license = portal_client_license_summary($pdo, $clientId);
 $stockQuery = trim((string) ($_GET['stock_q'] ?? ''));
 $stockState = trim((string) ($_GET['stock_estado'] ?? 'attention'));
@@ -119,11 +126,12 @@ $stockStateLabels = [
 if (!array_key_exists($stockState, $stockStateLabels)) {
     $stockState = 'attention';
 }
-$stockOverview = admin_cloud_sync_stock_overview($pdo, $clientId, $branchFilterId);
+$stockOverview = admin_cloud_sync_stock_overview($pdo, $clientId, $branchFilterId, $allowedBranchIds);
 $stockItems = admin_cloud_sync_stock_items($pdo, $clientId, [
     'q' => $stockQuery,
     'state' => $stockState,
     'branch_id' => $selectedBranchId,
+    'branch_ids' => $allowedBranchIds,
     'limit' => 24,
 ]);
 $cloudStartedLabel = format_datetime($installations['first_seen_at'] ?? null, 'Pendiente de primera sincronizacion');
@@ -232,13 +240,13 @@ if ($installTotal === 0) {
       <div class="portal-scope-summary">
         <span>Vista actual</span>
         <strong><?= e($selectedBranchName) ?></strong>
-        <small><?= e($periodLabel) ?></small>
+        <small><?= e($periodLabel) ?><?= $hasBranchRestriction ? ' - acceso limitado' : '' ?></small>
       </div>
       <div class="portal-scope-control">
         <label>
           <span>Sucursal</span>
           <select id="portalBranchScope" name="sucursal" aria-label="Elegir sucursal">
-            <option value="0">Todas las sucursales</option>
+            <option value="0"><?= $hasBranchRestriction ? 'Todas mis sucursales' : 'Todas las sucursales' ?></option>
             <?php foreach ($validBranchIds as $branchId => $branchName): ?>
               <option value="<?= $branchId ?>" <?= $selectedBranchId === $branchId ? 'selected' : '' ?>><?= e($branchName) ?></option>
             <?php endforeach; ?>

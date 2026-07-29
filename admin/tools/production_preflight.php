@@ -51,6 +51,20 @@ function preflight_table_exists(PDO $pdo, string $table): bool
     return (int) $stmt->fetchColumn() > 0;
 }
 
+function preflight_column_exists(PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->prepare('
+        SELECT COUNT(*)
+        FROM information_schema.COLUMNS
+        WHERE table_schema = DATABASE()
+          AND table_name = :table
+          AND column_name = :column
+    ');
+    $stmt->execute(['table' => $table, 'column' => $column]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
 echo '=== FLUS Web production preflight ===' . PHP_EOL;
 echo 'Este chequeo es solo lectura: no crea tablas, no modifica licencias y no muestra secretos.' . PHP_EOL . PHP_EOL;
 
@@ -120,6 +134,7 @@ try {
         'license_events',
         'client_portal_users',
         'client_portal_memberships',
+        'client_portal_membership_branches',
         'client_branches',
         'client_installations',
         'cloud_sync_events',
@@ -134,6 +149,12 @@ try {
         } else {
             preflight_fail('Tabla ' . $table, 'no encontrada');
         }
+    }
+
+    if (preflight_column_exists($pdo, 'client_portal_memberships', 'branch_scope')) {
+        preflight_ok('Alcance por sucursal del portal');
+    } else {
+        preflight_fail('Alcance por sucursal del portal', 'falta client_portal_memberships.branch_scope');
     }
 
     if (preflight_table_exists($pdo, 'licenses')) {

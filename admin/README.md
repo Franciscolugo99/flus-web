@@ -211,6 +211,14 @@ convierten a limites UTC en el servidor. La vista `Ventas` compara sucursales
 con cantidad, importe y ticket promedio; los accesos `viewer` no reciben esa
 seccion ni sus importes.
 
+Desde la ficha administrativa del cliente, cada acceso `manager` o `viewer`
+puede limitarse a una o varias sucursales. La restriccion se vuelve a cargar en
+cada solicitud y se aplica en las consultas de ventas, stock e instalaciones,
+no solo en el selector visual. Los accesos existentes y el rol `owner`
+conservan acceso a todas las sucursales. Para actualizar una base existente,
+ejecutar una vez el script repetible
+`admin/database/client_portal_membership_branches.sql`.
+
 La seccion `Proximamente en FLUS` es solo una demostracion visual de funciones
 proyectadas. No expone endpoints ni ejecuta acciones hasta que cada capacidad
 sea implementada en FLUS local y en el contrato cloud correspondiente.
@@ -246,6 +254,17 @@ Roles del portal:
 - `owner` / Dueño: ve ventas, importes, medios de pago, sucursales y stock.
 - `manager` / Encargado: ve ventas, importes, medios de pago, sucursales y stock.
 - `viewer` / Consulta operativa: ve sucursales, estado de conexion y stock; no ve ventas ni importes.
+
+Los accesos `manager` y `viewer` pueden limitarse a una o varias sucursales
+desde la ficha del cliente. Sin sucursales marcadas conservan acceso a todo el
+negocio; `owner` siempre ve todas. El alcance se revalida en cada request y se
+aplica en SQL a ventas, comparaciones, stock e instalaciones. Para habilitar
+esta capacidad en una base existente, importar de forma repetible:
+
+```powershell
+Get-Content -Raw admin\database\client_portal_membership_branches.sql |
+  & "C:\xampp\mysql\bin\mysql.exe" -u root flus_web
+```
 
 Luego entrar a:
 
