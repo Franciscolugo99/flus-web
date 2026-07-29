@@ -621,3 +621,55 @@ if (!function_exists('portal_operational_alerts')) {
         return $alerts;
     }
 }
+
+if (!function_exists('portal_stock_item_view')) {
+    function portal_stock_item_view(array $item): array
+    {
+        $stock = (float) ($item['stock'] ?? 0);
+        $stockMin = max(0.0, (float) ($item['stock_minimo'] ?? 0));
+        $reportedState = trim((string) ($item['estado_stock'] ?? 'ok'));
+        $unit = trim((string) ($item['unidad_venta'] ?? ''));
+        $suffix = $unit !== '' ? ' ' . $unit : '';
+
+        if ($stock <= 0 || $reportedState === 'sin_stock') {
+            $state = 'sin_stock';
+            $stateLabel = 'Sin stock';
+        } elseif ($reportedState === 'bajo_minimo' || ($stockMin > 0 && $stock <= $stockMin)) {
+            $state = 'bajo_minimo';
+            $stateLabel = 'Bajo minimo';
+        } else {
+            $state = 'ok';
+            $stateLabel = 'Disponible';
+        }
+
+        $shortage = max(0.0, $stockMin - max(0.0, $stock));
+        $progress = $stockMin > 0
+            ? (int) round(min(100, max(0, ($stock / $stockMin) * 100)))
+            : ($stock > 0 ? 100 : 0);
+
+        if ($state === 'sin_stock') {
+            $guidance = $stockMin > 0
+                ? 'Reponer al menos ' . number_format($stockMin, 3, ',', '.') . $suffix
+                : 'No quedan unidades disponibles';
+        } elseif ($state === 'bajo_minimo') {
+            $guidance = $shortage > 0
+                ? 'Faltan ' . number_format($shortage, 3, ',', '.') . $suffix . ' para el minimo'
+                : 'Revisar el minimo configurado';
+        } elseif ($stockMin > 0) {
+            $guidance = number_format(max(0.0, $stock - $stockMin), 3, ',', '.') . $suffix . ' sobre el minimo';
+        } else {
+            $guidance = 'Sin minimo configurado';
+        }
+
+        return [
+            'state' => $state,
+            'state_label' => $stateLabel,
+            'stock' => $stock,
+            'stock_min' => $stockMin,
+            'stock_label' => number_format($stock, 3, ',', '.') . $suffix,
+            'stock_min_label' => number_format($stockMin, 3, ',', '.') . $suffix,
+            'guidance' => $guidance,
+            'progress' => $progress,
+        ];
+    }
+}

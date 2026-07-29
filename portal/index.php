@@ -145,6 +145,13 @@ $stockFilterBase = [
     'stock_q' => $stockQuery,
 ];
 $stockResultContext = $stockStateLabels[$stockState] . ($stockQuery !== '' ? ' con busqueda "' . $stockQuery . '"' : '');
+$stockStateCounts = [
+    'attention' => (int) ($stockOverview['sin_stock'] ?? 0) + (int) ($stockOverview['bajo_minimo'] ?? 0),
+    'sin_stock' => (int) ($stockOverview['sin_stock'] ?? 0),
+    'bajo_minimo' => (int) ($stockOverview['bajo_minimo'] ?? 0),
+    'ok' => (int) ($stockOverview['ok'] ?? 0),
+    'all' => (int) ($stockOverview['total'] ?? 0),
+];
 $salesCount = (int) ($salesOverview['sales'] ?? 0);
 $amountPeriod = (float) ($salesOverview['amount'] ?? 0);
 $stockTotal = (int) ($stockOverview['total'] ?? 0);
@@ -525,41 +532,27 @@ if ($installTotal === 0) {
       </article>
     </section>
 
-    <section id="stock" class="portal-panel" data-portal-view="stock">
+    <section id="stock" class="portal-panel portal-stock-workspace" data-portal-view="stock">
       <div class="section-header section-header--spaced">
         <div>
-          <div class="section-title">Stock por sucursal</div>
-          <div class="section-meta"><?= e($selectedBranchName) ?>. Solo lectura. Ultima actualizacion: <?= e($lastStockLabel) ?>.</div>
+          <div class="section-title">Inventario</div>
+          <div class="section-meta"><?= e($selectedBranchName) ?>. Actualizado <?= e($lastStockLabel) ?>.</div>
         </div>
         <div class="portal-stock-current">
-          <span><?= e($stockStateLabels[$stockState]) ?></span>
           <strong><?= count($stockItems) ?></strong>
+          <span>en pantalla</span>
         </div>
       </div>
 
-      <div class="portal-stock-summary" aria-label="Resumen de stock">
-        <div>
-          <span>Productos</span>
-          <strong><?= (int) ($stockOverview['total'] ?? 0) ?></strong>
-        </div>
-        <div>
-          <span>Sin stock</span>
-          <strong><?= (int) ($stockOverview['sin_stock'] ?? 0) ?></strong>
-        </div>
-        <div>
-          <span>Bajo minimo</span>
-          <strong><?= (int) ($stockOverview['bajo_minimo'] ?? 0) ?></strong>
-        </div>
-      </div>
-
-      <nav class="portal-stock-tabs" aria-label="Filtros rapidos de stock">
+      <nav class="portal-stock-tabs" aria-label="Estado del inventario">
         <?php foreach ($stockStateLabels as $stateKey => $stateLabel): ?>
           <?php
             $stateUrl = portal_url('index.php?' . http_build_query($stockFilterBase + ['stock_estado' => $stateKey]) . '#stock');
             $isCurrentState = $stockState === $stateKey;
           ?>
           <a href="<?= e($stateUrl) ?>" class="<?= $isCurrentState ? 'is-active' : '' ?>" aria-current="<?= $isCurrentState ? 'page' : 'false' ?>">
-            <?= e($stateLabel) ?>
+            <span><?= e($stateLabel) ?></span>
+            <strong><?= (int) ($stockStateCounts[$stateKey] ?? 0) ?></strong>
           </a>
         <?php endforeach; ?>
       </nav>
@@ -571,52 +564,60 @@ if ($installTotal === 0) {
           <input type="hidden" name="desde" value="<?= e($customFrom) ?>">
           <input type="hidden" name="hasta" value="<?= e($customTo) ?>">
         <?php endif; ?>
-        <label>
-          <span>Buscar</span>
-          <input type="search" name="stock_q" value="<?= e($stockQuery) ?>" placeholder="Producto, codigo o categoria">
-        </label>
-        <label>
-          <span>Estado</span>
-          <select name="stock_estado">
-            <option value="attention" <?= $stockState === 'attention' ? 'selected' : '' ?>>Requiere atencion</option>
-            <option value="sin_stock" <?= $stockState === 'sin_stock' ? 'selected' : '' ?>>Sin stock</option>
-            <option value="bajo_minimo" <?= $stockState === 'bajo_minimo' ? 'selected' : '' ?>>Bajo minimo</option>
-            <option value="ok" <?= $stockState === 'ok' ? 'selected' : '' ?>>Stock disponible</option>
-            <option value="all" <?= $stockState === 'all' ? 'selected' : '' ?>>Todos</option>
-          </select>
-        </label>
-        <button class="button" type="submit">Filtrar</button>
+        <input type="hidden" name="stock_estado" value="<?= e($stockState) ?>">
+        <label for="portalStockSearch">Buscar en inventario</label>
+        <div class="portal-stock-search">
+          <input id="portalStockSearch" type="search" name="stock_q" value="<?= e($stockQuery) ?>" placeholder="Producto, codigo o categoria" autocomplete="off">
+          <?php if ($stockQuery !== ''): ?>
+            <a class="portal-stock-clear" href="<?= e(portal_url('index.php?' . http_build_query(array_merge($stockFilterBase, ['stock_q' => '', 'stock_estado' => $stockState])) . '#stock')) ?>">Limpiar</a>
+          <?php endif; ?>
+          <button class="button" type="submit">Buscar</button>
+        </div>
       </form>
 
       <div class="portal-stock-result-note">
-        <span><?= count($stockItems) ?> producto<?= count($stockItems) === 1 ? '' : 's' ?> mostrado<?= count($stockItems) === 1 ? '' : 's' ?></span>
-        <small><?= e($stockResultContext) ?>. Maximo 24 por vista para mantener la consulta rapida.</small>
+        <span><?= e($stockResultContext) ?></span>
+        <small><?= count($stockItems) ?> de hasta 24 productos</small>
       </div>
 
       <?php if (!$stockItems): ?>
-        <div class="empty-panel">Todavia no hay stock sincronizado con esos filtros.</div>
+        <div class="portal-stock-empty">
+          <strong>No encontramos productos</strong>
+          <span>Proba otra busqueda o cambia el estado del inventario.</span>
+        </div>
       <?php else: ?>
         <div class="portal-stock-list portal-contained-list">
           <?php foreach ($stockItems as $item): ?>
             <?php
-              $state = (string) ($item['estado_stock'] ?? 'ok');
-              $stateLabel = $state === 'sin_stock' ? 'Sin stock' : ($state === 'bajo_minimo' ? 'Bajo minimo' : 'Disponible');
-              $stock = (float) ($item['stock'] ?? 0);
-              $stockMin = (float) ($item['stock_minimo'] ?? 0);
-              $unit = trim((string) ($item['unidad_venta'] ?? ''));
-              $stockLabel = number_format($stock, 3, ',', '.');
-              $stockMinLabel = number_format($stockMin, 3, ',', '.');
+              $stockView = portal_stock_item_view($item);
+              $state = (string) $stockView['state'];
+              $category = trim((string) ($item['categoria'] ?? ''));
+              $code = trim((string) ($item['codigo'] ?? ''));
             ?>
             <article class="portal-stock-item portal-stock-item--<?= e($state) ?>">
-              <div>
+              <div class="portal-stock-product">
+                <div class="portal-stock-product-heading">
+                  <span class="portal-stock-badge"><?= e((string) $stockView['state_label']) ?></span>
+                  <small><?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?></small>
+                </div>
                 <strong><?= e((string) $item['nombre']) ?></strong>
-                <span><?= e((string) ($item['codigo'] ?: 'Sin codigo')) ?></span>
-                <small><?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?></small>
+                <span><?= e($code !== '' ? $code : 'Sin codigo') ?><?= $category !== '' ? ' · ' . e($category) : '' ?></span>
               </div>
-              <div>
-                <span class="portal-stock-badge"><?= e($stateLabel) ?></span>
-                <strong><?= e($stockLabel) ?><?= $unit !== '' ? ' ' . e($unit) : '' ?></strong>
-                <small>Min. <?= e($stockMinLabel) ?><?= $canViewFinancials ? ' - ' . e(format_money($item['precio'] ?? 0)) : '' ?></small>
+              <div class="portal-stock-level">
+                <div>
+                  <span>Disponible</span>
+                  <strong><?= e((string) $stockView['stock_label']) ?></strong>
+                </div>
+                <div class="portal-stock-progress" role="progressbar" aria-label="Nivel respecto del minimo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $stockView['progress'] ?>">
+                  <span style="width: <?= (int) $stockView['progress'] ?>%"></span>
+                </div>
+                <small><?= e((string) $stockView['guidance']) ?></small>
+                <?php if ((float) $stockView['stock_min'] > 0 || $canViewFinancials): ?>
+                  <span class="portal-stock-minimum">
+                    <?php if ((float) $stockView['stock_min'] > 0): ?>Minimo <?= e((string) $stockView['stock_min_label']) ?><?php endif; ?>
+                    <?php if ($canViewFinancials): ?><?= (float) $stockView['stock_min'] > 0 ? ' · ' : '' ?>Precio <?= e(format_money($item['precio'] ?? 0)) ?><?php endif; ?>
+                  </span>
+                <?php endif; ?>
               </div>
             </article>
           <?php endforeach; ?>

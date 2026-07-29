@@ -239,6 +239,14 @@ try {
     );
     test_assert($healthyAlerts === [], 'The alert center reported a healthy branch.');
 
+    $emptyStockView = portal_stock_item_view(['stock' => 0, 'stock_minimo' => 5, 'unidad_venta' => 'UNIDAD']);
+    test_assert($emptyStockView['state'] === 'sin_stock', 'A zero-stock item was not presented as unavailable.');
+    test_assert($emptyStockView['progress'] === 0 && strpos($emptyStockView['guidance'], '5,000') !== false, 'The stock view missed the replenishment target.');
+    $lowStockView = portal_stock_item_view(['stock' => 2, 'stock_minimo' => 5, 'estado_stock' => 'bajo_minimo']);
+    test_assert($lowStockView['state'] === 'bajo_minimo' && $lowStockView['progress'] === 40, 'The stock view calculated an invalid low-stock level.');
+    $healthyStockView = portal_stock_item_view(['stock' => 8, 'stock_minimo' => 5]);
+    test_assert($healthyStockView['state'] === 'ok' && $healthyStockView['progress'] === 100, 'The stock view did not cap a healthy level at 100 percent.');
+
     $centralStock = admin_cloud_sync_stock_overview($pdo, 1, $centralBranchId);
     $branch247Stock = admin_cloud_sync_stock_overview($pdo, 1, $branch247Id);
     test_assert((int) $centralStock['total'] === 1, 'The central branch stock overview leaked data.');
