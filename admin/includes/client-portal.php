@@ -622,6 +622,36 @@ if (!function_exists('portal_operational_alerts')) {
     }
 }
 
+if (!function_exists('portal_format_stock_quantity')) {
+    function portal_format_stock_quantity(float $quantity, string $unit = ''): string
+    {
+        $isWhole = abs($quantity - round($quantity)) < 0.0005;
+        $number = $isWhole
+            ? number_format($quantity, 0, ',', '.')
+            : rtrim(rtrim(number_format($quantity, 3, ',', '.'), '0'), ',');
+
+        $unitKey = strtoupper(trim($unit));
+        if ($unitKey === '') {
+            return $number;
+        }
+
+        $isSingular = abs(abs($quantity) - 1.0) < 0.0005;
+        $unitLabel = match ($unitKey) {
+            'UNIDAD', 'UNID', 'U' => $isSingular ? 'unidad' : 'unidades',
+            'CAJA' => $isSingular ? 'caja' : 'cajas',
+            'PAQUETE' => $isSingular ? 'paquete' : 'paquetes',
+            'LITRO', 'LITROS' => $isSingular ? 'litro' : 'litros',
+            'METRO', 'METROS' => $isSingular ? 'metro' : 'metros',
+            'KG', 'KILO', 'KILOGRAMO', 'KILOGRAMOS' => 'kg',
+            'G', 'GRAMO', 'GRAMOS' => 'g',
+            'L', 'ML' => strtolower($unitKey),
+            default => strtolower(trim($unit)),
+        };
+
+        return $number . ' ' . $unitLabel;
+    }
+}
+
 if (!function_exists('portal_stock_item_view')) {
     function portal_stock_item_view(array $item): array
     {
@@ -629,7 +659,6 @@ if (!function_exists('portal_stock_item_view')) {
         $stockMin = max(0.0, (float) ($item['stock_minimo'] ?? 0));
         $reportedState = trim((string) ($item['estado_stock'] ?? 'ok'));
         $unit = trim((string) ($item['unidad_venta'] ?? ''));
-        $suffix = $unit !== '' ? ' ' . $unit : '';
 
         if ($stock <= 0 || $reportedState === 'sin_stock') {
             $state = 'sin_stock';
@@ -649,14 +678,14 @@ if (!function_exists('portal_stock_item_view')) {
 
         if ($state === 'sin_stock') {
             $guidance = $stockMin > 0
-                ? 'Reponer al menos ' . number_format($stockMin, 3, ',', '.') . $suffix
+                ? 'Reponer al menos ' . portal_format_stock_quantity($stockMin, $unit)
                 : 'No quedan unidades disponibles';
         } elseif ($state === 'bajo_minimo') {
             $guidance = $shortage > 0
-                ? 'Faltan ' . number_format($shortage, 3, ',', '.') . $suffix . ' para el minimo'
+                ? 'Faltan ' . portal_format_stock_quantity($shortage, $unit) . ' para el minimo'
                 : 'Revisar el minimo configurado';
         } elseif ($stockMin > 0) {
-            $guidance = number_format(max(0.0, $stock - $stockMin), 3, ',', '.') . $suffix . ' sobre el minimo';
+            $guidance = portal_format_stock_quantity(max(0.0, $stock - $stockMin), $unit) . ' sobre el minimo';
         } else {
             $guidance = 'Sin minimo configurado';
         }
@@ -666,8 +695,8 @@ if (!function_exists('portal_stock_item_view')) {
             'state_label' => $stateLabel,
             'stock' => $stock,
             'stock_min' => $stockMin,
-            'stock_label' => number_format($stock, 3, ',', '.') . $suffix,
-            'stock_min_label' => number_format($stockMin, 3, ',', '.') . $suffix,
+            'stock_label' => portal_format_stock_quantity($stock, $unit),
+            'stock_min_label' => portal_format_stock_quantity($stockMin, $unit),
             'guidance' => $guidance,
             'progress' => $progress,
         ];
