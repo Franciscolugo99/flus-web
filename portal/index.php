@@ -827,7 +827,7 @@ if ($installTotal === 0) {
                       data-stock-count-step="<?= $isWeighable ? '0.001' : '1' ?>"
                     >
                       <span>Contar stock</span>
-                                        <small><?= $canChangePrice ? 'Sucursal' : 'Demostracion' ?></small>
+                      <small>Demostracion</small>
                     </button>
                   <?php endif; ?>
                   <?php if ($canPreviewPriceChange): ?>
@@ -843,7 +843,7 @@ if ($installTotal === 0) {
                       data-price-change-stock-id="<?= (int) ($item['id'] ?? 0) ?>"
                     >
                       <span>Cambiar precio</span>
-                      <small>Demostracion</small>
+                      <small>Sucursal</small>
                     </button>
                   <?php endif; ?>
                 </div>
@@ -1077,7 +1077,7 @@ if ($installTotal === 0) {
       <section class="portal-stock-count-panel" role="dialog" aria-modal="true" aria-labelledby="portalStockCountTitle">
         <header class="portal-stock-count-head">
           <div>
-            <span class="portal-stock-count-demo"><?= $canChangePrice ? 'Cambio remoto' : 'Demostracion' ?></span>
+            <span class="portal-stock-count-demo">Demostracion</span>
             <h2 id="portalStockCountTitle">Conteo de stock</h2>
           </div>
           <button class="portal-stock-count-close" type="button" data-stock-count-close aria-label="Cerrar conteo">Cerrar</button>
@@ -1121,7 +1121,7 @@ if ($installTotal === 0) {
       <section class="portal-stock-count-panel" role="dialog" aria-modal="true" aria-labelledby="portalPriceChangeTitle">
         <header class="portal-stock-count-head">
           <div>
-            <span class="portal-stock-count-demo">Demostracion</span>
+            <span class="portal-stock-count-demo">Cambio remoto</span>
             <h2 id="portalPriceChangeTitle">Cambiar precio</h2>
           </div>
           <button class="portal-stock-count-close" type="button" data-price-change-close aria-label="Cerrar cambio de precio">Cerrar</button>
