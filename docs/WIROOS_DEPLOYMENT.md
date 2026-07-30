@@ -155,12 +155,31 @@ Endpoints que deben responder en Wiroos:
 - Admin: `https://flus.com.ar/admin/login.php`
 - API licencia: `https://flus.com.ar/admin/api/license-check.php`
 - API sincronizacion: `https://flus.com.ar/admin/api/sync-ingest.php`
+- API consulta de comandos: `https://api.flus.com.ar/command-poll.php`
+- API confirmacion de comandos: `https://api.flus.com.ar/command-ack.php`
 - Portal cliente: `https://flus.com.ar/portal/login.php`
 
 La PC local FLUS debe usar el mismo token configurado en:
 
 - Wiroos: `admin/config/config.local.php`, clave `license.cloud_api_token`;
 - FLUS local: `FLUS_LICENSE_CLOUD_TOKEN` y `FLUS_CLOUD_SYNC_URL`.
+
+### Cambios remotos de precio
+
+Antes de habilitarlos en una sucursal:
+
+1. Respaldar la base de Wiroos.
+2. Aplicar de `admin/database/cloud_sync.sql` solamente la tabla
+   `cloud_commands` si la base ya es productiva. No importar el baseline entero.
+3. Publicar `admin/api/command-poll.php`, `admin/api/command-ack.php`, su bootstrap
+   y los wrappers homonimos de `deploy/api-subdomain/`.
+4. Actualizar la PC a FLUS 4.2.10 y aplicar la migracion
+   `046_cloud_command_receipts.sql`.
+5. Verificar primero con un producto no critico. Confirmar precio, historial y
+   estado `applied` en el portal antes de habilitar el uso habitual.
+
+El token nunca se envia en la URL ni se muestra en el portal. No regenerarlo para
+esta funcion: una rotacion requiere actualizar todas las instalaciones.
 
 ## Prueba Controlada En Produccion
 

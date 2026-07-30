@@ -8,6 +8,7 @@ if (getenv('FLUS_ADMIN_TEST_DB') !== '1') {
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/license-cloud.php';
 require_once __DIR__ . '/../includes/client-merge.php';
 require_once __DIR__ . '/../includes/cloud-sync.php';
 require_once __DIR__ . '/../includes/client-portal.php';
@@ -139,25 +140,92 @@ try {
     test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_events WHERE event_uid = 'stock-after-merge-1'")->fetchColumn() === $centralBranchId, 'A new event lost the preserved branch.');
     test_assert((int) $pdo->query("SELECT branch_id FROM cloud_sync_stock_items WHERE product_uid = 'product-after-merge-1'")->fetchColumn() === $centralBranchId, 'A stock snapshot lost the preserved branch.');
 
+    $pdo->exec("UPDATE cloud_sync_stock_items SET product_uid = 'id:501', local_product_id = 501, codigo = 'TEST-501', precio = 1250.00 WHERE product_uid = 'product-after-merge-1'");
+    $priceStockItemId = (int) $pdo->query("SELECT id FROM cloud_sync_stock_items WHERE product_uid = 'id:501'")->fetchColumn();
+    $priceCommand = admin_cloud_command_create_price(
+        $pdo,
+        1,
+        1,
+        $priceStockItemId,
+        1399.90,
+        'correction',
+        'portal-price-request-1',
+        [$centralBranchId]
+    );
+    test_assert(($priceCommand['duplicate'] ?? true) === false, 'The first remote price request was treated as a duplicate.');
+    test_assert((string) ($priceCommand['command']['status'] ?? '') === 'pending', 'The remote price command was not queued.');
+    test_assert((int) $pdo->query("SELECT branch_id FROM cloud_commands WHERE portal_request_uid = 'portal-price-request-1'")->fetchColumn() === $centralBranchId, 'The remote price command targeted the wrong branch.');
+
+    $storedPricePayload = json_decode((string) $pdo->query("SELECT payload_json FROM cloud_commands WHERE portal_request_uid = 'portal-price-request-1'")->fetchColumn(), true);
+    test_assert((string) ($storedPricePayload['expected_price'] ?? '') === '1250.00', 'The remote command trusted a client price instead of current synchronized stock.');
+    test_assert((string) ($storedPricePayload['new_price'] ?? '') === '1399.90', 'The remote command stored the wrong target price.');
+
+    $duplicatePriceCommand = admin_cloud_command_create_price(
+        $pdo,
+        1,
+        1,
+        $priceStockItemId,
+        1399.90,
+        'correction',
+        'portal-price-request-1',
+        [$centralBranchId]
+    );
+    test_assert(($duplicatePriceCommand['duplicate'] ?? false) === true, 'A repeated portal request created another command.');
+    test_assert((int) $pdo->query("SELECT COUNT(*) FROM cloud_commands WHERE portal_request_uid = 'portal-price-request-1'")->fetchColumn() === 1, 'Remote price request idempotency was not enforced by the database.');
+
+    $crossBranchPriceBlocked = false;
+    try {
+        admin_cloud_command_create_price($pdo, 1, 1, $priceStockItemId, 1499.90, 'correction', 'portal-price-request-2', [$branch247Id]);
+    } catch (RuntimeException $e) {
+        $crossBranchPriceBlocked = true;
+    }
+    test_assert($crossBranchPriceBlocked, 'A branch-restricted user queued a price command for another branch.');
+
+    $pdo->exec("UPDATE licenses SET status = 'suspendida' WHERE id = 8");
+    $suspendedLicensePriceBlocked = false;
+    try {
+        admin_cloud_command_create_price($pdo, 1, 1, $priceStockItemId, 1499.90, 'correction', 'portal-price-request-3', [$centralBranchId]);
+    } catch (RuntimeException $e) {
+        $suspendedLicensePriceBlocked = true;
+    }
+    test_assert($suspendedLicensePriceBlocked, 'A suspended Cloud license accepted a remote price command.');
+    $pdo->exec("UPDATE licenses SET status = 'activa' WHERE id = 8");
+
     $saleInsert = $pdo->prepare("
         INSERT INTO cloud_sync_events
-            (client_id, branch_id, installation_id, license_id, event_uid, event_type, occurred_at, received_at, summary_json)
+            (client_id, branch_id, installation_id, license_id, event_uid, event_type, occurred_at, received_at, summary_json, payload_json)
         VALUES
-            (1, :branch_id, :installation_id, :license_id, :event_uid, 'sale.created', UTC_TIMESTAMP(), UTC_TIMESTAMP(), :summary_json)
+            (1, :branch_id, :installation_id, :license_id, :event_uid, 'sale.created', UTC_TIMESTAMP(), UTC_TIMESTAMP(), :summary_json, :payload_json)
     ");
     $saleInsert->execute([
         'branch_id' => $centralBranchId,
         'installation_id' => 10,
         'license_id' => 8,
         'event_uid' => 'sale-central-filter-1',
-        'summary_json' => json_encode(['venta_id' => 101, 'total' => 1200, 'items_count' => 2, 'medio_pago' => 'efectivo']),
+        'summary_json' => json_encode(['venta_id' => 101, 'total' => 1200, 'items_count' => 2, 'medio_pago' => 'efectivo', 'user_id' => 3, 'cajero_nombre' => 'Ana Caja']),
+        'payload_json' => json_encode(['cajero_nombre' => 'Ana Caja', 'items' => [
+            ['codigo' => 'YM-001', 'nombre' => 'Yerba Mate', 'cantidad' => 2, 'subtotal' => 800],
+            ['codigo' => 'AZ-001', 'nombre' => 'Azucar', 'cantidad' => 1, 'subtotal' => 400],
+        ]]),
     ]);
+    $saleInsert->execute([
+        'branch_id' => $centralBranchId,
+        'installation_id' => 10,
+        'license_id' => 8,
+        'event_uid' => 'annulment-central-filter-1',
+        'summary_json' => json_encode(['venta_id' => 101, 'monto_anulado' => 200, 'estado_nuevo' => 'PARCIALMENTE_ANULADA']),
+        'payload_json' => json_encode(['motivo' => 'Prueba de anulacion']),
+    ]);
+    $pdo->exec("UPDATE cloud_sync_events SET event_type = 'sale.annulled' WHERE event_uid = 'annulment-central-filter-1'");
     $saleInsert->execute([
         'branch_id' => $branch247Id,
         'installation_id' => 20,
         'license_id' => 7,
         'event_uid' => 'sale-247-filter-1',
         'summary_json' => json_encode(['venta_id' => 202, 'total' => 3400, 'items_count' => 3, 'medio_pago' => 'debito']),
+        'payload_json' => json_encode(['items' => [
+            ['codigo' => 'GAS-001', 'nombre' => 'Gaseosa Cola', 'cantidad' => 3, 'subtotal' => 3400],
+        ]]),
     ]);
     $pdo->exec("
         INSERT INTO cloud_sync_events
@@ -170,8 +238,8 @@ try {
     $allSales = admin_cloud_sync_sales_overview($pdo, 1);
     $centralSales = admin_cloud_sync_sales_overview($pdo, 1, $centralBranchId);
     $branch247Sales = admin_cloud_sync_sales_overview($pdo, 1, $branch247Id);
-    test_assert((int) $allSales['sales_24h'] === 2 && (float) $allSales['amount_24h'] === 4600.0, 'The global sales overview did not combine both branches.');
-    test_assert((int) $centralSales['sales_24h'] === 1 && (float) $centralSales['amount_24h'] === 1200.0, 'The central branch sales filter leaked data.');
+    test_assert((int) $allSales['sales_24h'] === 2 && (float) $allSales['amount_24h'] === 4400.0, 'The global sales overview did not combine both branches with net totals.');
+    test_assert((int) $centralSales['sales_24h'] === 1 && (float) $centralSales['amount_24h'] === 1000.0, 'The central branch sales filter leaked data or ignored annulments.');
     test_assert((int) $branch247Sales['sales_24h'] === 1 && (float) $branch247Sales['amount_24h'] === 3400.0, 'The 24/7 branch sales filter leaked data.');
     test_assert((string) (admin_cloud_sync_recent_sales($pdo, 5, 1, $centralBranchId)[0]['event_uid'] ?? '') === 'sale-central-filter-1', 'Recent sales ignored the selected branch.');
 
@@ -179,11 +247,32 @@ try {
     $periodTo = gmdate('Y-m-d H:i:s', time() + 3600);
     $periodSales = admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo);
     $centralPeriodSales = admin_cloud_sync_sales_period_overview($pdo, 1, $periodFrom, $periodTo, $centralBranchId);
-    test_assert((int) $periodSales['sales'] === 2 && (float) $periodSales['amount'] === 4600.0, 'The period overview included a sale outside its UTC boundaries.');
-    test_assert((int) $centralPeriodSales['sales'] === 1 && (float) $centralPeriodSales['avg_ticket'] === 1200.0, 'The period and branch filters were not combined.');
+    test_assert((int) $periodSales['sales'] === 2 && (float) $periodSales['amount'] === 4400.0, 'The period overview included a sale outside its UTC boundaries or ignored annulments.');
+    test_assert((int) $centralPeriodSales['sales'] === 1 && (float) $centralPeriodSales['avg_ticket'] === 1000.0, 'The period and branch filters were not combined with net totals.');
     test_assert(count(admin_cloud_sync_recent_sales($pdo, 5, 1, null, $periodFrom, $periodTo)) === 2, 'Recent sales ignored the selected period.');
+    $salesList = admin_cloud_sync_sales_list($pdo, 1, ['from_utc' => $periodFrom, 'to_utc' => $periodTo]);
+    test_assert((int) $salesList['total'] === 2 && count($salesList['items']) === 2, 'The complete sales list did not include both branches.');
+    $centralSalesList = admin_cloud_sync_sales_list($pdo, 1, ['branch_id' => $centralBranchId, 'from_utc' => $periodFrom, 'to_utc' => $periodTo]);
+    test_assert((int) $centralSalesList['total'] === 1 && (string) ($centralSalesList['items'][0]['event_uid'] ?? '') === 'sale-central-filter-1', 'The complete sales list ignored its branch filter.');
+    test_assert((float) ($centralSalesList['items'][0]['net_amount'] ?? 0) === 1000.0 && (string) ($centralSalesList['items'][0]['sale_status'] ?? '') === 'PARCIALMENTE_ANULADA', 'The sales list did not apply the synchronized annulment.');
+    $restrictedSalesList = admin_cloud_sync_sales_list($pdo, 1, ['branch_ids' => [$branch247Id], 'from_utc' => $periodFrom, 'to_utc' => $periodTo]);
+    test_assert((int) $restrictedSalesList['total'] === 1 && (int) ($restrictedSalesList['items'][0]['branch_id'] ?? 0) === $branch247Id, 'The complete sales list leaked another branch.');
+    $productSearch = admin_cloud_sync_sales_list($pdo, 1, ['q' => 'Yerba Mate', 'from_utc' => $periodFrom, 'to_utc' => $periodTo]);
+    test_assert((int) $productSearch['total'] === 1 && (string) ($productSearch['items'][0]['payload']['items'][0]['codigo'] ?? '') === 'YM-001', 'Product search or sale detail decoding failed.');
+    test_assert((int) admin_cloud_sync_sales_list($pdo, 1, ['q' => '%', 'from_utc' => $periodFrom, 'to_utc' => $periodTo])['total'] === 0, 'A wildcard changed the literal sales search.');
+    $paymentSearch = admin_cloud_sync_sales_list($pdo, 1, ['payment' => 'debito', 'from_utc' => $periodFrom, 'to_utc' => $periodTo]);
+    test_assert((int) $paymentSearch['total'] === 1 && (string) ($paymentSearch['items'][0]['event_uid'] ?? '') === 'sale-247-filter-1', 'The payment filter returned an incorrect sale.');
+    $cashierSearch = admin_cloud_sync_sales_list($pdo, 1, ['cashier' => 'Ana Caja', 'from_utc' => $periodFrom, 'to_utc' => $periodTo]);
+    test_assert((int) $cashierSearch['total'] === 1 && (string) ($cashierSearch['items'][0]['event_uid'] ?? '') === 'sale-central-filter-1', 'The cashier filter returned an incorrect sale.');
+    $pagedSales = admin_cloud_sync_sales_list($pdo, 1, ['from_utc' => $periodFrom, 'to_utc' => $periodTo, 'per_page' => 1, 'page' => 2]);
+    test_assert((int) $pagedSales['total'] === 2 && (int) $pagedSales['pages'] === 2 && count($pagedSales['items']) === 1, 'Sales pagination returned an invalid page.');
+    $filteredOverview = admin_cloud_sync_sales_filtered_overview($pdo, 1, ['payment' => 'efectivo', 'from_utc' => $periodFrom, 'to_utc' => $periodTo]);
+    test_assert((int) $filteredOverview['sales'] === 1 && (float) $filteredOverview['amount'] === 1000.0 && (int) $filteredOverview['items'] === 2, 'Filtered sales totals do not match the net list.');
+    $exportRows = iterator_to_array(admin_cloud_sync_sales_export_rows($pdo, 1, ['branch_ids' => [$branch247Id], 'from_utc' => $periodFrom, 'to_utc' => $periodTo]));
+    test_assert(count($exportRows) === 1 && (int) ($exportRows[0]['branch_id'] ?? 0) === $branch247Id, 'Sales export ignored the portal branch scope.');
     $branchComparison = admin_cloud_sync_branch_sales_comparison($pdo, 1, $periodFrom, $periodTo);
     test_assert((int) ($branchComparison[$centralBranchId]['sales'] ?? 0) === 1, 'The comparison returned the wrong central sales count.');
+    test_assert((float) ($branchComparison[$centralBranchId]['amount'] ?? 0) === 1000.0, 'The comparison ignored the central annulment.');
     test_assert((float) ($branchComparison[$branch247Id]['amount'] ?? 0) === 3400.0, 'The comparison returned the wrong 24/7 amount.');
 
     $newerProductAt = gmdate('Y-m-d\TH:i:s\Z', time() - 60);

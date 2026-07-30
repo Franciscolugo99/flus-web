@@ -16,9 +16,12 @@ $allowedBranchIds = portal_current_branch_scope();
 $hasBranchRestriction = $allowedBranchIds !== null;
 $canViewSales = portal_role_can('view_sales', $portalRole);
 $canViewFinancials = portal_role_can('view_financials', $portalRole);
+$canPreviewStockCount = portal_role_can('preview_stock_count', $portalRole);
+$canPreviewPriceChange = $canViewFinancials && portal_role_can('preview_price_change', $portalRole);
+$canChangePrice = $canViewFinancials && portal_role_can('change_price', $portalRole);
 
 $periodKey = trim((string) ($_GET['periodo'] ?? 'today'));
-$validPeriods = ['today', 'yesterday', '7d', '30d', 'custom'];
+$validPeriods = ['today', 'yesterday', '7d', '30d', 'all', 'custom'];
 if (!in_array($periodKey, $validPeriods, true)) {
     $periodKey = 'today';
 }
@@ -40,6 +43,9 @@ if ($periodKey === 'yesterday') {
 } elseif ($periodKey === '30d') {
     $fromLocal = $todayLocal->modify('-29 days');
     $periodLabel = 'Ultimos 30 dias';
+} elseif ($periodKey === 'all') {
+    $fromLocal = new DateTimeImmutable('2000-01-01 00:00:00', $localTimezone);
+    $periodLabel = 'Todo lo sincronizado';
 } elseif ($periodKey === 'custom') {
     $parsedFrom = DateTimeImmutable::createFromFormat('!Y-m-d', $customFrom, $localTimezone);
     $parsedTo = DateTimeImmutable::createFromFormat('!Y-m-d', $customTo, $localTimezone);
@@ -94,12 +100,29 @@ $branchFilterId = $selectedBranchId > 0 ? $selectedBranchId : null;
 $salesOverview = $canViewSales
     ? admin_cloud_sync_sales_period_overview($pdo, $clientId, $fromUtc, $toUtc, $branchFilterId, $allowedBranchIds)
     : [];
-$previousSalesOverview = $canViewSales
+$previousSalesOverview = $canViewSales && $periodKey !== 'all'
     ? admin_cloud_sync_sales_period_overview($pdo, $clientId, $previousFromUtc, $previousToUtc, $branchFilterId, $allowedBranchIds)
     : [];
-$recentSales = $canViewSales
-    ? admin_cloud_sync_recent_sales($pdo, 6, $clientId, $branchFilterId, $fromUtc, $toUtc, $allowedBranchIds)
-    : [];
+$salesQuery = mb_substr(trim((string) ($_GET['venta_q'] ?? '')), 0, 80);
+$salesPayment = mb_substr(strtoupper(trim((string) ($_GET['venta_medio'] ?? ''))), 0, 40);
+$salesCashier = mb_substr(trim((string) ($_GET['venta_cajero'] ?? '')), 0, 80);
+$salesPage = max(1, (int) ($_GET['venta_pagina'] ?? 1));
+$salesFilters = [
+    'branch_id' => $selectedBranchId,
+    'branch_ids' => $allowedBranchIds,
+    'from_utc' => $fromUtc,
+    'to_utc' => $toUtc,
+    'q' => $salesQuery,
+    'payment' => $salesPayment,
+    'cashier' => $salesCashier,
+];
+$salesList = $canViewSales
+    ? admin_cloud_sync_sales_list($pdo, $clientId, $salesFilters + ['page' => $salesPage, 'per_page' => 15])
+    : ['items' => [], 'total' => 0, 'page' => 1, 'per_page' => 15, 'pages' => 0];
+$salesRows = is_array($salesList['items'] ?? null) ? $salesList['items'] : [];
+$filteredSalesOverview = $canViewSales
+    ? admin_cloud_sync_sales_filtered_overview($pdo, $clientId, $salesFilters)
+    : ['sales' => 0, 'amount' => 0.0, 'avg_ticket' => 0.0, 'items' => 0];
 $branchSalesData = $canViewSales
     ? admin_cloud_sync_branch_sales_comparison($pdo, $clientId, $fromUtc, $toUtc, $allowedBranchIds)
     : [];
@@ -194,6 +217,9 @@ $pulseTrend = static function (float $current, float $previous): array {
 $amountTrend = $pulseTrend($amountPeriod, $previousAmount);
 $salesTrend = $pulseTrend((float)$salesCount, (float)$previousSalesCount);
 $ticketTrend = $pulseTrend($averageTicket, $previousAverageTicket);
+if ($periodKey === 'all') {
+    $amountTrend = $salesTrend = $ticketTrend = ['class' => 'is-neutral', 'label' => 'Periodo completo'];
+}
 $stockTotal = (int) ($stockOverview['total'] ?? 0);
 $stockWithoutUnits = (int) ($stockOverview['sin_stock'] ?? 0);
 $stockLow = (int) ($stockOverview['bajo_minimo'] ?? 0);
@@ -255,8 +281,15 @@ if ($installTotal === 0) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#111520">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FLUS">
   <title><?= e($clientName) ?> - FLUS</title>
   <link rel="icon" type="image/png" href="<?= e(portal_public_asset_url('img/favicon.png')) ?>">
+  <link rel="apple-touch-icon" href="<?= e(portal_url('assets/icons/flus-192.png')) ?>">
+  <link rel="manifest" href="<?= e(portal_url('manifest.webmanifest')) ?>">
   <link rel="stylesheet" href="<?= e(portal_admin_asset_url('css/admin.css?v=' . (is_file(__DIR__ . '/../admin/assets/css/admin.css') ? filemtime(__DIR__ . '/../admin/assets/css/admin.css') : time()))) ?>">
 </head>
 <body class="portal-page">
@@ -269,9 +302,11 @@ if ($installTotal === 0) {
       <span class="portal-topbar-client"><?= e($clientName) ?></span>
     </div>
     <div class="portal-topbar-actions">
+      <button type="button" class="button button--ghost portal-install-action" data-pwa-install hidden>Instalar</button>
       <a class="button button--ghost" href="<?= e(portal_url('logout.php')) ?>">Salir</a>
     </div>
   </header>
+  <p class="portal-install-help portal-install-help--topbar" data-pwa-install-help hidden></p>
   <main class="portal-shell">
     <section class="portal-hero" data-portal-view="summary">
       <div class="portal-hero-copy">
@@ -324,6 +359,7 @@ if ($installTotal === 0) {
             <option value="yesterday" <?= $periodKey === 'yesterday' ? 'selected' : '' ?>>Ayer</option>
             <option value="7d" <?= $periodKey === '7d' ? 'selected' : '' ?>>Ultimos 7 dias</option>
             <option value="30d" <?= $periodKey === '30d' ? 'selected' : '' ?>>Ultimos 30 dias</option>
+            <option value="all" <?= $periodKey === 'all' ? 'selected' : '' ?>>Todo lo sincronizado</option>
             <option value="custom" <?= $periodKey === 'custom' ? 'selected' : '' ?>>Elegir fechas</option>
           </select>
         </label>
@@ -691,14 +727,14 @@ if ($installTotal === 0) {
         <?php endforeach; ?>
       </nav>
 
-      <form class="portal-stock-filters" method="get" action="<?= e(portal_url('index.php')) ?>#stock">
+      <form id="portalStockForm" class="portal-stock-filters" method="get" action="<?= e(portal_url('index.php')) ?>#stock" data-stock-scanner data-zxing-src="<?= e(portal_url('assets/vendor/zxing/zxing-browser.min.js')) ?>">
         <input type="hidden" name="sucursal" value="<?= $selectedBranchId ?>">
         <input type="hidden" name="periodo" value="<?= e($periodKey) ?>">
         <?php if ($periodKey === 'custom'): ?>
           <input type="hidden" name="desde" value="<?= e($customFrom) ?>">
           <input type="hidden" name="hasta" value="<?= e($customTo) ?>">
         <?php endif; ?>
-        <input type="hidden" name="stock_estado" value="<?= e($stockState) ?>">
+        <input id="portalStockState" type="hidden" name="stock_estado" value="<?= e($stockState) ?>">
         <label for="portalStockSearch">Buscar en inventario</label>
         <div class="portal-stock-search">
           <input id="portalStockSearch" type="search" name="stock_q" value="<?= e($stockQuery) ?>" placeholder="Producto, codigo o categoria" autocomplete="off">
@@ -706,7 +742,25 @@ if ($installTotal === 0) {
             <a class="portal-stock-clear" href="<?= e(portal_url('index.php?' . http_build_query(array_merge($stockFilterBase, ['stock_q' => '', 'stock_estado' => $stockState])) . '#stock')) ?>">Limpiar</a>
           <?php endif; ?>
           <button class="button" type="submit">Buscar</button>
+          <button class="button button--ghost portal-stock-scan-open" type="button" data-stock-scan-open>Escanear codigo</button>
         </div>
+        <section class="portal-stock-scanner" data-stock-scanner-panel hidden aria-labelledby="portalStockScannerTitle">
+          <div class="portal-stock-scanner-head">
+            <div>
+              <strong id="portalStockScannerTitle">Escanear producto</strong>
+              <span>Apunta la camara al codigo de barras.</span>
+            </div>
+            <button class="portal-stock-scanner-close" type="button" data-stock-scan-close aria-label="Cerrar camara">Cerrar</button>
+          </div>
+          <div class="portal-stock-camera">
+            <video data-stock-scanner-video playsinline muted aria-label="Vista de la camara"></video>
+            <span class="portal-stock-camera-frame" aria-hidden="true"></span>
+          </div>
+          <div class="portal-stock-scanner-footer">
+            <p data-stock-scanner-status role="status" aria-live="polite">Preparando camara...</p>
+            <button class="button button--ghost button--compact" type="button" data-stock-scan-torch hidden>Encender luz</button>
+          </div>
+        </section>
       </form>
 
       <div class="portal-stock-result-note">
@@ -727,8 +781,12 @@ if ($installTotal === 0) {
               $state = (string) $stockView['state'];
               $category = trim((string) ($item['categoria'] ?? ''));
               $code = trim((string) ($item['codigo'] ?? ''));
+              $brand = trim((string) ($item['marca'] ?? ''));
+              $unit = trim((string) ($item['unidad_venta'] ?? ''));
+              $isWeighable = (int) ($item['es_pesable'] ?? 0) === 1;
+              $stockUpdatedAt = $item['synced_at'] ?? $item['updated_at'] ?? null;
             ?>
-            <article class="portal-stock-item portal-stock-item--<?= e($state) ?>">
+            <article class="portal-stock-item portal-stock-item--<?= e($state) ?>"<?= $code !== '' ? ' data-product-code="' . e($code) . '"' : '' ?>>
               <div class="portal-stock-product">
                 <div class="portal-stock-product-heading">
                   <span class="portal-stock-badge"><?= e((string) $stockView['state_label']) ?></span>
@@ -753,6 +811,57 @@ if ($installTotal === 0) {
                   </span>
                 <?php endif; ?>
               </div>
+              <?php if ($canPreviewStockCount || $canPreviewPriceChange): ?>
+                <div class="portal-stock-actions">
+                  <?php if ($canPreviewStockCount): ?>
+                    <button
+                      class="button button--ghost portal-stock-count-open"
+                      type="button"
+                      data-stock-count-open
+                      data-stock-count-name="<?= e((string) $item['nombre']) ?>"
+                      data-stock-count-code="<?= e($code) ?>"
+                      data-stock-count-branch="<?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?>"
+                      data-stock-count-current="<?= e((string) $stockView['stock']) ?>"
+                      data-stock-count-current-label="<?= e((string) $stockView['stock_label']) ?>"
+                      data-stock-count-unit="<?= e($unit !== '' ? strtolower($unit) : 'unidad') ?>"
+                      data-stock-count-step="<?= $isWeighable ? '0.001' : '1' ?>"
+                    >
+                      <span>Contar stock</span>
+                                        <small><?= $canChangePrice ? 'Sucursal' : 'Demostracion' ?></small>
+                    </button>
+                  <?php endif; ?>
+                  <?php if ($canPreviewPriceChange): ?>
+                    <button
+                      class="button button--ghost portal-price-change-open"
+                      type="button"
+                      data-price-change-open
+                      data-price-change-name="<?= e((string) $item['nombre']) ?>"
+                      data-price-change-code="<?= e($code) ?>"
+                      data-price-change-branch="<?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?>"
+                      data-price-change-current="<?= e((string) (float) ($item['precio'] ?? 0)) ?>"
+                      data-price-change-current-label="<?= e(format_money($item['precio'] ?? 0)) ?>"
+                      data-price-change-stock-id="<?= (int) ($item['id'] ?? 0) ?>"
+                    >
+                      <span>Cambiar precio</span>
+                      <small>Demostracion</small>
+                    </button>
+                  <?php endif; ?>
+                </div>
+              <?php endif; ?>
+              <details class="portal-stock-detail-disclosure">
+                <summary>Ver ficha del producto</summary>
+                <dl class="portal-stock-detail-grid">
+                  <div><dt>Codigo</dt><dd><?= e($code !== '' ? $code : 'Sin codigo') ?></dd></div>
+                  <div><dt>Sucursal</dt><dd><?= e((string) ($item['branch_name'] ?? 'Sin sucursal')) ?></dd></div>
+                  <div><dt>Categoria</dt><dd><?= e($category !== '' ? $category : 'Sin categoria') ?></dd></div>
+                  <div><dt>Marca</dt><dd><?= e($brand !== '' ? $brand : 'Sin marca') ?></dd></div>
+                  <div><dt>Stock actual</dt><dd><?= e((string) $stockView['stock_label']) ?></dd></div>
+                  <div><dt>Stock minimo</dt><dd><?= (float) $stockView['stock_min'] > 0 ? e((string) $stockView['stock_min_label']) : 'No configurado' ?></dd></div>
+                  <div><dt>Venta</dt><dd><?= e($isWeighable ? 'Producto pesable' : ($unit !== '' ? 'Por ' . strtolower($unit) : 'Por unidad')) ?></dd></div>
+                  <?php if ($canViewFinancials): ?><div><dt>Precio</dt><dd><?= e(format_money($item['precio'] ?? 0)) ?></dd></div><?php endif; ?>
+                  <div><dt>Actualizado</dt><dd><?= e(format_utc_datetime($stockUpdatedAt, 'Sin sincronizacion')) ?></dd></div>
+                </dl>
+              </details>
             </article>
           <?php endforeach; ?>
         </div>
@@ -760,41 +869,165 @@ if ($installTotal === 0) {
     </section>
 
     <?php if ($canViewSales): ?>
-      <section id="ventas" class="portal-panel" data-portal-view="sales">
-        <div class="section-header">
+      <section id="ventas" class="portal-panel portal-sales-workspace" data-portal-view="sales">
+        <div class="section-header section-header--spaced">
           <div>
-            <div class="section-title">Ultimas ventas recibidas</div>
-            <div class="section-meta"><?= e($selectedBranchName) ?>. Listado de control para confirmar que la informacion llega desde caja.</div>
+            <div class="section-title">Ventas</div>
+            <div class="section-meta"><?= e($selectedBranchName) ?>, <?= e(strtolower($periodLabel)) ?>.</div>
           </div>
+          <strong class="portal-sales-count"><?= (int) ($salesList['total'] ?? 0) ?> venta<?= (int) ($salesList['total'] ?? 0) === 1 ? '' : 's' ?></strong>
         </div>
 
-        <?php if (!$recentSales): ?>
-          <div class="empty-panel">Sin ventas recibidas todavia.</div>
+        <form class="portal-sales-filters" method="get" action="<?= e(portal_url('index.php')) ?>#ventas">
+          <input type="hidden" name="sucursal" value="<?= $selectedBranchId ?>">
+          <input type="hidden" name="periodo" value="<?= e($periodKey) ?>">
+          <?php if ($periodKey === 'custom'): ?>
+            <input type="hidden" name="desde" value="<?= e($customFrom) ?>">
+            <input type="hidden" name="hasta" value="<?= e($customTo) ?>">
+          <?php endif; ?>
+          <label class="portal-sales-search">
+            <span>Buscar venta o producto</span>
+            <input type="search" name="venta_q" value="<?= e($salesQuery) ?>" placeholder="Numero, producto o codigo" autocomplete="off">
+          </label>
+          <label>
+            <span>Medio de pago</span>
+            <select name="venta_medio">
+              <option value="">Todos</option>
+              <?php foreach (array_keys((array) ($salesOverview['payments'] ?? [])) as $paymentOption): ?>
+                <option value="<?= e((string) $paymentOption) ?>" <?= $salesPayment === (string) $paymentOption ? 'selected' : '' ?>><?= e(ucwords(strtolower(str_replace('_', ' ', (string) $paymentOption)))) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+          <label>
+            <span>Cajero</span>
+            <input type="search" name="venta_cajero" value="<?= e($salesCashier) ?>" placeholder="Nombre o identificador" autocomplete="off">
+          </label>
+          <button class="button" type="submit">Buscar</button>
+          <?php if ($salesQuery !== '' || $salesPayment !== '' || $salesCashier !== ''): ?>
+            <a class="button button--ghost" href="<?= e(portal_url('index.php?' . http_build_query([
+              'sucursal' => $selectedBranchId,
+              'periodo' => $periodKey,
+              'desde' => $customFrom,
+              'hasta' => $customTo,
+            ]))) ?>#ventas">Limpiar</a>
+          <?php endif; ?>
+          <a class="button button--ghost portal-sales-export" href="<?= e(portal_url('ventas-exportar.php?' . http_build_query([
+            'sucursal' => $selectedBranchId,
+            'periodo' => $periodKey,
+            'desde' => $customFrom,
+            'hasta' => $customTo,
+            'venta_q' => $salesQuery,
+            'venta_medio' => $salesPayment,
+            'venta_cajero' => $salesCashier,
+          ]))) ?>">Exportar CSV</a>
+        </form>
+
+        <div class="portal-sales-totals" aria-label="Totales de ventas filtradas">
+          <span><small>Operaciones</small><strong><?= (int) ($filteredSalesOverview['sales'] ?? 0) ?></strong></span>
+          <span><small>Productos</small><strong><?= (int) ($filteredSalesOverview['items'] ?? 0) ?></strong></span>
+          <?php if ($canViewFinancials): ?>
+            <span><small>Total neto</small><strong><?= e(format_money($filteredSalesOverview['amount'] ?? 0)) ?></strong></span>
+            <span><small>Ticket promedio</small><strong><?= e(format_money($filteredSalesOverview['avg_ticket'] ?? 0)) ?></strong></span>
+          <?php endif; ?>
+        </div>
+
+        <?php if (!$salesRows): ?>
+          <div class="empty-panel">
+            <?= $salesQuery !== '' || $salesPayment !== '' || $salesCashier !== '' ? 'No encontramos ventas con esos filtros.' : 'Sin ventas sincronizadas en este periodo.' ?>
+          </div>
         <?php else: ?>
-          <div class="cloud-sales-list portal-contained-list">
-            <?php foreach ($recentSales as $sale): ?>
+          <div class="portal-sales-list">
+            <?php foreach ($salesRows as $sale): ?>
               <?php
                 $summary = is_array($sale['summary'] ?? null) ? $sale['summary'] : [];
+                $payload = is_array($sale['payload'] ?? null) ? $sale['payload'] : [];
                 $saleId = (int) ($summary['venta_id'] ?? 0);
-                $saleTotal = (float) ($summary['total'] ?? 0);
+                $saleGross = (float) ($summary['total'] ?? 0);
+                $saleAnnulled = (float) ($sale['annulled_amount'] ?? 0);
+                $saleTotal = (float) ($sale['net_amount'] ?? $saleGross);
+                $saleStatus = strtoupper(trim((string) ($sale['sale_status'] ?? $summary['estado'] ?? 'EMITIDA')));
                 $salePayment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
                 $saleItems = (int) ($summary['items_count'] ?? 0);
                 $branchName = (string) ($sale['branch_name'] ?: 'Sin sucursal');
+                $saleProductRows = is_array($payload['items'] ?? null) ? $payload['items'] : [];
+                $salePaymentLabel = ucwords(strtolower(str_replace('_', ' ', $salePayment)));
+                $saleCashier = trim((string) ($summary['cajero_nombre'] ?? $payload['cajero_nombre'] ?? ''));
+                if ($saleCashier === '' && (int) ($summary['user_id'] ?? $payload['user_id'] ?? 0) > 0) {
+                  $saleCashier = 'Cajero #' . (int) ($summary['user_id'] ?? $payload['user_id']);
+                }
               ?>
-              <article class="cloud-sale-item">
-                <div>
-                  <strong><?= e($branchName) ?> - <?= $saleId > 0 ? 'venta #' . $saleId : 'venta sin numero' ?></strong>
-                  <span><?= e(format_utc_datetime($sale['received_at'] ?? null)) ?></span>
-                </div>
-                <div>
-                  <?php if ($canViewFinancials): ?>
-                    <strong><?= e(format_money($saleTotal)) ?></strong>
+              <details class="portal-sale-row">
+                <summary>
+                  <span class="portal-sale-identity">
+                    <small><?= e($branchName) ?></small>
+                    <strong><?= $saleId > 0 ? 'Venta #' . $saleId : 'Venta sincronizada' ?><?= $saleStatus !== 'EMITIDA' ? ' · ' . e(ucwords(strtolower(str_replace('_', ' ', $saleStatus)))) : '' ?></strong>
+                    <time><?= e(format_utc_datetime($sale['occurred_at'] ?? null)) ?></time>
+                  </span>
+                  <span class="portal-sale-summary">
+                    <?php if ($canViewFinancials): ?><strong><?= e(format_money($saleTotal)) ?></strong><?php endif; ?>
+                    <small><?= e($salePaymentLabel) ?>, <?= $saleItems ?> producto<?= $saleItems === 1 ? '' : 's' ?><?= $saleCashier !== '' ? ', ' . e($saleCashier) : '' ?></small>
+                  </span>
+                  <span class="portal-sale-chevron" aria-hidden="true">+</span>
+                </summary>
+                <div class="portal-sale-detail">
+                  <?php if ($saleAnnulled > 0 && $canViewFinancials): ?>
+                    <p>Importe original <?= e(format_money($saleGross)) ?>, anulado <?= e(format_money($saleAnnulled)) ?>, neto vigente <?= e(format_money($saleTotal)) ?>.</p>
                   <?php endif; ?>
-                  <span><?= e($salePayment) ?> - <?= $saleItems ?> items</span>
+                  <?php if (!$saleProductRows): ?>
+                    <p>El detalle de productos no estaba disponible cuando se sincronizo esta venta.</p>
+                  <?php else: ?>
+                    <div class="portal-sale-items">
+                      <?php foreach ($saleProductRows as $saleProduct): ?>
+                        <?php
+                          if (!is_array($saleProduct)) { continue; }
+                          $productName = trim((string) ($saleProduct['nombre'] ?? ''));
+                          $productCode = trim((string) ($saleProduct['codigo'] ?? ''));
+                          $productQuantity = (float) ($saleProduct['cantidad'] ?? 0);
+                        ?>
+                        <div class="portal-sale-product">
+                          <span>
+                            <strong><?= e($productName !== '' ? $productName : 'Producto sin nombre') ?></strong>
+                            <small><?= e($productCode !== '' ? $productCode : 'Sin codigo') ?></small>
+                          </span>
+                          <span>
+                            <strong><?= e(number_format($productQuantity, abs($productQuantity - round($productQuantity)) < 0.0001 ? 0 : 3, ',', '.')) ?> u.</strong>
+                            <?php if ($canViewFinancials): ?><small><?= e(format_money($saleProduct['subtotal'] ?? 0)) ?></small><?php endif; ?>
+                          </span>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                  <?php endif; ?>
                 </div>
-              </article>
+              </details>
             <?php endforeach; ?>
           </div>
+
+          <?php if ((int) ($salesList['pages'] ?? 0) > 1): ?>
+            <nav class="portal-sales-pagination" aria-label="Paginas de ventas">
+              <?php
+                $currentSalesPage = (int) ($salesList['page'] ?? 1);
+                $salesPages = (int) ($salesList['pages'] ?? 0);
+                $salesPageQuery = [
+                  'sucursal' => $selectedBranchId,
+                  'periodo' => $periodKey,
+                  'desde' => $customFrom,
+                  'hasta' => $customTo,
+                  'venta_q' => $salesQuery,
+                  'venta_medio' => $salesPayment,
+                  'venta_cajero' => $salesCashier,
+                ];
+              ?>
+              <?php if ($currentSalesPage > 1): ?>
+                <?php $salesPageQuery['venta_pagina'] = $currentSalesPage - 1; ?>
+                <a class="button button--ghost" href="<?= e(portal_url('index.php?' . http_build_query($salesPageQuery))) ?>#ventas">Anterior</a>
+              <?php endif; ?>
+              <span>Pagina <?= $currentSalesPage ?> de <?= $salesPages ?></span>
+              <?php if ($currentSalesPage < $salesPages): ?>
+                <?php $salesPageQuery['venta_pagina'] = $currentSalesPage + 1; ?>
+                <a class="button button--ghost" href="<?= e(portal_url('index.php?' . http_build_query($salesPageQuery))) ?>#ventas">Siguiente</a>
+              <?php endif; ?>
+            </nav>
+          <?php endif; ?>
         <?php endif; ?>
       </section>
 
@@ -838,6 +1071,104 @@ if ($installTotal === 0) {
       </section>
     <?php endif; ?>
   </main>
+  <?php if ($canPreviewStockCount): ?>
+    <div class="portal-stock-count-sheet" data-stock-count-sheet hidden>
+      <button class="portal-stock-count-backdrop" type="button" data-stock-count-close aria-label="Cerrar conteo"></button>
+      <section class="portal-stock-count-panel" role="dialog" aria-modal="true" aria-labelledby="portalStockCountTitle">
+        <header class="portal-stock-count-head">
+          <div>
+            <span class="portal-stock-count-demo"><?= $canChangePrice ? 'Cambio remoto' : 'Demostracion' ?></span>
+            <h2 id="portalStockCountTitle">Conteo de stock</h2>
+          </div>
+          <button class="portal-stock-count-close" type="button" data-stock-count-close aria-label="Cerrar conteo">Cerrar</button>
+        </header>
+        <div class="portal-stock-count-product">
+          <strong data-stock-count-product>Producto</strong>
+          <span><b data-stock-count-branch>Sucursal</b><i aria-hidden="true">&middot;</i><span data-stock-count-code>Sin codigo</span></span>
+        </div>
+        <form class="portal-stock-count-form" data-stock-count-form novalidate>
+          <div class="portal-stock-count-current">
+            <span>Stock informado</span>
+            <strong data-stock-count-current>0 unidades</strong>
+          </div>
+          <label for="portalStockCountQuantity">
+            <span>Cantidad contada</span>
+            <input id="portalStockCountQuantity" data-stock-count-quantity type="number" min="0" inputmode="decimal" autocomplete="off" required>
+          </label>
+          <label for="portalStockCountReason">
+            <span>Motivo</span>
+            <select id="portalStockCountReason" data-stock-count-reason required>
+              <option value="physical_count">Conteo fisico</option>
+              <option value="breakage">Rotura o merma</option>
+              <option value="expiration">Vencimiento</option>
+              <option value="correction">Correccion de carga</option>
+            </select>
+          </label>
+          <div class="portal-stock-count-difference" data-stock-count-difference aria-live="polite">
+            <span>Diferencia</span>
+            <strong>Ingresá la cantidad contada</strong>
+          </div>
+          <p class="portal-stock-count-note">Esta vista calcula el ajuste, pero todavia no modifica FLUS ni envia datos a la sucursal.</p>
+          <button class="button button--block" type="submit">Simular ajuste</button>
+          <div class="portal-stock-count-result" data-stock-count-result role="status" hidden></div>
+        </form>
+      </section>
+    </div>
+  <?php endif; ?>
+  <?php if ($canPreviewPriceChange): ?>
+    <div class="portal-stock-count-sheet portal-price-change-sheet" data-price-change-sheet hidden>
+      <button class="portal-stock-count-backdrop" type="button" data-price-change-close aria-label="Cerrar cambio de precio"></button>
+      <section class="portal-stock-count-panel" role="dialog" aria-modal="true" aria-labelledby="portalPriceChangeTitle">
+        <header class="portal-stock-count-head">
+          <div>
+            <span class="portal-stock-count-demo">Demostracion</span>
+            <h2 id="portalPriceChangeTitle">Cambiar precio</h2>
+          </div>
+          <button class="portal-stock-count-close" type="button" data-price-change-close aria-label="Cerrar cambio de precio">Cerrar</button>
+        </header>
+        <div class="portal-stock-count-product">
+          <strong data-price-change-product>Producto</strong>
+          <span><b data-price-change-branch>Sucursal</b><i aria-hidden="true">&middot;</i><span data-price-change-code>Sin codigo</span></span>
+        </div>
+        <form class="portal-stock-count-form portal-price-change-form" data-price-change-form data-price-command-url="<?= e(portal_url('price-command.php')) ?>" data-price-command-enabled="<?= $canChangePrice ? '1' : '0' ?>" novalidate>
+          <input type="hidden" data-price-change-csrf value="<?= e(csrf_token()) ?>">
+          <input type="hidden" data-price-change-stock-id value="">
+          <input type="hidden" data-price-change-request-uid value="">
+          <div class="portal-stock-count-current">
+            <span>Precio actual</span>
+            <strong data-price-change-current>$ 0,00</strong>
+          </div>
+          <label for="portalPriceChangeValue">
+            <span>Nuevo precio</span>
+            <input id="portalPriceChangeValue" data-price-change-value type="number" min="0.01" step="0.01" inputmode="decimal" autocomplete="off" required>
+          </label>
+          <div class="portal-price-presets" role="group" aria-label="Ajustes rapidos de precio">
+            <button type="button" data-price-change-percent="-5">-5%</button>
+            <button type="button" data-price-change-percent="5">+5%</button>
+            <button type="button" data-price-change-percent="10">+10%</button>
+            <button type="button" data-price-change-percent="15">+15%</button>
+          </div>
+          <label for="portalPriceChangeReason">
+            <span>Motivo</span>
+            <select id="portalPriceChangeReason" data-price-change-reason required>
+              <option value="supplier_cost">Cambio de costo</option>
+              <option value="price_list">Nueva lista</option>
+              <option value="margin">Ajuste de margen</option>
+              <option value="promotion">Promocion</option>
+              <option value="correction">Correccion de carga</option>
+            </select>
+          </label>
+          <div class="portal-stock-count-difference portal-price-change-difference" data-price-change-difference aria-live="polite">
+            <span>Variacion</span>
+            <strong>Ingresa el nuevo precio</strong>
+          </div>
+          <p class="portal-stock-count-note"><?= $canChangePrice ? 'La orden se enviara solamente a esta sucursal. FLUS validara nuevamente el producto y el precio antes de aplicarla.' : 'Esta vista previsualiza el cambio, pero todavia no modifica FLUS ni envia precios a la sucursal.' ?></p>
+          <button class="button button--block" type="submit"><?= $canChangePrice ? 'Enviar cambio a la sucursal' : 'Simular cambio' ?></button>
+          <div class="portal-stock-count-result" data-price-change-result role="status" hidden></div>
+        </form>
+      </section>
+    </div>
+  <?php endif; ?>
   <script>
     (function() {
       const mobileQuery = window.matchMedia('(max-width: 600px)');
@@ -909,5 +1240,9 @@ if ($installTotal === 0) {
       mobileQuery.addEventListener('change', function() { activate(document.body.dataset.portalView || 'summary', false); });
     })();
   </script>
+  <script src="<?= e(portal_url('assets/js/stock-scanner.js?v=' . (string) @filemtime(__DIR__ . '/assets/js/stock-scanner.js'))) ?>" defer></script>
+  <?php if ($canPreviewStockCount): ?><script src="<?= e(portal_url('assets/js/stock-count-demo.js?v=' . (string) @filemtime(__DIR__ . '/assets/js/stock-count-demo.js'))) ?>" defer></script><?php endif; ?>
+  <?php if ($canPreviewPriceChange): ?><script src="<?= e(portal_url('assets/js/price-change-demo.js?v=' . (string) @filemtime(__DIR__ . '/assets/js/price-change-demo.js'))) ?>" defer></script><?php endif; ?>
+  <script src="<?= e(portal_url('assets/js/pwa.js')) ?>" defer></script>
 </body>
 </html>

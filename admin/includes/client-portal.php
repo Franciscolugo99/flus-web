@@ -102,8 +102,8 @@ if (!function_exists('portal_role_can')) {
     {
         $role = $role ?? portal_current_role();
         $capabilities = [
-            'owner' => ['view_sales', 'view_financials', 'view_stock', 'view_operations'],
-            'manager' => ['view_sales', 'view_financials', 'view_stock', 'view_operations'],
+            'owner' => ['view_sales', 'view_financials', 'view_stock', 'view_operations', 'preview_stock_count', 'preview_price_change', 'change_price'],
+            'manager' => ['view_sales', 'view_financials', 'view_stock', 'view_operations', 'preview_stock_count', 'preview_price_change', 'change_price'],
             'viewer' => ['view_stock', 'view_operations'],
         ];
 

@@ -17,6 +17,7 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
             'client_installations',
             'cloud_sync_events',
             'cloud_sync_stock_items',
+            'cloud_commands',
         ];
 
         try {
@@ -205,6 +206,43 @@ if (!function_exists('admin_cloud_sync_ensure_schema')) {
                     CONSTRAINT fk_cloud_sync_stock_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE SET NULL ON UPDATE CASCADE,
                     CONSTRAINT fk_cloud_sync_stock_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
                     CONSTRAINT fk_cloud_sync_stock_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS cloud_commands (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    command_uid VARCHAR(120) NOT NULL,
+                    portal_request_uid VARCHAR(120) NOT NULL,
+                    client_id INT UNSIGNED NOT NULL,
+                    branch_id INT UNSIGNED NOT NULL,
+                    installation_id BIGINT UNSIGNED NOT NULL,
+                    license_id INT UNSIGNED NOT NULL,
+                    requested_by_user_id INT UNSIGNED DEFAULT NULL,
+                    command_type VARCHAR(60) NOT NULL,
+                    payload_json LONGTEXT NOT NULL,
+                    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    attempts INT UNSIGNED NOT NULL DEFAULT 0,
+                    available_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    expires_at DATETIME NOT NULL,
+                    claimed_at DATETIME DEFAULT NULL,
+                    lease_until DATETIME DEFAULT NULL,
+                    claim_token_hash CHAR(64) DEFAULT NULL,
+                    completed_at DATETIME DEFAULT NULL,
+                    result_json LONGTEXT DEFAULT NULL,
+                    last_error VARCHAR(190) DEFAULT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_cloud_commands_uid (command_uid),
+                    UNIQUE KEY uq_cloud_commands_portal_request (client_id, portal_request_uid),
+                    KEY idx_cloud_commands_poll (installation_id, status, available_at),
+                    KEY idx_cloud_commands_client_created (client_id, created_at),
+                    KEY idx_cloud_commands_branch_created (branch_id, created_at),
+                    CONSTRAINT fk_cloud_commands_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    CONSTRAINT fk_cloud_commands_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    CONSTRAINT fk_cloud_commands_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    CONSTRAINT fk_cloud_commands_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    CONSTRAINT fk_cloud_commands_portal_user FOREIGN KEY (requested_by_user_id) REFERENCES client_portal_users(id) ON DELETE SET NULL ON UPDATE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
@@ -1178,6 +1216,259 @@ if (!function_exists('admin_cloud_sync_recent_sales')) {
     }
 }
 
+if (!function_exists('admin_cloud_sync_sales_list')) {
+    function admin_cloud_sync_sales_filter_sql(int $clientId, array $filters = [], string $prefix = 'sales'): array
+    {
+        $branchId = max(0, (int) ($filters['branch_id'] ?? 0));
+        $allowedBranchIds = array_key_exists('branch_ids', $filters) && is_array($filters['branch_ids'])
+            ? array_values(array_unique(array_filter(array_map('intval', $filters['branch_ids']), static function (int $id): bool {
+                return $id > 0;
+            })))
+            : null;
+        $query = mb_substr(trim((string) ($filters['q'] ?? '')), 0, 80);
+        $payment = mb_substr(strtoupper(trim((string) ($filters['payment'] ?? ''))), 0, 40);
+        $cashier = mb_substr(trim((string) ($filters['cashier'] ?? '')), 0, 80);
+        $fromUtc = trim((string) ($filters['from_utc'] ?? ''));
+        $toUtc = trim((string) ($filters['to_utc'] ?? ''));
+
+        $where = [
+            "e.event_type IN ('sale.created', 'sale_created')",
+            'e.client_id = :' . $prefix . '_client_id',
+        ];
+        $params = [$prefix . '_client_id' => $clientId];
+        if ($fromUtc !== '') {
+            $where[] = 'e.occurred_at >= :' . $prefix . '_from_utc';
+            $params[$prefix . '_from_utc'] = $fromUtc;
+        }
+        if ($toUtc !== '') {
+            $where[] = 'e.occurred_at < :' . $prefix . '_to_utc';
+            $params[$prefix . '_to_utc'] = $toUtc;
+        }
+        if ($branchId > 0) {
+            if ($allowedBranchIds !== null && !in_array($branchId, $allowedBranchIds, true)) {
+                $where[] = '1 = 0';
+            } else {
+                $where[] = 'e.branch_id = :' . $prefix . '_branch_id';
+                $params[$prefix . '_branch_id'] = $branchId;
+            }
+        } elseif ($allowedBranchIds !== null) {
+            $placeholders = [];
+            foreach ($allowedBranchIds as $index => $allowedBranchId) {
+                $key = $prefix . '_allowed_branch_' . $index;
+                $placeholders[] = ':' . $key;
+                $params[$key] = $allowedBranchId;
+            }
+            $where[] = $placeholders ? 'e.branch_id IN (' . implode(',', $placeholders) . ')' : '1 = 0';
+        }
+        if ($payment !== '') {
+            $where[] = "UPPER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(e.summary_json, '$.medio_pago')), '')) = :{$prefix}_payment";
+            $params[$prefix . '_payment'] = $payment;
+        }
+        if ($cashier !== '') {
+            $where[] = "CONCAT_WS(' ',"
+                . " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(e.summary_json, '$.cajero_nombre')), ''),"
+                . " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(e.payload_json, '$.cajero_nombre')), ''),"
+                . " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(e.summary_json, '$.user_id')), ''),"
+                . " COALESCE(JSON_UNQUOTE(JSON_EXTRACT(e.payload_json, '$.user_id')), '')"
+                . ") LIKE :{$prefix}_cashier ESCAPE '='";
+            $params[$prefix . '_cashier'] = '%' . str_replace(['=', '%', '_'], ['==', '=%', '=_'], $cashier) . '%';
+        }
+        if ($query !== '') {
+            $escaped = str_replace(['=', '%', '_'], ['==', '=%', '=_'], $query);
+            $where[] = "(e.event_uid LIKE :{$prefix}_query_uid ESCAPE '='"
+                . " OR e.summary_json LIKE :{$prefix}_query_summary ESCAPE '='"
+                . " OR e.payload_json LIKE :{$prefix}_query_payload ESCAPE '=')";
+            $searchPattern = '%' . $escaped . '%';
+            $params[$prefix . '_query_uid'] = $searchPattern;
+            $params[$prefix . '_query_summary'] = $searchPattern;
+            $params[$prefix . '_query_payload'] = $searchPattern;
+        }
+
+        return ['sql' => 'WHERE ' . implode(' AND ', $where), 'params' => $params];
+    }
+
+    function admin_cloud_sync_sales_list(PDO $pdo, int $clientId, array $filters = []): array
+    {
+        $empty = [
+            'items' => [],
+            'total' => 0,
+            'page' => 1,
+            'per_page' => 15,
+            'pages' => 0,
+        ];
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return $empty;
+        }
+
+        $page = max(1, (int) ($filters['page'] ?? 1));
+        $perPage = max(1, min(50, (int) ($filters['per_page'] ?? 15)));
+        $filterSql = admin_cloud_sync_sales_filter_sql($clientId, $filters, 'sales_list');
+        $whereSql = $filterSql['sql'];
+        $params = $filterSql['params'];
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM cloud_sync_events e {$whereSql}");
+        $countStmt->execute($params);
+        $total = (int) $countStmt->fetchColumn();
+        $pages = $total > 0 ? (int) ceil($total / $perPage) : 0;
+        if ($pages > 0 && $page > $pages) {
+            $page = $pages;
+        }
+        $offset = ($page - 1) * $perPage;
+
+        $stmt = $pdo->prepare("
+            SELECT
+                e.id,
+                e.event_uid,
+                e.occurred_at,
+                e.received_at,
+                e.summary_json,
+                e.payload_json,
+                e.installation_id,
+                e.branch_id,
+                b.name AS branch_name,
+                b.code AS branch_code,
+                i.display_name,
+                i.device_label
+            FROM cloud_sync_events e
+            INNER JOIN client_installations i ON i.id = e.installation_id
+            LEFT JOIN client_branches b ON b.id = e.branch_id AND b.client_id = e.client_id
+            {$whereSql}
+            ORDER BY e.occurred_at DESC, e.id DESC
+            LIMIT {$perPage} OFFSET {$offset}
+        ");
+        $stmt->execute($params);
+
+        $items = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $row['summary'] = admin_cloud_sync_decode_json($row['summary_json'] ?? null);
+            $row['payload'] = admin_cloud_sync_decode_json($row['payload_json'] ?? null);
+            unset($row['summary_json'], $row['payload_json']);
+            $items[] = $row;
+        }
+
+        $annulments = admin_cloud_sync_sale_annulment_map($pdo, $clientId);
+        foreach ($items as &$item) {
+            $summary = is_array($item['summary'] ?? null) ? $item['summary'] : [];
+            $key = (int)($item['installation_id'] ?? 0) . ':' . (int)($summary['venta_id'] ?? 0);
+            $cloudAnnulment = $annulments[$key] ?? ['amount' => 0.0, 'status' => ''];
+            $annulledAmount = max(0, (float)($summary['monto_anulado'] ?? 0) + (float)$cloudAnnulment['amount']);
+            $item['annulled_amount'] = $annulledAmount;
+            $item['net_amount'] = max(0, (float)($summary['total'] ?? 0) - $annulledAmount);
+            $item['sale_status'] = (string)($cloudAnnulment['status'] ?: ($summary['estado'] ?? 'EMITIDA'));
+        }
+        unset($item);
+
+        return [
+            'items' => $items,
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'pages' => $pages,
+        ];
+    }
+}
+
+if (!function_exists('admin_cloud_sync_sale_annulment_map')) {
+    function admin_cloud_sync_sale_annulment_map(PDO $pdo, int $clientId): array
+    {
+        static $cache = [];
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return [];
+        }
+        $cacheKey = spl_object_id($pdo) . ':' . $clientId;
+        if (isset($cache[$cacheKey])) {
+            return $cache[$cacheKey];
+        }
+        $stmt = $pdo->prepare("
+            SELECT installation_id, summary_json
+            FROM cloud_sync_events
+            WHERE client_id = :client_id
+              AND event_type IN ('sale.annulled', 'sale_annulled')
+            ORDER BY occurred_at ASC, id ASC
+        ");
+        $stmt->execute(['client_id' => $clientId]);
+        $map = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $summary = admin_cloud_sync_decode_json($row['summary_json'] ?? null);
+            $saleId = (int)($summary['venta_id'] ?? 0);
+            if ($saleId <= 0) {
+                continue;
+            }
+            $key = (int)$row['installation_id'] . ':' . $saleId;
+            if (!isset($map[$key])) {
+                $map[$key] = ['amount' => 0.0, 'status' => ''];
+            }
+            $map[$key]['amount'] += max(0, (float)($summary['monto_anulado'] ?? 0));
+            $map[$key]['status'] = (string)($summary['estado_nuevo'] ?? $map[$key]['status']);
+        }
+        $cache[$cacheKey] = $map;
+        return $map;
+    }
+}
+
+if (!function_exists('admin_cloud_sync_sales_filtered_overview')) {
+    function admin_cloud_sync_sales_filtered_overview(PDO $pdo, int $clientId, array $filters = []): array
+    {
+        $overview = ['sales' => 0, 'amount' => 0.0, 'avg_ticket' => 0.0, 'items' => 0];
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return $overview;
+        }
+
+        $filterSql = admin_cloud_sync_sales_filter_sql($clientId, $filters, 'sales_overview');
+        $stmt = $pdo->prepare('SELECT e.installation_id, e.summary_json FROM cloud_sync_events e ' . $filterSql['sql']);
+        $stmt->execute($filterSql['params']);
+        $sales = $stmt->fetchAll() ?: [];
+        $annulments = admin_cloud_sync_sale_annulment_map($pdo, $clientId);
+        foreach ($sales as $sale) {
+            $summary = admin_cloud_sync_decode_json($sale['summary_json'] ?? null);
+            $key = (int)($sale['installation_id'] ?? 0) . ':' . (int)($summary['venta_id'] ?? 0);
+            $annulledAmount = max(0, (float)($summary['monto_anulado'] ?? 0) + (float)($annulments[$key]['amount'] ?? 0));
+            $overview['sales']++;
+            $overview['amount'] += max(0, (float)($summary['total'] ?? 0) - $annulledAmount);
+            $overview['items'] += (int) ($summary['items_count'] ?? 0);
+        }
+        if ($overview['sales'] > 0) {
+            $overview['avg_ticket'] = $overview['amount'] / $overview['sales'];
+        }
+        return $overview;
+    }
+}
+
+if (!function_exists('admin_cloud_sync_sales_export_rows')) {
+    function admin_cloud_sync_sales_export_rows(PDO $pdo, int $clientId, array $filters = []): iterable
+    {
+        if ($clientId <= 0 || !admin_cloud_sync_ensure_schema($pdo)) {
+            return;
+        }
+
+        $filterSql = admin_cloud_sync_sales_filter_sql($clientId, $filters, 'sales_export');
+        $stmt = $pdo->prepare("
+            SELECT e.event_uid, e.occurred_at, e.summary_json, e.payload_json, e.installation_id, e.branch_id,
+                   b.name AS branch_name, i.display_name, i.device_label
+            FROM cloud_sync_events e
+            INNER JOIN client_installations i ON i.id = e.installation_id
+            LEFT JOIN client_branches b ON b.id = e.branch_id AND b.client_id = e.client_id
+            {$filterSql['sql']}
+            ORDER BY e.occurred_at DESC, e.id DESC
+        ");
+        $stmt->execute($filterSql['params']);
+
+        $annulments = admin_cloud_sync_sale_annulment_map($pdo, $clientId);
+        while (($row = $stmt->fetch()) !== false) {
+            $row['summary'] = admin_cloud_sync_decode_json($row['summary_json'] ?? null);
+            $row['payload'] = admin_cloud_sync_decode_json($row['payload_json'] ?? null);
+            unset($row['summary_json'], $row['payload_json']);
+            $summary = is_array($row['summary'] ?? null) ? $row['summary'] : [];
+            $key = (int)($row['installation_id'] ?? 0) . ':' . (int)($summary['venta_id'] ?? 0);
+            $cloudAnnulment = $annulments[$key] ?? ['amount' => 0.0, 'status' => ''];
+            $annulledAmount = max(0, (float)($summary['monto_anulado'] ?? 0) + (float)$cloudAnnulment['amount']);
+            $row['annulled_amount'] = $annulledAmount;
+            $row['net_amount'] = max(0, (float)($summary['total'] ?? 0) - $annulledAmount);
+            $row['sale_status'] = (string)($cloudAnnulment['status'] ?: ($summary['estado'] ?? 'EMITIDA'));
+            yield $row;
+        }
+    }
+}
+
 if (!function_exists('admin_cloud_sync_sales_period_overview')) {
     function admin_cloud_sync_sales_period_overview(
         PDO $pdo,
@@ -1229,11 +1520,14 @@ if (!function_exists('admin_cloud_sync_sales_period_overview')) {
             $where .= $branchPlaceholders ? ' AND branch_id IN (' . implode(',', $branchPlaceholders) . ')' : ' AND 1 = 0';
         }
 
-        $stmt = $pdo->prepare("SELECT summary_json FROM cloud_sync_events {$where}");
+        $stmt = $pdo->prepare("SELECT installation_id, summary_json FROM cloud_sync_events {$where}");
         $stmt->execute($params);
-        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $summaryJson) {
-            $summary = admin_cloud_sync_decode_json($summaryJson);
-            $total = (float) ($summary['total'] ?? 0);
+        $annulments = admin_cloud_sync_sale_annulment_map($pdo, $clientId);
+        foreach ($stmt->fetchAll() as $sale) {
+            $summary = admin_cloud_sync_decode_json($sale['summary_json'] ?? null);
+            $key = (int) ($sale['installation_id'] ?? 0) . ':' . (int) ($summary['venta_id'] ?? 0);
+            $annulledAmount = max(0, (float) ($summary['monto_anulado'] ?? 0) + (float) ($annulments[$key]['amount'] ?? 0));
+            $total = max(0, (float) ($summary['total'] ?? 0) - $annulledAmount);
             $items = (int) ($summary['items_count'] ?? 0);
             $payment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
             if ($payment === '') {
@@ -1282,7 +1576,7 @@ if (!function_exists('admin_cloud_sync_branch_sales_comparison')) {
             $scopeSql = $branchPlaceholders ? ' AND e.branch_id IN (' . implode(',', $branchPlaceholders) . ')' : ' AND 1 = 0';
         }
         $stmt = $pdo->prepare("
-            SELECT e.branch_id, b.name AS branch_name, e.summary_json
+            SELECT e.branch_id, e.installation_id, b.name AS branch_name, e.summary_json
             FROM cloud_sync_events e
             LEFT JOIN client_branches b ON b.id = e.branch_id AND b.client_id = e.client_id
             WHERE e.event_type IN ('sale.created', 'sale_created')
@@ -1295,6 +1589,7 @@ if (!function_exists('admin_cloud_sync_branch_sales_comparison')) {
         $stmt->execute($params);
 
         $comparison = [];
+        $annulments = admin_cloud_sync_sale_annulment_map($pdo, $clientId);
         foreach ($stmt->fetchAll() as $row) {
             $branchId = (int) ($row['branch_id'] ?? 0);
             if ($branchId <= 0) {
@@ -1310,8 +1605,10 @@ if (!function_exists('admin_cloud_sync_branch_sales_comparison')) {
                 ];
             }
             $summary = admin_cloud_sync_decode_json($row['summary_json'] ?? null);
+            $key = (int) ($row['installation_id'] ?? 0) . ':' . (int) ($summary['venta_id'] ?? 0);
+            $annulledAmount = max(0, (float) ($summary['monto_anulado'] ?? 0) + (float) ($annulments[$key]['amount'] ?? 0));
             $comparison[$branchId]['sales']++;
-            $comparison[$branchId]['amount'] += (float) ($summary['total'] ?? 0);
+            $comparison[$branchId]['amount'] += max(0, (float) ($summary['total'] ?? 0) - $annulledAmount);
         }
         foreach ($comparison as &$branch) {
             if ($branch['sales'] > 0) {
@@ -1428,15 +1725,20 @@ if (!function_exists('admin_cloud_sync_sales_overview')) {
         }
 
         $stmt = $pdo->prepare("
-            SELECT summary_json
+            SELECT installation_id, summary_json
             FROM cloud_sync_events
             {$where}
         ");
         $stmt->execute($params);
 
-        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $summaryJson) {
-            $summary = admin_cloud_sync_decode_json($summaryJson);
-            $total = (float) ($summary['total'] ?? 0);
+        $annulments = $clientId !== null && $clientId > 0
+            ? admin_cloud_sync_sale_annulment_map($pdo, $clientId)
+            : [];
+        foreach ($stmt->fetchAll() as $sale) {
+            $summary = admin_cloud_sync_decode_json($sale['summary_json'] ?? null);
+            $key = (int) ($sale['installation_id'] ?? 0) . ':' . (int) ($summary['venta_id'] ?? 0);
+            $annulledAmount = max(0, (float) ($summary['monto_anulado'] ?? 0) + (float) ($annulments[$key]['amount'] ?? 0));
+            $total = max(0, (float) ($summary['total'] ?? 0) - $annulledAmount);
             $items = (int) ($summary['items_count'] ?? 0);
             $payment = strtoupper(trim((string) ($summary['medio_pago'] ?? 'SIN_DATO')));
             if ($payment === '') {
@@ -1626,5 +1928,184 @@ if (!function_exists('admin_cloud_sync_stock_items')) {
         $stmt->execute($params);
 
         return $stmt->fetchAll();
+    }
+}
+
+if (!function_exists('admin_cloud_command_price_reasons')) {
+    function admin_cloud_command_price_reasons(): array
+    {
+        return [
+            'supplier_cost' => 'Cambio de costo',
+            'price_list' => 'Nueva lista',
+            'margin' => 'Ajuste de margen',
+            'promotion' => 'Promocion',
+            'correction' => 'Correccion de carga',
+        ];
+    }
+}
+
+if (!function_exists('admin_cloud_command_public_row')) {
+    function admin_cloud_command_public_row(array $row): array
+    {
+        $payload = json_decode((string) ($row['payload_json'] ?? '{}'), true);
+        $result = json_decode((string) ($row['result_json'] ?? '{}'), true);
+        return [
+            'command_uid' => (string) ($row['command_uid'] ?? ''),
+            'status' => (string) ($row['status'] ?? 'pending'),
+            'current_price' => (float) ($payload['expected_price'] ?? 0),
+            'new_price' => (float) ($payload['new_price'] ?? 0),
+            'product_name' => (string) ($payload['product_name'] ?? ''),
+            'branch_name' => (string) ($row['branch_name'] ?? $payload['branch_name'] ?? ''),
+            'reason' => (string) ($payload['reason_label'] ?? ''),
+            'created_at' => $row['created_at'] ?? null,
+            'completed_at' => $row['completed_at'] ?? null,
+            'error_code' => (string) ($row['last_error'] ?? $result['error_code'] ?? ''),
+            'applied_price' => isset($result['applied_price']) ? (float) $result['applied_price'] : null,
+        ];
+    }
+}
+
+if (!function_exists('admin_cloud_command_find_for_portal')) {
+    function admin_cloud_command_find_for_portal(PDO $pdo, int $clientId, string $commandUid, ?array $allowedBranchIds = null): ?array
+    {
+        $commandUid = admin_cloud_sync_normalize_uid($commandUid, 120);
+        if ($clientId <= 0 || $commandUid === '') {
+            return null;
+        }
+
+        $where = ['c.client_id = :client_id', 'c.command_uid = :command_uid'];
+        $params = ['client_id' => $clientId, 'command_uid' => $commandUid];
+        if (is_array($allowedBranchIds)) {
+            $allowedBranchIds = array_values(array_unique(array_filter(array_map('intval', $allowedBranchIds), static fn(int $id): bool => $id > 0)));
+            $marks = [];
+            foreach ($allowedBranchIds as $index => $branchId) {
+                $key = 'allowed_branch_' . $index;
+                $marks[] = ':' . $key;
+                $params[$key] = $branchId;
+            }
+            $where[] = $marks ? 'c.branch_id IN (' . implode(',', $marks) . ')' : '1 = 0';
+        }
+
+        $stmt = $pdo->prepare('SELECT c.*, b.name AS branch_name FROM cloud_commands c INNER JOIN client_branches b ON b.id = c.branch_id WHERE ' . implode(' AND ', $where) . ' LIMIT 1');
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        return is_array($row) ? $row : null;
+    }
+}
+
+if (!function_exists('admin_cloud_command_create_price')) {
+    function admin_cloud_command_create_price(
+        PDO $pdo,
+        int $clientId,
+        int $portalUserId,
+        int $stockItemId,
+        float $newPrice,
+        string $reason,
+        string $requestUid,
+        ?array $allowedBranchIds = null
+    ): array {
+        $reasonLabels = admin_cloud_command_price_reasons();
+        $requestUid = admin_cloud_sync_normalize_uid($requestUid, 120);
+        $newPrice = round($newPrice, 2);
+        if ($clientId <= 0 || $portalUserId <= 0 || $stockItemId <= 0 || $requestUid === '') {
+            throw new InvalidArgumentException('Solicitud incompleta.');
+        }
+        if ($newPrice <= 0 || $newPrice > 999999999.99) {
+            throw new InvalidArgumentException('El precio nuevo no es valido.');
+        }
+        if (!isset($reasonLabels[$reason])) {
+            throw new InvalidArgumentException('Selecciona un motivo valido.');
+        }
+
+        $existingStmt = $pdo->prepare('SELECT c.*, b.name AS branch_name FROM cloud_commands c INNER JOIN client_branches b ON b.id = c.branch_id WHERE c.client_id = :client_id AND c.portal_request_uid = :request_uid LIMIT 1');
+        $existingStmt->execute(['client_id' => $clientId, 'request_uid' => $requestUid]);
+        $existing = $existingStmt->fetch();
+        if (is_array($existing)) {
+            return ['duplicate' => true, 'command' => admin_cloud_command_public_row($existing)];
+        }
+
+        try {
+            $pdo->beginTransaction();
+            $stockStmt = $pdo->prepare('SELECT s.*, b.name AS branch_name, b.status AS branch_status, i.status AS installation_status, i.license_id AS installation_license_id, l.status AS license_status, l.plan_type AS license_plan_type, l.expires_at AS license_expires_at, c.status AS client_status FROM cloud_sync_stock_items s INNER JOIN client_branches b ON b.id = s.branch_id INNER JOIN client_installations i ON i.id = s.installation_id INNER JOIN licenses l ON l.id = i.license_id AND l.client_id = s.client_id INNER JOIN clients c ON c.id = s.client_id WHERE s.id = :stock_item_id AND s.client_id = :client_id LIMIT 1 FOR UPDATE');
+            $stockStmt->execute(['stock_item_id' => $stockItemId, 'client_id' => $clientId]);
+            $stock = $stockStmt->fetch();
+            if (!is_array($stock) || (int) ($stock['activo'] ?? 0) !== 1) {
+                throw new InvalidArgumentException('El producto ya no esta disponible para esta sucursal.');
+            }
+
+            $branchId = (int) ($stock['branch_id'] ?? 0);
+            if ($branchId <= 0 || (is_array($allowedBranchIds) && !in_array($branchId, array_map('intval', $allowedBranchIds), true))) {
+                throw new RuntimeException('No tienes acceso a esta sucursal.');
+            }
+            if ((string) ($stock['branch_status'] ?? '') !== 'active') {
+                throw new RuntimeException('La sucursal no esta activa.');
+            }
+            $licenseState = [
+                'status' => (string) ($stock['license_status'] ?? ''),
+                'plan_type' => (string) ($stock['license_plan_type'] ?? ''),
+                'expires_at' => $stock['license_expires_at'] ?? null,
+                'client_status' => (string) ($stock['client_status'] ?? ''),
+            ];
+            if (!admin_cloud_sync_license_accepts_events($licenseState)) {
+                throw new RuntimeException('La licencia Cloud de esta sucursal no esta activa.');
+            }
+
+            $currentPrice = round((float) ($stock['precio'] ?? 0), 2);
+            if (abs($currentPrice - $newPrice) < 0.005) {
+                throw new InvalidArgumentException('El precio nuevo es igual al precio actual.');
+            }
+
+            $commandUid = 'price-' . bin2hex(random_bytes(16));
+            $payload = [
+                'schema_version' => 1,
+                'operation' => 'price.update',
+                'product_uid' => (string) ($stock['product_uid'] ?? ''),
+                'local_product_id' => (int) ($stock['local_product_id'] ?? 0),
+                'product_code' => (string) ($stock['codigo'] ?? ''),
+                'product_name' => (string) ($stock['nombre'] ?? ''),
+                'branch_name' => (string) ($stock['branch_name'] ?? ''),
+                'expected_price' => number_format($currentPrice, 2, '.', ''),
+                'new_price' => number_format($newPrice, 2, '.', ''),
+                'reason' => $reason,
+                'reason_label' => $reasonLabels[$reason],
+                'requested_at' => gmdate(DATE_ATOM),
+            ];
+            $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if (!is_string($payloadJson) || strlen($payloadJson) > 16384) {
+                throw new RuntimeException('No se pudo preparar la orden.');
+            }
+
+            $insert = $pdo->prepare('INSERT INTO cloud_commands (command_uid, portal_request_uid, client_id, branch_id, installation_id, license_id, requested_by_user_id, command_type, payload_json, status, available_at, expires_at) VALUES (:command_uid, :request_uid, :client_id, :branch_id, :installation_id, :license_id, :portal_user_id, :command_type, :payload_json, \'pending\', UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL 24 HOUR))');
+            $insert->execute([
+                'command_uid' => $commandUid,
+                'request_uid' => $requestUid,
+                'client_id' => $clientId,
+                'branch_id' => $branchId,
+                'installation_id' => (int) $stock['installation_id'],
+                'license_id' => (int) $stock['installation_license_id'],
+                'portal_user_id' => $portalUserId,
+                'command_type' => 'price.update',
+                'payload_json' => $payloadJson,
+            ]);
+            $pdo->commit();
+
+            $created = admin_cloud_command_find_for_portal($pdo, $clientId, $commandUid, $allowedBranchIds);
+            if (!is_array($created)) {
+                throw new RuntimeException('No se pudo recuperar la orden creada.');
+            }
+            return ['duplicate' => false, 'command' => admin_cloud_command_public_row($created)];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            if ($e instanceof PDOException && (string) $e->getCode() === '23000') {
+                $existingStmt->execute(['client_id' => $clientId, 'request_uid' => $requestUid]);
+                $existing = $existingStmt->fetch();
+                if (is_array($existing)) {
+                    return ['duplicate' => true, 'command' => admin_cloud_command_public_row($existing)];
+                }
+            }
+            throw $e;
+        }
     }
 }

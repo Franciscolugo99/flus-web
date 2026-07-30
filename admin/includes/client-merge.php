@@ -59,7 +59,7 @@ if (!function_exists('admin_client_merge_unknown_tables')) {
         $supported = [
             'licenses', 'payments', 'license_notifications', 'license_events',
             'client_portal_memberships', 'client_branches', 'client_installations',
-            'cloud_sync_events', 'cloud_sync_stock_items',
+            'cloud_sync_events', 'cloud_sync_stock_items', 'cloud_commands',
         ];
         $stmt = $pdo->query("
             SELECT DISTINCT TABLE_NAME
@@ -77,7 +77,7 @@ if (!function_exists('admin_client_merge_counts')) {
         $tables = [
             'licenses', 'payments', 'license_notifications', 'license_events',
             'client_portal_memberships', 'client_branches', 'client_installations',
-            'cloud_sync_events', 'cloud_sync_stock_items',
+            'cloud_sync_events', 'cloud_sync_stock_items', 'cloud_commands',
         ];
         $counts = [];
         foreach ($tables as $table) {
@@ -221,7 +221,7 @@ if (!function_exists('admin_client_merge')) {
             $assignSource = $pdo->prepare('UPDATE client_installations SET branch_id = :branch_id, updated_at = NOW() WHERE client_id = :client_id AND branch_id IS NULL');
             $assignSource->execute(['branch_id' => $sourceBranchId, 'client_id' => $sourceClientId]);
 
-            foreach (['cloud_sync_events', 'cloud_sync_stock_items'] as $cloudTable) {
+            foreach (['cloud_sync_events', 'cloud_sync_stock_items', 'cloud_commands'] as $cloudTable) {
                 if (!admin_client_merge_table_exists($pdo, $cloudTable)) {
                     continue;
                 }
@@ -233,7 +233,7 @@ if (!function_exists('admin_client_merge')) {
 
             $moveTables = [
                 'licenses', 'payments', 'license_notifications', 'license_events',
-                'cloud_sync_events', 'cloud_sync_stock_items', 'client_installations', 'client_branches',
+                'cloud_sync_events', 'cloud_sync_stock_items', 'cloud_commands', 'client_installations', 'client_branches',
             ];
             foreach ($moveTables as $table) {
                 if (admin_client_merge_table_exists($pdo, $table)) {

@@ -73,8 +73,15 @@ if (request_is_post()) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#111520">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FLUS">
   <title>Ingreso clientes - FLUS</title>
   <link rel="icon" type="image/png" href="<?= e(portal_public_asset_url('img/favicon.png')) ?>">
+  <link rel="apple-touch-icon" href="<?= e(portal_url('assets/icons/flus-192.png')) ?>">
+  <link rel="manifest" href="<?= e(portal_url('manifest.webmanifest')) ?>">
   <link rel="stylesheet" href="<?= e(portal_admin_asset_url('css/admin.css?v=' . (is_file(__DIR__ . '/../admin/assets/css/admin.css') ? filemtime(__DIR__ . '/../admin/assets/css/admin.css') : time()))) ?>">
 </head>
 <body class="portal-page portal-login-page">
@@ -114,7 +121,13 @@ if (request_is_post()) {
 
         <button type="submit" class="button button--block">Ingresar</button>
       </form>
+
+      <button type="button" class="button button--ghost button--block portal-install-action" data-pwa-install hidden>
+        Instalar FLUS en este dispositivo
+      </button>
+      <p class="portal-install-help" data-pwa-install-help hidden></p>
     </section>
   </main>
+  <script src="<?= e(portal_url('assets/js/pwa.js')) ?>" defer></script>
 </body>
 </html>

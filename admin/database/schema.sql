@@ -248,6 +248,41 @@ CREATE TABLE IF NOT EXISTS client_merge_events (
     CONSTRAINT fk_client_merge_events_target FOREIGN KEY (target_client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS cloud_commands (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    command_uid VARCHAR(120) NOT NULL,
+    portal_request_uid VARCHAR(120) NOT NULL,
+    client_id INT UNSIGNED NOT NULL,
+    branch_id INT UNSIGNED NOT NULL,
+    installation_id BIGINT UNSIGNED NOT NULL,
+    license_id INT UNSIGNED NOT NULL,
+    requested_by_user_id INT UNSIGNED DEFAULT NULL,
+    command_type VARCHAR(60) NOT NULL,
+    payload_json LONGTEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    available_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    claimed_at DATETIME DEFAULT NULL,
+    lease_until DATETIME DEFAULT NULL,
+    claim_token_hash CHAR(64) DEFAULT NULL,
+    completed_at DATETIME DEFAULT NULL,
+    result_json LONGTEXT DEFAULT NULL,
+    last_error VARCHAR(190) DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_cloud_commands_uid (command_uid),
+    UNIQUE KEY uq_cloud_commands_portal_request (client_id, portal_request_uid),
+    KEY idx_cloud_commands_poll (installation_id, status, available_at),
+    KEY idx_cloud_commands_client_created (client_id, created_at),
+    KEY idx_cloud_commands_branch_created (branch_id, created_at),
+    CONSTRAINT fk_cloud_commands_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_commands_branch FOREIGN KEY (branch_id) REFERENCES client_branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_commands_installation FOREIGN KEY (installation_id) REFERENCES client_installations(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_commands_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_cloud_commands_portal_user FOREIGN KEY (requested_by_user_id) REFERENCES client_portal_users(id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS client_portal_membership_branches (
     membership_id INT UNSIGNED NOT NULL,
     branch_id INT UNSIGNED NOT NULL,

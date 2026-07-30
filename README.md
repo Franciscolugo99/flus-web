@@ -2,6 +2,47 @@
 
 Sitio institucional de FLUS - sistema de gestion comercial.
 
+El portal de clientes incluye un listado unificado de ventas sincronizadas por
+sucursal, periodo, producto, medio de pago y cajero. Muestra importe original,
+anulaciones y neto vigente, permite abrir el detalle de productos y exportar el
+resultado a CSV respetando los permisos de sucursal del usuario.
+
+El portal tambien es instalable como aplicacion web (PWA) desde Chrome, Edge o
+Safari. El service worker no guarda paginas autenticadas ni datos comerciales:
+las consultas siguen saliendo siempre al servidor para mostrar informacion actual.
+Para habilitar la instalacion en produccion se debe publicar completa la carpeta
+`portal/` y acceder mediante HTTPS. En Android, Chrome ofrece `Instalar`; en iPhone,
+Safari utiliza `Compartir > Agregar a inicio`.
+
+La vista de stock puede leer codigos de barras con la camara del celular. Utiliza
+`BarcodeDetector` cuando el navegador lo ofrece y carga localmente ZXing Browser
+como alternativa. El lector solo completa la busqueda existente: no modifica stock
+ni envia datos comerciales a un servicio externo. La copia distribuida de ZXing y
+su licencia MIT estan en `portal/assets/vendor/zxing/`.
+
+Dueno y encargado pueden abrir una demostracion de conteo desde cada producto. La
+hoja movil calcula faltantes o sobrantes y permite elegir un motivo, pero no escribe
+en la base ni envia comandos a las sucursales. La aplicacion real del ajuste queda
+reservada para una futura cola auditada e idempotente en FLUS.
+
+Dueno y encargado pueden enviar un cambio de precio a la sucursal del producto.
+Wiroos valida permiso, CSRF, cliente, sucursal e instalacion, toma como referencia el
+precio sincronizado y crea una orden idempotente. FLUS 4.2.10 vuelve a validar el
+producto y el precio local, aplica el cambio dentro de una transaccion y registra el
+historial una sola vez. Si el precio cambio localmente, la orden queda en conflicto y
+no sobrescribe el valor mas nuevo.
+
+## Meta y estado actual de precios remotos
+
+La meta es operar cambios de precio desde el portal movil sin confiar en el
+navegador y sin duplicar actualizaciones ante doble toque, timeout o reintento.
+Cada orden queda limitada al cliente, sucursal, instalacion y licencia activos.
+
+Al 30/07/2026, el flujo esta implementado y validado localmente junto con FLUS
+4.2.10. Todavia no debe considerarse habilitado en produccion hasta crear la tabla
+`cloud_commands`, publicar los endpoints de consulta y confirmacion, y completar
+una prueba controlada con una sucursal piloto. No se requiere rotar el token cloud.
+
 ## Como usarlo en local
 
 1. Extrae el contenido dentro de `C:\xampp\htdocs\flus-web`
