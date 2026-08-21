@@ -47,7 +47,10 @@ function ConvertTo-TicketText {
             $name = [string]$item.name
             $total = if ($null -ne $item.total) { ('{0:N2}' -f [double]$item.total) } else { '' }
             $lines.Add("$qty x $name")
-            if ($total -ne '') { $lines.Add((''.PadLeft([Math]::Max(1, 32 - $total.Length), ' ') + $total)) }
+            if ($total -ne '') {
+                $spaces = [Math]::Max(1, 32 - $total.Length)
+                $lines.Add((''.PadLeft($spaces, ' ') + $total))
+            }
         }
     }
 
@@ -65,11 +68,71 @@ function Send-ToWindowsPrinter {
         [string]$PrinterName,
         [string]$Text
     )
+
+    # Out-Printer falla con algunos drivers termicos POS cuando Windows informa
+    # un ancho de pagina reducido. PrintDocument dibuja directo al spooler.
+    Add-Type -AssemblyName System.Drawing
+
     $printer = Get-Printer -Name $PrinterName -ErrorAction Stop
     if ($printer.PrinterStatus -eq 'Offline') {
         throw "La impresora '$PrinterName' figura offline"
     }
-    $Text | Out-Printer -Name $PrinterName
+
+    $document = New-Object System.Drawing.Printing.PrintDocument
+    $document.PrinterSettings.PrinterName = $PrinterName
+
+    if (-not $document.PrinterSettings.IsValid) {
+        $document.Dispose()
+        throw "Windows no considera valida la impresora '$PrinterName'"
+    }
+
+    $document.PrintController = New-Object System.Drawing.Printing.StandardPrintController
+    $document.DocumentName = 'FLUS Ticket'
+    $document.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(4, 4, 4, 4)
+
+    $font = New-Object System.Drawing.Font('Consolas', 8.0)
+    $lines = @(($Text -replace "`r", '') -split "`n")
+    $state = [pscustomobject]@{ Index = 0 }
+
+    $handler = [System.Drawing.Printing.PrintPageEventHandler]{
+        param($sender, $e)
+
+        $lineHeight = [float]$font.GetHeight($e.Graphics)
+        $x = [float]($e.PageBounds.Left + 5)
+        $y = [float]($e.PageBounds.Top + 5)
+        $bottom = [float]($e.PageBounds.Bottom - 5)
+
+        while ($state.Index -lt $lines.Count) {
+            if (($y + $lineHeight) -gt $bottom) {
+                $e.HasMorePages = $true
+                return
+            }
+
+            $e.Graphics.DrawString(
+                [string]$lines[$state.Index],
+                $font,
+                [System.Drawing.Brushes]::Black,
+                $x,
+                $y
+            )
+
+            $y += $lineHeight
+            $state.Index++
+        }
+
+        $e.HasMorePages = $false
+    }
+
+    $document.add_PrintPage($handler)
+
+    try {
+        $document.Print()
+    }
+    finally {
+        $document.remove_PrintPage($handler)
+        $font.Dispose()
+        $document.Dispose()
+    }
 }
 
 function Invoke-FlusApi {
@@ -95,12 +158,14 @@ if ($ListPrinters) {
 $config = Get-FlusConfig -Path $ConfigPath
 
 if ($TestPrint) {
+    $printer = Get-Printer -Name ([string]$config.printer_name) -ErrorAction Stop
     $text = @"
 FLUS PRINT AGENT
 PRUEBA DE IMPRESION
 
 Equipo: $env:COMPUTERNAME
 Impresora: $($config.printer_name)
+Puerto: $($printer.PortName)
 Fecha: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
 
 OK
