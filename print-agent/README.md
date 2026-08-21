@@ -2,14 +2,20 @@
 
 Objetivo de esta primera etapa: permitir que una venta originada desde FLUS Web en un celular termine imprimiendo en una impresora termica USB instalada en una PC Windows del comercio.
 
+## Estado validado
+
+El 20/08/2026 se realizo una prueba fisica en Windows con una impresora POS-58 conectada por USB002. El listado de impresoras detecto correctamente `POS-58` y la impresion de prueba salio correctamente usando `.NET PrintDocument`.
+
+`Out-Printer` fue descartado para impresoras termicas porque el driver POS-58 devolvio `ArgumentOutOfRangeException: La longitud no puede ser inferior a cero`. El agente usa ahora `System.Drawing.Printing.PrintDocument`, que fue validado fisicamente.
+
 ## Alcance actual
 
 - Windows 10/11 con PowerShell 5.1 o superior.
-- Impresora ya instalada y funcional en Windows (por ejemplo POS-80C, XPrinter, 3nStar usando su driver).
+- Impresora ya instalada y funcional en Windows (por ejemplo POS-58/POS-80, XPrinter, 3nStar usando su driver).
 - Consulta saliente por HTTPS; no requiere abrir puertos del router.
 - Autenticacion por agente con UID + token propio.
 - Claim con lease, ACK, reintentos y proteccion contra dos agentes tomando el mismo trabajo.
-- Impresion inicial mediante el spooler de Windows (`Out-Printer`).
+- Impresion mediante `.NET PrintDocument` y spooler de Windows.
 
 Esta version NO implementa todavia ESC/POS RAW, corte automatico, apertura de cajon, instalador EXE, servicio de Windows ni CUPS/Ubuntu.
 
