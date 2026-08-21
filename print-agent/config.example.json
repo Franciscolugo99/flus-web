@@ -1,0 +1,7 @@
+{
+  "server_base_url": "https://api.flus.com.ar",
+  "agent_uid": "agent-caja-01",
+  "agent_token": "REEMPLAZAR_CON_TOKEN_SEGURO",
+  "printer_name": "POS-80C",
+  "poll_seconds": 3
+}
