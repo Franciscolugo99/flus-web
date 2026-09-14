@@ -336,3 +336,55 @@ CREATE TABLE IF NOT EXISTS security_rate_limits (
     KEY idx_security_rate_limits_scope (scope),
     KEY idx_security_rate_limits_updated_at (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS web_instances (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id INT UNSIGNED NOT NULL,
+    license_id INT UNSIGNED DEFAULT NULL,
+    slug VARCHAR(63) NOT NULL,
+    primary_domain VARCHAR(190) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'preparando',
+    provisioning_status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
+    db_host VARCHAR(190) NOT NULL DEFAULT 'localhost',
+    db_port INT UNSIGNED NOT NULL DEFAULT 3306,
+    db_name VARCHAR(190) NOT NULL,
+    db_user VARCHAR(190) NOT NULL,
+    db_password_encrypted TEXT DEFAULT NULL,
+    app_version VARCHAR(40) DEFAULT NULL,
+    schema_version VARCHAR(40) DEFAULT NULL,
+    last_health_at DATETIME DEFAULT NULL,
+    last_backup_at DATETIME DEFAULT NULL,
+    internal_notes TEXT DEFAULT NULL,
+    created_by_admin_id INT UNSIGNED DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_web_instances_slug (slug),
+    UNIQUE KEY uq_web_instances_domain (primary_domain),
+    UNIQUE KEY uq_web_instances_database (db_host, db_name),
+    KEY idx_web_instances_client_id (client_id),
+    KEY idx_web_instances_license_id (license_id),
+    KEY idx_web_instances_status (status),
+    KEY idx_web_instances_provisioning (provisioning_status),
+    CONSTRAINT fk_web_instances_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_web_instances_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_web_instances_admin FOREIGN KEY (created_by_admin_id) REFERENCES admin_users(id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS web_instance_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    web_instance_id BIGINT UNSIGNED NOT NULL,
+    client_id INT UNSIGNED NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    from_status VARCHAR(20) DEFAULT NULL,
+    to_status VARCHAR(20) DEFAULT NULL,
+    message VARCHAR(255) DEFAULT NULL,
+    metadata_json TEXT DEFAULT NULL,
+    actor_admin_id INT UNSIGNED DEFAULT NULL,
+    actor VARCHAR(190) DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_web_instance_events_instance (web_instance_id, created_at),
+    KEY idx_web_instance_events_client (client_id, created_at),
+    CONSTRAINT fk_web_instance_events_instance FOREIGN KEY (web_instance_id) REFERENCES web_instances(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_web_instance_events_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_web_instance_events_admin FOREIGN KEY (actor_admin_id) REFERENCES admin_users(id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

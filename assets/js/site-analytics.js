@@ -6,6 +6,8 @@
     'click_contact',
     'click_demo',
     'click_download',
+    'lead_form_success',
+    'finder_result',
   ]);
 
   const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
@@ -50,8 +52,59 @@
     }
   }
 
+  function getFirstTouch() {
+    const key = 'flus_analytics_first_touch';
+    try {
+      const existing = JSON.parse(window.sessionStorage.getItem(key) || 'null');
+      if (existing && typeof existing === 'object') return existing;
+      const params = new URLSearchParams(window.location.search);
+      const data = {
+        landing_page: safeText(window.location.pathname, 190) || '/',
+        referrer: safeText(document.referrer, 255),
+        utm_source: safeText(params.get('utm_source') || '', 100),
+        utm_medium: safeText(params.get('utm_medium') || '', 100),
+        utm_campaign: safeText(params.get('utm_campaign') || '', 100),
+      };
+      window.sessionStorage.setItem(key, JSON.stringify(data));
+      return data;
+    } catch (error) {
+      return {landing_page: safeText(window.location.pathname, 190) || '/', referrer: safeText(document.referrer,255), utm_source:'',utm_medium:'',utm_campaign:''};
+    }
+  }
+
   function normalizeHref(href) {
     return safeText(href || '', 255);
+  }
+
+  function sendToGa4(eventType, extra = {}) {
+    if (typeof window.gtag !== 'function' || eventType === 'page_view') {
+      return;
+    }
+
+    const params = {
+      event_category: 'flus_commercial',
+      event_label: safeText(extra.label || '', 120),
+      page_path: safeText(window.location.pathname, 190) || '/',
+      transport_type: 'beacon',
+    };
+
+    if (extra.href) {
+      params.link_url = normalizeHref(extra.href);
+    }
+    if (extra.form_id) {
+      params.form_id = safeText(extra.form_id, 80);
+    }
+    if (extra.result) {
+      params.result = safeText(extra.result, 80);
+    }
+
+    // generate_lead is a recommended GA4 event and represents a real form lead.
+    const gaEvent = eventType === 'lead_form_success' ? 'generate_lead' : eventType;
+    try {
+      window.gtag('event', gaEvent, params);
+    } catch (error) {
+      // Analytics must never break navigation or forms.
+    }
   }
 
   function sendPayload(payload) {
@@ -88,18 +141,20 @@
       return;
     }
 
+    const firstTouch = getFirstTouch();
     const payload = {
       event_type: eventType,
       page_url: safeText(window.location.pathname + window.location.search, 255) || '/',
       page_title: safeText(document.title, 190),
-      referrer: safeText(document.referrer, 255),
-      utm_source: safeText(getUtmValue('utm_source'), 100),
-      utm_medium: safeText(getUtmValue('utm_medium'), 100),
-      utm_campaign: safeText(getUtmValue('utm_campaign'), 100),
+      referrer: firstTouch.referrer || safeText(document.referrer, 255),
+      utm_source: safeText(getUtmValue('utm_source') || firstTouch.utm_source, 100),
+      utm_medium: safeText(getUtmValue('utm_medium') || firstTouch.utm_medium, 100),
+      utm_campaign: safeText(getUtmValue('utm_campaign') || firstTouch.utm_campaign, 100),
       session_id: getSessionId(),
-      extra,
+      extra: Object.assign({ landing_page: firstTouch.landing_page || '/' }, extra),
     };
 
+    sendToGa4(eventType, extra);
     sendPayload(payload);
   }
 

@@ -121,6 +121,17 @@ if (trim((string) ($security['rate_limit_salt'] ?? '')) !== '') {
     preflight_warn('Rate limit salt', 'conviene definir uno unico en produccion');
 }
 
+$webInstances = (array) ($config['web_instances'] ?? []);
+$webInstanceKey = (string) ($webInstances['encryption_key'] ?? '');
+$webInstanceKeyRaw = base64_decode($webInstanceKey, true);
+if (!function_exists('sodium_crypto_secretbox') && !function_exists('openssl_encrypt')) {
+    preflight_fail('Cifrado de instancias web', 'Sodium y OpenSSL no estan disponibles');
+} elseif ($webInstanceKeyRaw === false || strlen($webInstanceKeyRaw) !== 32) {
+    preflight_fail('Clave de instancias web', 'debe contener 32 bytes codificados en base64');
+} else {
+    preflight_ok('Clave de instancias web', function_exists('sodium_crypto_secretbox') ? 'configurada con Sodium' : 'configurada con OpenSSL AES-256-GCM');
+}
+
 try {
     $pdo = admin_db();
     preflight_ok('Conexion DB', 'OK');
@@ -141,6 +152,8 @@ try {
         'cloud_sync_stock_items',
         'downloads',
         'web_events',
+        'web_instances',
+        'web_instance_events',
     ];
 
     foreach ($requiredTables as $table) {
@@ -183,4 +196,3 @@ try {
 echo PHP_EOL;
 echo 'Resultado: ' . $errors . ' error(es), ' . $warnings . ' advertencia(s).' . PHP_EOL;
 exit($errors > 0 ? 1 : 0);
-

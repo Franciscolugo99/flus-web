@@ -11,5 +11,6 @@ require_once __DIR__ . '/license-events.php';
 require_once __DIR__ . '/license-notifications.php';
 require_once __DIR__ . '/cloud-sync.php';
 require_once __DIR__ . '/client-merge.php';
+require_once __DIR__ . '/web-instances.php';
 
 admin_start_session();

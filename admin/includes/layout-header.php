@@ -162,6 +162,10 @@ $__total_alerts = $__expiring_soon + $__expired;
          class="nav-item <?= ($active_menu ?? '') === 'payments' ? 'active' : '' ?>">
         <span class="nav-icon">◎</span> Pagos
       </a>
+      <a href="<?= admin_url('web-instances.php') ?>"
+         class="nav-item <?= ($active_menu ?? '') === 'web-instances' ? 'active' : '' ?>">
+        <span class="nav-icon">▣</span> Instancias web
+      </a>
 
       <div class="nav-group-label">Reportes & Alertas</div>
 
@@ -182,7 +186,6 @@ $__total_alerts = $__expiring_soon + $__expired;
          class="nav-item <?= ($active_menu ?? '') === 'cloud-sync' ? 'active' : '' ?>">
         <span class="nav-icon">◇</span> Sucursales cloud
       </a>
-
       <div class="nav-group-label">Recursos</div>
 
       <a href="<?= admin_url('downloads.php') ?>"

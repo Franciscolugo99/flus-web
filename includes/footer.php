@@ -11,24 +11,23 @@
           <span>FLUS</span>
         </a>
         <p class="footer-copy">
-          Sistema de gestión comercial para comercios y pymes que necesitan vender,
-          controlar caja, seguir stock y trabajar la facturación con más orden operativo.
+          Dos ediciones para una misma operación: FLUS Web para trabajar desde cualquier dispositivo y FLUS Server para instalaciones locales más completas y personalizadas.
         </p>
         <div class="footer-cta-row">
-          <a href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo" data-track-label="Footer solicitar demo">Solicitar demo</a>
+          <a href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Footer demo Web">Demo Web</a>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <a class="footer-whatsapp" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer WhatsApp">Escribinos por WhatsApp</a>
+            <a class="footer-whatsapp" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer WhatsApp">WhatsApp comercial</a>
           <?php endif; ?>
         </div>
       </div>
 
       <div>
-        <strong class="footer-title">Soluciones</strong>
+        <strong class="footer-title">Versiones</strong>
         <ul class="footer-links">
-          <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Sistema de gestión</a></li>
-          <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Sistema POS</a></li>
-          <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Control de stock</a></li>
-          <li><a href="<?= e(site_url('facturacion.php')) ?>">Facturación</a></li>
+          <li><a href="<?= e(site_url('flus-web.php')) ?>">FLUS Web</a></li>
+          <li><a href="<?= e(site_url('flus-server.php')) ?>">FLUS Server</a></li>
+          <li><a href="<?= e(site_url()) ?>#comparar">Comparar ediciones</a></li>
+          <li><a href="<?= e(site_url()) ?>#precios">Precios</a></li>
         </ul>
       </div>
 
@@ -36,9 +35,11 @@
         <strong class="footer-title">Explorar</strong>
         <ul class="footer-links">
           <li><a href="<?= e(site_url()) ?>">Inicio</a></li>
-          <li><a href="<?= e(site_url()) ?>#precios">Planes y precios</a></li>
+          <li><a href="<?= e(site_url()) ?>#funciones">Funciones</a></li>
           <li><a href="<?= e(site_url('contacto.php')) ?>">Contacto y demo</a></li>
           <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Cómo trabaja FLUS</a></li>
+          <li><a href="<?= e(site_url('recursos/')) ?>">Guías para comercios</a></li>
+          <li><a href="<?= e(site_url('sistema-para-kioscos/')) ?>">FLUS para kioscos</a></li>
         </ul>
       </div>
 
@@ -52,7 +53,7 @@
             <li><a href="tel:<?= e(phone_href($site['contact_phone'])) ?>" data-track-event="click_contact" data-track-label="Footer telefono"><?= e($site['contact_phone']) ?></a></li>
           <?php endif; ?>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <li><a href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer contacto WhatsApp">Escribinos por WhatsApp</a></li>
+            <li><a href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer contacto WhatsApp">Escribir por WhatsApp</a></li>
           <?php endif; ?>
         </ul>
       </div>
@@ -101,5 +102,8 @@
   ?>
   <script src="<?= e($scriptSrc) ?>"></script>
   <script src="<?= e($analyticsScriptSrc) ?>"></script>
+<?php if (!empty($trackLeadSuccess)): ?>
+  <script>window.FLUSTrack && window.FLUSTrack.track('lead_form_success', {form_id:'formulario-contacto', label:'Consulta comercial enviada'});</script>
+<?php endif; ?>
 </body>
 </html>

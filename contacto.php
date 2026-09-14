@@ -161,7 +161,7 @@ require __DIR__ . '/includes/header.php';
       </p>
       <div class="hero-actions">
         <?php if ($site['whatsapp_number'] !== ''): ?>
-          <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Hero contacto WhatsApp">Hablar por WhatsApp</a>
+          <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Hero contacto WhatsApp">Escribir por WhatsApp</a>
         <?php endif; ?>
         <?php if ($site['contact_email'] !== ''): ?>
           <a class="btn btn-secondary" href="mailto:<?= e($site['contact_email']) ?>" data-track-event="click_contact" data-track-label="Hero contacto correo">Enviar correo</a>

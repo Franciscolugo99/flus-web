@@ -31,6 +31,9 @@ if (!function_exists('admin_config')) {
                 'security' => [
                     'rate_limit_salt' => getenv('FLUS_RATE_LIMIT_SALT') ?: '',
                 ],
+                'web_instances' => [
+                    'encryption_key' => getenv('FLUS_WEB_INSTANCE_ENCRYPTION_KEY') ?: '',
+                ],
                 'analytics' => [
                     'exclude_local_requests' => true,
                     'exclude_admin_sessions' => true,

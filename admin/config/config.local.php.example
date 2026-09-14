@@ -29,4 +29,8 @@ return [
     'security' => [
         'rate_limit_salt' => 'GENERAR_UN_VALOR_ALEATORIO_DE_32_BYTES',
     ],
+    'web_instances' => [
+        // Generar con: php -r "echo base64_encode(random_bytes(32)), PHP_EOL;"
+        'encryption_key' => 'CLAVE_BASE64_DE_32_BYTES',
+    ],
 ];

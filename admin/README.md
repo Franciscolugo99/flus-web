@@ -334,6 +334,25 @@ Para enviar avisos reales de vencimientos:
 Cada envio queda registrado en `license_notifications` para evitar duplicados
 del mismo vencimiento.
 
+## Instancias FLUS Web por cliente
+
+El panel registra cada despliegue web con dominio, cliente, licencia, estado,
+version y una base MySQL aislada. La contraseña de la base se cifra con Sodium
+o con OpenSSL AES-256-GCM y nunca se vuelve a mostrar desde la interfaz.
+
+Para habilitar el modulo en una instalacion existente:
+
+1. Ejecutar `admin/database/web_instances.sql` sobre la base del panel.
+2. Generar una clave con `php -r "echo base64_encode(random_bytes(32)), PHP_EOL;"`.
+3. Configurarla como `FLUS_WEB_INSTANCE_ENCRYPTION_KEY` o como
+   `web_instances.encryption_key` en `admin/config/config.local.php`.
+4. Ejecutar `php admin/tools/production_preflight.php` antes de publicar.
+
+Esta primera etapa no crea bases ni usuarios automaticamente: esas operaciones
+continuan en cPanel y luego se registran en el panel. Asi se puede validar el
+aislamiento, los permisos, backups y recuperacion antes de integrar la API del
+hosting.
+
 ## Seguridad
 
 - `admin/config`, `admin/database` y `admin/tools` bloquean acceso web directo.

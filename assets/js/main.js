@@ -10,7 +10,14 @@ function closeNav() {
   body.classList.remove('nav-open');
   if (toggle) {
     toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Abrir menú');
   }
+
+  document.querySelectorAll('[data-nav-dropdown].is-open').forEach((dropdown) => {
+    dropdown.classList.remove('is-open');
+    const trigger = dropdown.querySelector('.nav-dropdown__trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+  });
 }
 
 if (toggle && navPanel) {
@@ -49,75 +56,89 @@ if (toggle && navPanel) {
   });
 }
 
-/* ── Nav Dropdown ────────────────────────── */
+/* ── Nav Dropdowns ───────────────────────── */
 (function () {
-  var dropdown = document.querySelector('[data-nav-dropdown]');
-  if (!dropdown) return;
-
-  var trigger = dropdown.querySelector('.nav-dropdown__trigger');
-  var menu = dropdown.querySelector('.nav-dropdown__menu');
-  if (!trigger || !menu) return;
+  var dropdowns = Array.from(document.querySelectorAll('[data-nav-dropdown]'));
+  if (!dropdowns.length) return;
 
   var isMobile = function () {
     return window.innerWidth <= 920;
   };
 
-  function open() {
-    dropdown.classList.add('is-open');
-    trigger.setAttribute('aria-expanded', 'true');
+  function setOpen(dropdown, open) {
+    var trigger = dropdown.querySelector('.nav-dropdown__trigger');
+    dropdown.classList.toggle('is-open', open);
+    if (trigger) trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
-  function close() {
-    dropdown.classList.remove('is-open');
-    trigger.setAttribute('aria-expanded', 'false');
+  function closeAll(except) {
+    dropdowns.forEach(function (item) {
+      if (item !== except) setOpen(item, false);
+    });
   }
 
-  function toggle() {
-    if (dropdown.classList.contains('is-open')) {
-      close();
-    } else {
-      open();
-    }
-  }
+  dropdowns.forEach(function (dropdown) {
+    var trigger = dropdown.querySelector('.nav-dropdown__trigger');
+    var menu = dropdown.querySelector('.nav-dropdown__menu');
+    if (!trigger || !menu) return;
 
-  // Click always works (mobile + desktop)
-  trigger.addEventListener('click', function (e) {
-    e.stopPropagation();
-    toggle();
-  });
+    var hoverTimeout;
 
-  // Hover on desktop
-  var hoverTimeout;
-  dropdown.addEventListener('mouseenter', function () {
-    if (isMobile()) return;
-    clearTimeout(hoverTimeout);
-    open();
-  });
+    // Click funciona tanto en escritorio como en el menú móvil.
+    trigger.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
 
-  dropdown.addEventListener('mouseleave', function () {
-    if (isMobile()) return;
-    hoverTimeout = setTimeout(close, 180);
-  });
+      var shouldOpen = !dropdown.classList.contains('is-open');
+      closeAll(dropdown);
+      setOpen(dropdown, shouldOpen);
+    });
 
-  // Close on outside click
-  document.addEventListener('click', function (e) {
-    if (!dropdown.contains(e.target)) {
-      close();
-    }
-  });
+    // Hover solo en escritorio. Abrir uno cierra el otro.
+    dropdown.addEventListener('mouseenter', function () {
+      if (isMobile()) return;
+      clearTimeout(hoverTimeout);
+      closeAll(dropdown);
+      setOpen(dropdown, true);
+    });
 
-  // Close on Escape
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') close();
-  });
+    dropdown.addEventListener('mouseleave', function () {
+      if (isMobile()) return;
+      hoverTimeout = setTimeout(function () {
+        setOpen(dropdown, false);
+      }, 180);
+    });
 
-  // Close dropdown links on mobile nav
-  menu.querySelectorAll('a').forEach(function (link) {
-    link.addEventListener('click', function () {
-      close();
-      if (isMobile()) closeNav();
+    menu.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        setOpen(dropdown, false);
+        if (isMobile()) closeNav();
+      });
     });
   });
+
+  document.addEventListener('click', function (event) {
+    var clickedDropdown = dropdowns.some(function (dropdown) {
+      return dropdown.contains(event.target);
+    });
+    if (!clickedDropdown) closeAll();
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      closeAll();
+    }
+  });
+
+  // Evita dejar un dropdown abierto al cambiar entre vista móvil/escritorio.
+  var lastMobileState = isMobile();
+  window.addEventListener('resize', function () {
+    var mobileState = isMobile();
+    if (mobileState !== lastMobileState) {
+      closeAll();
+      lastMobileState = mobileState;
+    }
+  }, { passive: true });
 })();
 
 /* ── WhatsApp FAB — aparece al bajar 300px ─ */
@@ -752,4 +773,140 @@ moduleMarquees.forEach((marquee) => {
   );
 
   targets.forEach((el) => observer.observe(el));
+})();
+
+/* FLUS V4 — edition finder */
+(function () {
+  const finder = document.querySelector('[data-flus-finder]');
+  if (!finder) return;
+
+  const groups = Array.from(finder.querySelectorAll('[data-finder-group]'));
+  const result = finder.querySelector('[data-finder-result]');
+  const title = finder.querySelector('[data-finder-title]');
+  const copy = finder.querySelector('[data-finder-copy]');
+  const benefits = finder.querySelector('[data-finder-benefits]');
+  const icon = finder.querySelector('.flus26-finder__resulticon');
+  const primary = finder.querySelector('[data-finder-primary]');
+  const secondary = finder.querySelector('[data-finder-secondary]');
+
+  if (!result || !title || !copy || !benefits || !icon || !primary || !secondary) return;
+
+  const webDemoUrl = primary.getAttribute('href');
+  const whatsappUrl = secondary.getAttribute('href');
+
+  function render() {
+    let webScore = 0;
+    let serverScore = 0;
+
+    groups.forEach((group) => {
+      const selected = group.querySelector('[data-finder-choice].is-selected');
+      if (!selected) return;
+      if (selected.dataset.finderChoice === 'server') serverScore += 1;
+      else webScore += 1;
+    });
+
+    const isServer = serverScore > webScore;
+    result.classList.toggle('is-server', isServer);
+    result.classList.toggle('is-web', !isServer);
+
+    if (isServer) {
+      icon.textContent = 'S';
+      title.textContent = 'FLUS Server';
+      copy.textContent = 'Por lo que marcaste, tu operación parece necesitar una instalación más personalizada, con varias cajas, datos para pasar o sistemas para conectar.';
+      benefits.innerHTML = '<li>Se adapta a tus cajas y puestos</li><li>Se instala en tu negocio o servidor</li><li>Cotización según lo que necesitás</li>';
+      primary.textContent = 'Cotizar FLUS Server';
+      primary.setAttribute('href', whatsappUrl);
+      primary.setAttribute('target', '_blank');
+      primary.setAttribute('rel', 'noopener');
+      primary.setAttribute('data-track-event', 'click_whatsapp');
+      primary.setAttribute('data-track-label', 'Quiz cotizar Server');
+      secondary.textContent = 'Volver a FLUS Web →';
+      secondary.setAttribute('href', '#flus-web');
+    } else {
+      icon.textContent = 'W';
+      title.textContent = 'FLUS Web';
+      copy.textContent = 'Por lo que marcaste, te conviene empezar con la versión Web: rápida de implementar y con la parte técnica resuelta por FLUS.';
+      benefits.innerHTML = '<li>Funciona en PC, tablet y teléfono</li><li>FLUS se ocupa de la parte técnica</li><li>Entrada mensual simple para empezar</li>';
+      primary.textContent = 'Ver la operación';
+      primary.setAttribute('href', webDemoUrl);
+      primary.setAttribute('target', '_blank');
+      primary.setAttribute('rel', 'noopener');
+      primary.setAttribute('data-track-event', 'click_demo');
+      primary.setAttribute('data-track-label', 'Quiz ver operación');
+      secondary.textContent = 'Consultar por WhatsApp';
+      secondary.setAttribute('href', whatsappUrl);
+    }
+  }
+
+  groups.forEach((group) => {
+    const choices = Array.from(group.querySelectorAll('[data-finder-choice]'));
+    choices.forEach((choice) => {
+      choice.setAttribute('aria-pressed', choice.classList.contains('is-selected') ? 'true' : 'false');
+      choice.addEventListener('click', () => {
+        choices.forEach((button) => {
+          const selected = button === choice;
+          button.classList.toggle('is-selected', selected);
+          button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        });
+        render();
+        if (window.FLUSTrack && typeof window.FLUSTrack.track === 'function') {
+          const serverScore = groups.filter((g) => g.querySelector('[data-finder-choice].is-selected')?.dataset.finderChoice === 'server').length;
+          const webScore = groups.length - serverScore;
+          window.FLUSTrack.track('finder_result', { recommended_flus: serverScore > webScore ? 'server' : 'web' });
+        }
+      });
+    });
+  });
+
+  render();
+})();
+
+/* FLUS V5 — interactive product tour */
+(function () {
+  const tour = document.querySelector('[data-product-tour]');
+  if (!tour) return;
+
+  const tabs = Array.from(tour.querySelectorAll('[data-tour-target]'));
+  const panels = Array.from(tour.querySelectorAll('[data-tour-panel]'));
+  const windowTitle = tour.querySelector('[data-tour-window-title]');
+  const kicker = tour.querySelector('[data-tour-kicker-output]');
+  const caption = tour.querySelector('[data-tour-caption-output]');
+
+  function activate(key) {
+    let activePanel = null;
+
+    tabs.forEach((tab) => {
+      const active = tab.dataset.tourTarget === key;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      tab.tabIndex = active ? 0 : -1;
+    });
+
+    panels.forEach((panel) => {
+      const active = panel.dataset.tourPanel === key;
+      panel.classList.toggle('is-active', active);
+      panel.hidden = !active;
+      if (active) activePanel = panel;
+    });
+
+    if (!activePanel) return;
+    if (windowTitle) windowTitle.textContent = activePanel.dataset.tourTitle || 'FLUS';
+    if (kicker) kicker.textContent = activePanel.dataset.tourKicker || '';
+    if (caption) caption.textContent = activePanel.dataset.tourCaption || '';
+  }
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activate(tab.dataset.tourTarget));
+    tab.addEventListener('keydown', (event) => {
+      if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
+      event.preventDefault();
+      const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+      const nextIndex = (index + (forward ? 1 : -1) + tabs.length) % tabs.length;
+      tabs[nextIndex].focus();
+      activate(tabs[nextIndex].dataset.tourTarget);
+    });
+  });
+
+  const initial = tabs.find((tab) => tab.classList.contains('is-active')) || tabs[0];
+  if (initial) activate(initial.dataset.tourTarget);
 })();

@@ -14,8 +14,27 @@ $site = [
     'mail_timeout' => 15,
     'turnstile_site_key' => '',
     'turnstile_secret_key' => '',
+    // SEO / medición: completar en includes/config.local.php cuando tengas los IDs.
+    'google_site_verification' => '',
+    'ga4_measurement_id' => '',
     'contact_phone' => '+54 261-273-1742',
     'whatsapp_number' => '+54 261-273-1742',
+    'demo_url' => 'https://app.flus.com.ar/',
+    'commercial' => [
+        'web' => [
+            'name' => 'FLUS Web',
+            'setup_price' => '$120.000',
+            'monthly_price' => '$45.000',
+            'currency' => 'ARS',
+            'base_scope' => '1 local + 1 caja',
+            'extra_cash_price' => '$7.500 / mes',
+        ],
+        'server' => [
+            'name' => 'FLUS Server',
+            'pricing_label' => 'Cotización personalizada',
+            'currency' => 'ARS',
+        ],
+    ],
 ];
 
 $localConfigPath = __DIR__ . '/config.local.php';
@@ -26,16 +45,40 @@ if (is_file($localConfigPath)) {
     }
 }
 
-$basePath = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-$basePath = rtrim($basePath, '/');
+// FLUS se publica en la raíz de flus.com.ar. Si alguna instalación futura usa
+// un subdirectorio, puede definir 'base_path' en config.local.php.
+$basePath = trim((string)($site['base_path'] ?? ''));
 if ($basePath === '/' || $basePath === '.') {
     $basePath = '';
+}
+
+// En el entorno local de XAMPP el proyecto suele abrirse como /flus-web/.
+// La instalación publicada sigue viviendo en la raíz del dominio, por eso
+// esta detección queda limitada a hosts locales y no cambia las URLs públicas.
+if ($basePath === '') {
+    $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+    $script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $isLocalHost = $host === 'localhost' || str_starts_with($host, 'localhost:')
+        || $host === '127.0.0.1' || str_starts_with($host, '127.0.0.1:')
+        || $host === '::1' || str_starts_with($host, '[::1]:');
+    if ($isLocalHost && (str_starts_with($script, '/flus-web/') || $script === '/flus-web')) {
+        $basePath = '/flus-web';
+    }
+}
+
+if ($basePath !== '') {
+    $basePath = '/' . trim($basePath, '/');
 }
 $site['base_path'] = $basePath;
 
 function e(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+}
+
+function text_length(string $value): int
+{
+    return function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
 }
 
 function site_url(string $path = ''): string
@@ -67,10 +110,43 @@ function asset_url(string $path): string
     return site_url('assets/' . ltrim($path, '/'));
 }
 
+function current_script_path(): string
+{
+    $path = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? ''));
+    return ltrim($path, '/');
+}
+
 function is_active_page(string $file): bool
 {
-    $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
-    return $currentPage === $file;
+    global $site;
+
+    $file = ltrim(str_replace('\\', '/', $file), '/');
+    $current = current_script_path();
+    $basePath = trim((string)($site['base_path'] ?? ''), '/');
+    if ($basePath !== '' && ($current === $basePath || str_starts_with($current, $basePath . '/'))) {
+        $current = ltrim(substr($current, strlen($basePath)), '/');
+    }
+
+    // Para archivos de raíz (index.php, contacto.php, etc.) evitamos que un
+    // /recursos/index.php sea confundido con la home.
+    if (strpos($file, '/') === false) {
+        return $current === $file;
+    }
+
+    return $current === $file;
+}
+
+function is_active_section(string $prefix): bool
+{
+    global $site;
+
+    $prefix = trim(str_replace('\\', '/', $prefix), '/');
+    $current = current_script_path();
+    $basePath = trim((string)($site['base_path'] ?? ''), '/');
+    if ($basePath !== '' && ($current === $basePath || str_starts_with($current, $basePath . '/'))) {
+        $current = ltrim(substr($current, strlen($basePath)), '/');
+    }
+    return $prefix !== '' && ($current === $prefix || str_starts_with($current, $prefix . '/'));
 }
 
 function phone_href(string $phone): string

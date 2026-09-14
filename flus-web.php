@@ -1,0 +1,85 @@
+<?php
+require_once __DIR__ . '/includes/bootstrap.php';
+$pageTitle = 'Sistema de gestión web para comercios | FLUS Web';
+$pageDescription = 'FLUS Web es un sistema de gestión web para comercios con caja POS, ventas, stock, compras y proveedores. Usalo desde PC, tablet, Android o iPhone.';
+$pageStyles = ['css/seo-growth.css'];
+$pageBreadcrumbs = [
+    ['name' => 'Inicio', 'url' => page_url()],
+    ['name' => 'FLUS Web', 'url' => page_url('flus-web.php')],
+];
+$webPlan = $site['commercial']['web'] ?? [];
+$pageSchemas = [
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'FLUS Web',
+        'applicationCategory' => 'BusinessApplication',
+        'operatingSystem' => 'Web, Android, iOS, Windows, macOS',
+        'description' => 'Sistema de gestión web para comercios con caja POS, ventas, productos, stock, compras, proveedores, usuarios y terminales.',
+        'url' => page_url('flus-web.php'),
+        'offers' => [[
+            '@type' => 'Offer',
+            'priceCurrency' => 'ARS',
+            'price' => preg_replace('/\D+/', '', (string)($webPlan['monthly_price'] ?? '45000')),
+            'description' => 'Abono mensual base para 1 local y 1 caja. Puesta en marcha según configuración.',
+        ]],
+        'featureList' => 'Caja POS, ventas, productos, stock, compras, proveedores, usuarios, terminales, lector y cámara para códigos de barras',
+    ],
+    [
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        'mainEntity' => [
+            ['@type'=>'Question','name'=>'¿FLUS Web funciona desde el celular?','acceptedAnswer'=>['@type'=>'Answer','text'=>'Sí. FLUS Web está diseñado para usarse desde navegador o PWA en PC, tablet, Android y iPhone.']],
+            ['@type'=>'Question','name'=>'¿Necesito un servidor en mi negocio?','acceptedAnswer'=>['@type'=>'Answer','text'=>'No para FLUS Web. La infraestructura se administra como parte del servicio y el comercio accede por navegador o PWA.']],
+            ['@type'=>'Question','name'=>'¿Qué incluye FLUS Web?','acceptedAnswer'=>['@type'=>'Answer','text'=>'La propuesta base incluye caja, ventas, productos, stock, compras, proveedores, usuarios y terminales. El alcance final se confirma al implementar.']],
+        ],
+    ],
+];
+require __DIR__ . '/includes/header.php';
+?>
+<section class="growth-hero">
+  <div class="container growth-hero__grid">
+    <div>
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="<?= e(site_url()) ?>">Inicio</a><span>/</span><span aria-current="page">FLUS Web</span></nav>
+      <span class="growth-kicker">Web + PWA · recomendado para empezar</span>
+      <h1>Sistema de gestión web para tu comercio, en la PC y también en el celular.</h1>
+      <p class="growth-hero__lead">Vendé, controlá caja y stock, registrá compras y seguí la operación sin montar un servidor dentro del negocio. FLUS Web está pensado para una puesta en marcha ágil y una operación cotidiana simple.</p>
+      <div class="growth-hero__actions">
+        <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="FLUS Web hero demo">Abrir FLUS Web</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" data-track-event="click_contact" data-track-label="FLUS Web hero consulta">Consultar implementación</a>
+      </div>
+      <div class="growth-proof"><span>PC + tablet + móvil</span><span>Sin servidor propio</span><span>Soporte y actualizaciones</span></div>
+    </div>
+    <div class="growth-showcase">
+      <div class="growth-window"><div class="growth-window__bar"><i></i><i></i><i></i><b>FLUS Web · Caja POS</b></div><picture><source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp"><img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Caja POS de FLUS Web" width="1384" height="825" fetchpriority="high"></picture></div>
+      <div class="growth-float"><strong>Acceso desde navegador o PWA</strong><span>La misma operación preparada para computadora, tablet y teléfono.</span></div>
+    </div>
+  </div>
+</section>
+<section class="growth-section">
+  <div class="container">
+    <div class="growth-head"><span class="section-kicker">Operación diaria</span><h2>Lo necesario para dejar de depender de planillas y pantallas sueltas.</h2><p>FLUS Web conecta las tareas principales del comercio para que una venta, un ingreso de mercadería o un movimiento de stock formen parte del mismo circuito.</p></div>
+    <div class="growth-grid">
+      <article class="growth-card"><span class="growth-card__num">01</span><h3>Caja POS y ventas</h3><p>Productos, ticket, cantidades, medios de pago, apertura, movimientos y cierre de caja.</p></article>
+      <article class="growth-card"><span class="growth-card__num">02</span><h3>Productos y stock</h3><p>Existencias, movimientos, alertas, precios e inventario con búsqueda y códigos de barras.</p></article>
+      <article class="growth-card"><span class="growth-card__num">03</span><h3>Compras y proveedores</h3><p>Ingresá mercadería y conectá reposición, costos y disponibilidad con la operación.</p></article>
+      <article class="growth-card"><span class="growth-card__num">04</span><h3>Usuarios y terminales</h3><p>Organizá la operación por usuarios, permisos y cajas o puestos de trabajo.</p></article>
+      <article class="growth-card"><span class="growth-card__num">05</span><h3>Dashboard e historial</h3><p>Consultá ventas, actividad y movimientos para entender mejor lo que pasó en el negocio.</p></article>
+      <article class="growth-card"><span class="growth-card__num">06</span><h3>Códigos de barras</h3><p>Trabajá con lector y, donde corresponda, cámara del teléfono para agilizar búsquedas y carga.</p></article>
+    </div>
+  </div>
+</section>
+<section class="growth-section growth-section--soft">
+  <div class="container growth-split">
+    <div class="growth-panel"><span class="section-kicker">Precio de entrada</span><div class="growth-price"><strong><?= e((string)($webPlan['monthly_price'] ?? '$45.000')) ?></strong><span>ARS / mes</span></div><p class="growth-note">Propuesta base para 1 local + 1 caja. La puesta en marcha se define según configuración y necesidades del comercio.</p><div class="growth-hero__actions"><a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="FLUS Web precio demo">Ver la operación</a></div></div>
+    <div class="growth-panel"><h3>¿Para quién encaja mejor?</h3><ul class="growth-list"><li>Comercios que hoy trabajan con Excel, cuadernos o un sistema viejo.</li><li>Negocios que quieren empezar sin instalar un servidor local.</li><li>Operaciones que necesitan consultar o trabajar también desde móvil.</li><li>Comercios con una o varias cajas que buscan una base simple para crecer.</li></ul></div>
+  </div>
+</section>
+<section class="growth-section">
+  <div class="container"><div class="growth-head"><span class="section-kicker">Web o Server</span><h2>Si necesitás infraestructura propia, hay otra edición.</h2><p>FLUS Web prioriza rapidez de puesta en marcha y acceso desde cualquier dispositivo. FLUS Server apunta a proyectos que requieren instalación propia y mayor adaptación.</p></div><div class="growth-comparison"><table><thead><tr><th>Necesidad</th><th>FLUS Web</th><th>FLUS Server</th></tr></thead><tbody><tr><td>Acceso por navegador / PWA</td><td>Sí</td><td>Según proyecto</td></tr><tr><td>Servidor propio en el negocio</td><td>No necesario</td><td>Sí / infraestructura del cliente</td></tr><tr><td>Puesta en marcha rápida</td><td>Prioridad</td><td>Proyecto personalizado</td></tr><tr><td>Adaptaciones e integraciones</td><td>Alcance Web</td><td>Según requerimiento</td></tr></tbody></table></div><div class="growth-hero__actions" style="margin-top:22px"><a class="btn btn-secondary" href="<?= e(site_url('flus-server.php')) ?>">Conocer FLUS Server</a></div></div>
+</section>
+<section class="growth-section growth-section--soft">
+  <div class="container"><div class="growth-head"><span class="section-kicker">Preguntas frecuentes</span><h2>Antes de probar FLUS Web.</h2></div><div class="growth-faq"><details><summary>¿Puedo usarlo desde iPhone o Android?</summary><p>Sí. La interfaz Web está preparada para PC, tablet y teléfono mediante navegador o PWA.</p></details><details><summary>¿Puedo usar lector de códigos de barras?</summary><p>Sí. FLUS contempla operación con lector y funciones de cámara/código donde el módulo lo admite.</p></details><details><summary>¿La facturación electrónica está incluida?</summary><p>La integración fiscal/ARCA depende de la edición y de la implementación acordada. Se confirma antes de contratar para no prometer un alcance que no corresponda.</p></details></div></div>
+</section>
+<section class="growth-section"><div class="container"><div class="growth-cta"><div><h2>Probalo antes de decidir.</h2><p>Entrá a la demo o contanos cómo trabaja tu comercio y te decimos si FLUS Web es la edición adecuada.</p></div><div class="growth-cta__actions"><a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="FLUS Web CTA demo">Entrar a la demo Web</a><a class="btn btn-secondary" href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" data-track-event="click_contact">Consultar mi caso</a></div></div></div></section>
+<?php require __DIR__ . '/includes/footer.php'; ?>

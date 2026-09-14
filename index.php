@@ -1,657 +1,142 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
-$pageTitle = 'Sistema de gestión comercial para ventas, caja, stock y facturación | FLUS';
-$pageDescription = 'FLUS centraliza ventas, caja, stock, clientes y facturación en un solo sistema para comercios y pymes que necesitan más control diario y menos planillas.';
+
+$pageTitle = 'Sistema de gestión para comercios | FLUS Web y Server';
+$pageDescription = 'Caja, ventas, stock, compras y proveedores en una misma operación. Empezá con FLUS Web o implementá FLUS Server en infraestructura propia.';
+$webPlan = $site['commercial']['web'] ?? [];
+
+$faqItems = [
+    ['question' => '¿Cuál es la diferencia entre FLUS Web y FLUS Server?', 'answer' => 'FLUS Web se usa desde PC, tablet o teléfono y FLUS se ocupa de la parte técnica. FLUS Server se instala en tu negocio o servidor propio y permite una configuración más personalizada.'],
+    ['question' => '¿FLUS Web funciona en teléfono y tablet?', 'answer' => 'Sí. La interfaz está preparada para PC, tablet, Android y iPhone en los flujos principales.'],
+    ['question' => '¿Puedo usar lector de código de barras?', 'answer' => 'Sí. FLUS contempla lector de códigos y, en la edición Web, también flujos de escaneo con cámara en dispositivos compatibles.'],
+    ['question' => '¿La facturación ARCA está incluida?', 'answer' => 'Depende de la edición, perfil e implementación contratada. En proyectos Server puede incorporarse como parte del alcance; en Web se define según el perfil comercial.'],
+    ['question' => '¿Puedo sumar más cajas o sucursales?', 'answer' => 'Sí. En FLUS Web la propuesta base parte de 1 local y 1 caja, y se puede ampliar. En Server se define la cantidad de puestos al cotizar la instalación.'],
+    ['question' => '¿Puedo ver una demo antes de contratar?', 'answer' => 'Sí. La demo está pensada para mostrar una operación real: venta, caja, stock, productos y seguimiento desde las pantallas de FLUS.'],
+];
+
 $pageSchemas = [
-    [
-        '@context' => 'https://schema.org',
-        '@type' => 'SoftwareApplication',
-        'name' => 'FLUS',
-        'applicationCategory' => 'BusinessApplication',
-        'operatingSystem' => 'Web',
-        'description' => 'Sistema de gestión comercial para ventas, stock, caja, clientes y facturación.',
-        'url' => page_url(),
-    ],
-    [
-        '@context' => 'https://schema.org',
-        '@type' => 'FAQPage',
-        'mainEntity' => [
-            [
-                '@type' => 'Question',
-                'name' => '¿FLUS es solo un sistema de caja?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'No. También reúne ventas, caja, stock, clientes, cuenta corriente y facturación dentro de la misma operación diaria.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => '¿Para qué tipo de negocio tiene más sentido?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Para comercios y pymes con ventas diarias, caja, stock y necesidad de seguir clientes, deuda o facturación sin herramientas separadas.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => '¿Todos los planes incluyen los mismos módulos?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Sí. Caja, ventas, stock, clientes, cuenta corriente, facturación y reportes están incluidos en los tres planes. La diferencia es la modalidad de pago y el soporte.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => '¿Qué diferencia hay entre el plan anual y el permanente?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'El anual incluye soporte y actualizaciones continuas con un ahorro de 2 meses. El permanente es un pago único con 3 meses de soporte incluidos; después, soporte y actualizaciones son opcionales.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => '¿Puedo cambiar de plan después?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Sí. Podés pasar de mensual a anual o permanente en cualquier momento. Escribinos y te ayudamos a hacer la transición.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => '¿Se puede coordinar una demo de FLUS?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Sí. Desde la página de contacto se puede coordinar una demo para ver FLUS funcionando con ejemplos de venta, caja, stock y seguimiento comercial.',
-                ],
-            ],
-        ],
-    ],
+    ['@context' => 'https://schema.org', '@type' => 'SoftwareApplication', 'name' => 'FLUS', 'applicationCategory' => 'BusinessApplication', 'operatingSystem' => 'Web, Windows, Server', 'description' => $pageDescription, 'url' => page_url(), 'offers' => [['@type' => 'Offer', 'name' => 'FLUS Web', 'priceCurrency' => 'ARS', 'price' => preg_replace('/\D+/', '', (string)($webPlan['monthly_price'] ?? '45000')), 'description' => 'Abono mensual base para 1 local y 1 caja.']]],
+    ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(static function (array $item): array { return ['@type' => 'Question', 'name' => $item['question'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $item['answer']]]; }, $faqItems)],
 ];
+
 require __DIR__ . '/includes/header.php';
-
-$homeModules = [
-    [
-        'icon' => 'pos',
-        'name' => 'Caja POS',
-        'description' => 'Venta, ticket y cobro en la misma pantalla para atender con más ritmo.',
-        'tag' => 'POS',
-    ],
-    [
-        'icon' => 'receipt',
-        'name' => 'Ventas',
-        'description' => 'Historial, tickets, estados y consulta por período.',
-        'tag' => 'Comercial',
-    ],
-    [
-        'icon' => 'layers',
-        'name' => 'Stock',
-        'description' => 'Disponibilidad, alertas y movimientos con trazabilidad.',
-        'tag' => 'Inventario',
-    ],
-    [
-        'icon' => 'users',
-        'name' => 'Clientes',
-        'description' => 'Datos, historial y seguimiento comercial por cliente.',
-        'tag' => 'CRM',
-    ],
-    [
-        'icon' => 'wallet',
-        'name' => 'Cuenta corriente',
-        'description' => 'Saldos, deuda, cobranzas y movimientos por cliente.',
-        'tag' => 'Cobranza',
-    ],
-    [
-        'icon' => 'stamp',
-        'name' => 'Facturación',
-        'description' => 'Comprobantes integrados a la operación comercial.',
-        'tag' => 'Fiscal',
-    ],
-    [
-        'icon' => 'cart',
-        'name' => 'Compras y proveedores',
-        'description' => 'Ingresos, costos y abastecimiento conectados al stock.',
-        'tag' => 'Compras',
-    ],
-    [
-        'icon' => 'report',
-        'name' => 'Reportes',
-        'description' => 'Ventas, caja, productos y categorías para seguir el negocio.',
-        'tag' => 'Análisis',
-    ],
-];
-
-if (!function_exists('flus_home_module_icon')) {
-    function flus_home_module_icon(string $icon): string
-    {
-        switch ($icon) {
-            case 'pos':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v11A2.5 2.5 0 0 1 16.5 20h-9A2.5 2.5 0 0 1 5 17.5z"/><path d="M8 8.5h8"/><path d="M8 12h3"/><path d="M8 15.5h2"/><path d="M14 12h2"/><path d="M14 15.5h2"/></svg>';
-            case 'receipt':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4v-17z"/><path d="M9 8h6"/><path d="M9 11.5h6"/><path d="M9 15h4"/></svg>';
-            case 'cart':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/><path d="M3.5 5h2l1.5 8.2a1.5 1.5 0 0 0 1.5 1.3h8.2a1.5 1.5 0 0 0 1.4-1l2-5.5H7.3"/></svg>';
-            case 'chart':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5h15"/><path d="M7.5 16V10"/><path d="M12 16V6.5"/><path d="M16.5 16V12"/></svg>';
-            case 'box':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 18.5 7v10L12 20.2 5.5 17V7z"/><path d="M12 3.8 5.5 7 12 10.2 18.5 7z"/><path d="M12 10.2v10"/></svg>';
-            case 'layers':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 4.5 8 12 12 19.5 8z"/><path d="M4.5 12 12 16l7.5-4"/><path d="M4.5 16 12 20l7.5-4"/></svg>';
-            case 'users':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M16 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/><path d="M4.8 18.5a4.7 4.7 0 0 1 8.4 0"/><path d="M14 18.5a4 4 0 0 1 5.2-1.5"/></svg>';
-            case 'wallet':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v9A2.5 2.5 0 0 1 16.5 19h-9A2.5 2.5 0 0 1 5 16.5z"/><path d="M15 12h4"/><path d="M17.5 12h.01"/></svg>';
-            case 'stamp':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l3 3v10A2.5 2.5 0 0 1 14.5 19h-7A2.5 2.5 0 0 1 5 16.5v-10A3 3 0 0 1 8 3.5z"/><path d="M14 3.5v4h4"/><path d="m9 14 1.5 1.5L14.5 11"/></svg>';
-            case 'clock':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 8v4l2.8 1.8"/></svg>';
-            case 'tag':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4.5H6.8A1.8 1.8 0 0 0 5 6.3v4.2l7.8 7.8a1.7 1.7 0 0 0 2.4 0l3.1-3.1a1.7 1.7 0 0 0 0-2.4z"/><circle cx="8.3" cy="8.3" r="1.2"/></svg>';
-            case 'megaphone':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12v-1.5a2 2 0 0 1 1.4-1.9L17.5 5v10l-11.1-3.6A2 2 0 0 1 5 9.5z"/><path d="M9 14.2V18"/><path d="M17.5 9.5h1.5a2 2 0 0 1 0 4h-1.5"/></svg>';
-            case 'clipboard':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5h6"/><path d="M9 6.5h6"/><path d="M8 4.5H7A2 2 0 0 0 5 6.5v11A2 2 0 0 0 7 19.5h10a2 2 0 0 0 2-2v-11a2 2 0 0 0-2-2h-1"/><path d="M9 11h6"/><path d="M9 14.5h6"/></svg>';
-            case 'checklist':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7.5h9"/><path d="M8.5 12h9"/><path d="M8.5 16.5h9"/><path d="m5.5 7.5.8.8 1.6-1.6"/><path d="m5.5 12 .8.8 1.6-1.6"/><path d="m5.5 16.5.8.8 1.6-1.6"/></svg>';
-            case 'refresh':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 8.5V4.5h-4"/><path d="M18 9a6.5 6.5 0 0 0-10.8-2"/><path d="M5.5 15.5v4h4"/><path d="M6 15a6.5 6.5 0 0 0 10.8 2"/></svg>';
-            case 'swap':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7.5h10"/><path d="m13.5 4.5 3.5 3-3.5 3"/><path d="M17 16.5H7"/><path d="m10.5 13.5-3.5 3 3.5 3"/></svg>';
-            case 'truck':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/><path d="M4.5 7.5h9v8H4.5z"/><path d="M13.5 10h3l2 2v3.5h-5"/></svg>';
-            case 'settings':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 4.5v2"/><path d="M12 17.5v2"/><path d="M4.5 12h2"/><path d="M17.5 12h2"/><path d="m6.7 6.7 1.4 1.4"/><path d="m15.9 15.9 1.4 1.4"/><path d="m17.3 6.7-1.4 1.4"/><path d="m8.1 15.9-1.4 1.4"/></svg>';
-            case 'report':
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 19.5h13"/><path d="M7.5 16V11"/><path d="M12 16V8"/><path d="M16.5 16v-3"/><path d="M7.5 9.5 12 6l4.5 3"/></svg>';
-            default:
-                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/></svg>';
-        }
-    }
-}
 ?>
-<section class="hero hero-home">
-  <div class="container hero-grid">
-    <div class="hero-copy">
-      <div class="hero-index hero-stagger hero-stagger--1" aria-hidden="true">
-        <span>FLUS / 01</span>
-        <span>OPERACIÓN COMERCIAL</span>
-      </div>
-      <span class="eyebrow hero-stagger hero-stagger--1">Sistema de gestión comercial para comercios y pymes</span>
-      <h1 class="hero-stagger hero-stagger--2">Tu negocio, <em>conectado</em> de punta a punta.</h1>
-      <p class="hero-stagger hero-stagger--3">
-        Vendé, cobrá, controlá stock y seguí cada movimiento desde una sola base.
-        FLUS reemplaza planillas y pantallas aisladas por un circuito comercial claro, rápido y trazable.
-      </p>
 
-      <div class="hero-actions hero-stagger hero-stagger--4">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo" data-track-label="Hero solicitar demo">Solicitar demo</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
+<section class="flus26-hero">
+  <div class="container flus26-hero__grid">
+    <div class="flus26-hero__copy">
+      <div class="flus26-pill"><span></span> FLUS · Gestión comercial</div>
+      <h1>Vendé rápido.<br><em>El resto se actualiza solo.</em></h1>
+      <p class="flus26-hero__lead">Una sola operación para vender, controlar stock y seguir el negocio donde estés.</p>
+      <div class="flus26-hero__actions">
+        <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Hero abrir demo">Abrir la demo</a>
+        <?php if (($site['whatsapp_number'] ?? '') !== ''): ?><a class="btn btn-secondary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Hero consulta WhatsApp">Consultar por WhatsApp</a><?php endif; ?>
       </div>
-
-      <div class="hero-proof hero-stagger hero-stagger--5" aria-label="Áreas conectadas por FLUS">
-        <span><b>01</b> Caja POS</span>
-        <span><b>02</b> Stock</span>
-        <span><b>03</b> Clientes</span>
-        <span><b>04</b> Facturación</span>
-      </div>
+      <div class="flus26-hero__trust" aria-label="Alcance de FLUS"><span>Desde cualquier dispositivo</span><span>Caja + stock + ventas</span><span>Implementación acompañada</span></div>
     </div>
-
-    <div class="hero-media hero-media--product hero-stagger hero-stagger--5">
-      <div class="hero-product-label" aria-hidden="true">
-        <span>PRODUCTO REAL</span>
-        <span>FLUS POS</span>
+    <div class="flus26-hero__visual" aria-label="FLUS funcionando en escritorio y teléfono">
+      <div class="flus26-desktop-stage">
+        <div class="flus26-product-window">
+          <div class="flus26-windowbar"><span></span><span></span><span></span><b>FLUS · Caja y cobros</b></div>
+          <picture><source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp"><img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla real de caja POS de FLUS con ticket, medios de pago y total a cobrar" width="1608" height="978" fetchpriority="high" decoding="async"></picture>
+        </div>
       </div>
-      <figure class="product-shot product-shot--hero">
-        <picture>
-          <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
-          <img
-            src="<?= e(asset_url('img/flus-caja-pos.png')) ?>"
-            alt="Pantalla de caja POS de FLUS con ticket, medios de pago y total a cobrar"
-            width="1384"
-            height="825"
-            fetchpriority="high"
-            decoding="async"
-          >
-        </picture>
-      </figure>
-      <div class="hero-media-caption" aria-hidden="true">
-        <strong>Una venta. Todo actualizado.</strong>
-        <span>Ticket, cobro, stock y cliente dentro del mismo flujo.</span>
-      </div>
-      <div class="hero-status-card hero-status-card--top" aria-hidden="true">
-        <span class="status-pulse"></span>
-        <strong>Caja activa</strong>
-        <small>Operación en tiempo real</small>
-      </div>
-      <div class="hero-status-card hero-status-card--bottom" aria-hidden="true">
-        <strong>8 módulos</strong>
-        <small>Una misma base operativa</small>
-      </div>
-    </div>
-  </div>
-  <div class="container hero-bottom-line" aria-hidden="true">
-    <span>MENDOZA · ARGENTINA</span>
-    <span>SOFTWARE PARA COMERCIOS Y PYMES</span>
-  </div>
-</section>
 
-<section class="operation-proof" data-reveal aria-labelledby="operation-proof-title">
-  <div class="container operation-proof__grid">
-    <div>
-      <span class="section-kicker">Una sola operación</span>
-      <h2 id="operation-proof-title">Lo que pasa en caja no termina en caja.</h2>
-      <p>FLUS convierte cada venta en información útil para el resto del negocio.</p>
-    </div>
-    <div class="operation-proof__items">
-      <article>
-        <span>01</span>
-        <strong>Mostrador</strong>
-        <span>La venta deja ticket, medio de pago y movimiento registrado.</span>
-      </article>
-      <article>
-        <span>02</span>
-        <strong>Inventario</strong>
-        <span>El stock se actualiza con trazabilidad y menos planillas paralelas.</span>
-      </article>
-      <article>
-        <span>03</span>
-        <strong>Seguimiento</strong>
-        <span>Clientes, cuenta corriente y comprobantes quedan disponibles para revisar.</span>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="modules-band" data-reveal aria-labelledby="home-modules-title">
-  <div class="container">
-    <div class="modules-band__intro">
-      <span class="section-kicker">Módulos principales</span>
-      <h2 id="home-modules-title">FLUS reúne las áreas que más pesan en la operación diaria</h2>
-      <p>
-        Caja, ventas, stock, clientes, cuenta corriente, facturación y reportes dentro de la misma base operativa.
-      </p>
-    </div>
-
-    <?php
-      // Map tag names to CSS modifier classes
-      $tagColorMap = [
-        'POS' => 'pos',
-        'Comercial' => 'comercial',
-        'Inventario' => 'inventario',
-        'CRM' => 'crm',
-        'Cobranza' => 'cobranza',
-        'Fiscal' => 'fiscal',
-        'Compras' => 'compras',
-        'Análisis' => 'analisis',
-      ];
-    ?>
-
-    <div class="modules-ticker" data-module-marquee data-speed="32">
-      <div class="modules-ticker__viewport">
-        <div class="modules-ticker__track">
-          <div class="modules-ticker__group">
-            <?php foreach ($homeModules as $i => $module):
-              $tagClass = isset($tagColorMap[$module['tag']]) ? ' module-card__tag--' . $tagColorMap[$module['tag']] : '';
-            ?>
-              <article class="module-card" tabindex="0" role="group" aria-label="<?= e($module['name'] . ' | categoria ' . $module['tag']) ?>">
-                <span class="module-card__num" aria-hidden="true"><?= str_pad($i + 1, 2, '0', STR_PAD_LEFT) ?></span>
-                <span class="module-card__icon" aria-hidden="true"><?= flus_home_module_icon($module['icon']) ?></span>
-                <h3><?= e($module['name']) ?></h3>
-                <p><?= e($module['description']) ?></p>
-                <span class="module-card__tag<?= $tagClass ?>"><?= e($module['tag']) ?></span>
-              </article>
-            <?php endforeach; ?>
+      <div class="flus26-phone-wrap" aria-label="Demostración de FLUS Web en teléfono">
+        <div class="flus26-phone-badge"><span class="flus26-version-dot"></span><b>FLUS Web</b><small>También en tu teléfono</small></div>
+        <div class="flus26-phone">
+          <div class="flus26-phone__island"></div>
+          <div class="flus26-phone__screen">
+            <div class="flus26-phone__status"><b>9:41</b><span>● ᴡɪꜰɪ ▰</span></div>
+            <div class="flus26-phone__appbar">
+              <div class="flus26-phone__brand"><span class="flus26-phone__mark">F</span><div><b>FLUS</b><small>Demo móvil</small></div></div>
+              <span class="flus26-phone__online">EN LÍNEA</span>
+            </div>
+            <div class="flus26-phone__panels">
+              <div class="flus26-phone-panel flus26-phone-panel--caja">
+                <div class="flus26-phone__sectiontop"><div><small>CAJA ABIERTA</small><b>Caja 1</b></div><span>•••</span></div>
+                <div class="flus26-phone__search"><span>⌕</span> Buscar o escanear producto <b>▣</b></div>
+                <div class="flus26-phone__toast">✓ Producto agregado</div>
+                <div class="flus26-phone__items">
+                  <div><span class="flus26-phone__prodicon">G</span><p><b>Gaseosa 500 ml</b><small>1 × $1.560,00</small></p><strong>$1.560</strong></div>
+                  <div><span class="flus26-phone__prodicon">B</span><p><b>Bebida Cola 1.25 L</b><small>1 × $2.600,00</small></p><strong>$2.600</strong></div>
+                </div>
+                <div class="flus26-phone__total"><span>Total</span><b>$4.160,00</b></div>
+                <button type="button" tabindex="-1">Cobrar</button>
+              </div>
+              <div class="flus26-phone-panel flus26-phone-panel--stock">
+                <div class="flus26-phone__sectiontop"><div><small>INVENTARIO</small><b>Stock</b></div><span>＋</span></div>
+                <div class="flus26-phone__metricgrid"><div><small>Productos</small><b>528</b><span>Activos</span></div><div><small>Stock bajo</small><b>7</b><span>Revisar</span></div></div>
+                <div class="flus26-phone__mini-title">Movimientos recientes</div>
+                <div class="flus26-phone__stockrow"><span>Yerba 1 kg</span><b>24 u.</b></div>
+                <div class="flus26-phone__stockrow"><span>Agua mineral</span><b>18 u.</b></div>
+                <div class="flus26-phone__stockrow flus26-phone__stockrow--warn"><span>Jabón líquido</span><b>2 u.</b></div>
+                <div class="flus26-phone__scan"><span>▦</span><div><b>Escanear código</b><small>Usar cámara del teléfono</small></div></div>
+              </div>
+              <div class="flus26-phone-panel flus26-phone-panel--dash">
+                <div class="flus26-phone__sectiontop"><div><small>RESUMEN DE HOY</small><b>Resumen del día</b></div><span>↗</span></div>
+                <div class="flus26-phone__salescard"><small>Ventas del día</small><b>$186.420</b><span>↑ 12,4% vs. ayer</span></div>
+                <div class="flus26-phone__bars" aria-hidden="true"><i style="--h:38%"></i><i style="--h:58%"></i><i style="--h:46%"></i><i style="--h:72%"></i><i style="--h:64%"></i><i style="--h:88%"></i><i style="--h:76%"></i></div>
+                <div class="flus26-phone__metricline"><span>Operaciones</span><b>42</b></div>
+                <div class="flus26-phone__metricline"><span>Ticket promedio</span><b>$4.438</b></div>
+                <div class="flus26-phone__metricline"><span>Caja</span><b class="is-ok">Abierta</b></div>
+              </div>
+            </div>
+            <div class="flus26-phone__nav"><span class="is-active">⌂<small>Inicio</small></span><span>▦<small>Caja</small></span><span>▤<small>Stock</small></span><span>•••<small>Más</small></span></div>
           </div>
         </div>
       </div>
+      <div class="flus26-sync-chip"><span>↻</span><div><b>La misma operación</b><small>PC, tablet y teléfono</small></div></div>
     </div>
+  </div>
+</section>
 
-    <!-- Progress dots -->
-    <div class="modules-dots" data-module-dots aria-label="Posición del carrusel"></div>
+<section class="flus26-signalbar" aria-label="Resumen del producto"><div class="container flus26-signalbar__inner"><span><b>2</b> ediciones</span><span><b>1</b> plataforma de gestión</span><span><b>Compatible</b> con PC, tablet y teléfono</span><span><b>Demo</b> con operación real</span></div></section>
 
-    <div class="modules-band__footer">
-      <p class="modules-band__hint">Cada módulo comparte información con el resto. Lo que pasa en caja también impacta en stock, clientes, cuenta corriente y facturación.</p>
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div class="modules-nav" data-module-nav>
-          <button class="modules-nav__btn" data-dir="prev" aria-label="Anterior">
-            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <button class="modules-nav__btn" data-dir="next" aria-label="Siguiente">
-            <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
-          </button>
+<section class="flus26-section flus26-product-tour" id="producto" data-reveal data-product-tour>
+  <div class="container">
+    <span id="funciones" class="sr-only">Funciones de FLUS</span>
+    <div class="flus26-sectionhead flus26-sectionhead--split flus26-product-tour__head"><div><span class="section-kicker">Producto real</span><h2>Conocé FLUS<br>por dentro.</h2></div><p>Elegí una pantalla y mirá el flujo completo: vender, controlar y seguir el negocio.</p></div>
+    <div class="flus26-tour">
+      <div class="flus26-tour__nav" role="tablist" aria-label="Pantallas de FLUS">
+        <button class="flus26-tour__tab is-active" type="button" role="tab" aria-selected="true" aria-controls="flus-tour-caja" data-tour-target="caja"><span class="flus26-tour__num">01</span><span class="flus26-tour__tabcopy"><strong>Caja y cobros</strong><small>Venta, ticket y cobro en una sola vista.</small></span><span class="flus26-tour__arrow" aria-hidden="true">→</span></button>
+        <button class="flus26-tour__tab" type="button" role="tab" aria-selected="false" aria-controls="flus-tour-dashboard" data-tour-target="dashboard"><span class="flus26-tour__num">02</span><span class="flus26-tour__tabcopy"><strong>Resumen del negocio</strong><small>Indicadores claros para leer el negocio.</small></span><span class="flus26-tour__arrow" aria-hidden="true">→</span></button>
+        <button class="flus26-tour__tab" type="button" role="tab" aria-selected="false" aria-controls="flus-tour-stock" data-tour-target="stock"><span class="flus26-tour__num">03</span><span class="flus26-tour__tabcopy"><strong>Stock</strong><small>Disponibilidad, filtros y alertas.</small></span><span class="flus26-tour__arrow" aria-hidden="true">→</span></button>
+        <button class="flus26-tour__tab" type="button" role="tab" aria-selected="false" aria-controls="flus-tour-ventas" data-tour-target="ventas"><span class="flus26-tour__num">04</span><span class="flus26-tour__tabcopy"><strong>Ventas</strong><small>Historial y seguimiento de cada operación.</small></span><span class="flus26-tour__arrow" aria-hidden="true">→</span></button>
+      </div>
+      <div class="flus26-tour__stage">
+        <div class="flus26-tour__windowbar"><div class="flus26-tour__dots" aria-hidden="true"><i></i><i></i><i></i></div><strong data-tour-window-title>FLUS · Caja y cobros</strong><span><i></i> Producto real</span></div>
+        <div class="flus26-tour__viewport">
+          <figure class="flus26-tour__panel is-active" id="flus-tour-caja" role="tabpanel" data-tour-panel="caja" data-tour-title="FLUS · Caja y cobros" data-tour-kicker="OPERACIÓN DIARIA" data-tour-caption="Vendé, elegí el medio de pago y cerrá la operación sin cambiar de pantalla."><picture><source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp"><img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla de Caja POS de FLUS" width="1608" height="978" loading="lazy"></picture></figure>
+          <figure class="flus26-tour__panel" id="flus-tour-dashboard" role="tabpanel" hidden data-tour-panel="dashboard" data-tour-title="FLUS · Resumen del negocio" data-tour-kicker="CONTROL DEL NEGOCIO" data-tour-caption="Ventas, productos y medios de pago resumidos para entender qué está pasando."><picture><source srcset="<?= e(asset_url('img/Dashboard.webp')) ?>" type="image/webp"><img src="<?= e(asset_url('img/Dashboard.png')) ?>" alt="Resumen del negocio en FLUS" width="1536" height="1024" loading="lazy"></picture></figure>
+          <figure class="flus26-tour__panel" id="flus-tour-stock" role="tabpanel" hidden data-tour-panel="stock" data-tour-title="FLUS · Stock" data-tour-kicker="INVENTARIO" data-tour-caption="Detectá faltantes y revisá existencias con filtros y alertas en una misma vista."><picture><source srcset="<?= e(asset_url('img/Stock.webp')) ?>" type="image/webp"><img src="<?= e(asset_url('img/Stock.png')) ?>" alt="Control de stock de FLUS" width="1536" height="1024" loading="lazy"></picture></figure>
+          <figure class="flus26-tour__panel" id="flus-tour-ventas" role="tabpanel" hidden data-tour-panel="ventas" data-tour-title="FLUS · Ventas" data-tour-kicker="SEGUIMIENTO" data-tour-caption="Consultá operaciones anteriores y mantené trazabilidad de las ventas del comercio."><picture><source srcset="<?= e(asset_url('img/ventas.webp')) ?>" type="image/webp"><img src="<?= e(asset_url('img/ventas.png')) ?>" alt="Historial de ventas de FLUS" width="1536" height="1024" loading="lazy"></picture></figure>
         </div>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver módulos principales</a>
+        <div class="flus26-tour__caption"><div><span data-tour-kicker-output>OPERACIÓN DIARIA</span><strong data-tour-caption-output>Vendé, elegí el medio de pago y cerrá la operación sin cambiar de pantalla.</strong></div><span class="flus26-tour__hint">Elegí un módulo para explorarlo</span></div>
       </div>
     </div>
   </div>
 </section>
 
+<section class="flus26-section flus26-versions" id="versiones" data-reveal><div class="container"><div class="flus26-sectionhead"><span class="section-kicker">Versiones</span><h2>Dos formas de usar FLUS.</h2><p>Elegí dónde querés trabajar y cuánto necesitás personalizar.</p></div><div class="flus26-edition-grid">
+  <article class="flus26-edition flus26-edition--web" id="flus-web"><div class="flus26-edition__top"><span class="flus26-edition__tag">Recomendado para empezar</span><span class="flus26-edition__code">WEB / ONLINE</span></div><h3>FLUS Web</h3><p class="flus26-edition__lead">Para trabajar desde PC, tablet o teléfono, sin instalar un servidor en el negocio.</p><div class="flus26-edition__summary"><span>Acceso</span><strong>PC, tablet y teléfono</strong></div><ul class="flus26-checks"><li>FLUS se ocupa de la parte técnica</li><li>Puesta en marcha rápida</li><li>Actualizaciones y soporte incluidos</li></ul><div class="flus26-edition__foot"><span>Ideal para empezar con una operación simple y conectada.</span><a href="<?= e(site_url('flus-web.php')) ?>" class="flus26-arrowlink" data-track-event="click_contact" data-track-label="Conocer FLUS Web">Conocer FLUS Web <span>→</span></a></div></article>
+  <article class="flus26-edition flus26-edition--server" id="flus-server"><div class="flus26-edition__top"><span class="flus26-edition__tag">Más control y personalización</span><span class="flus26-edition__code">INSTALACIÓN PROPIA</span></div><h3>FLUS Server</h3><p class="flus26-edition__lead">Para negocios con varias cajas o una instalación propia.</p><div class="flus26-edition__summary"><span>Instalación</span><strong>En tu negocio o servidor</strong></div><ul class="flus26-checks"><li>Instalación en tu red o servidor</li><li>Se adapta a tus cajas y puestos</li><li>Pasamos tus datos y conectamos otros sistemas</li></ul><div class="flus26-edition__foot"><span>Ideal cuando el escenario necesita un proyecto propio.</span><a href="<?= e(site_url('flus-server.php')) ?>" class="flus26-arrowlink" data-track-event="click_contact" data-track-label="Conocer FLUS Server">Conocer FLUS Server <span>→</span></a></div></article>
+</div></div></section>
 
-<section class="section" data-reveal>
-  <div class="container">
-    <span class="section-kicker">Pantallas reales</span>
-    <h2>Así se ve FLUS cuando lo usás en el día a día</h2>
-    <p class="section-lead">
-      Estas pantallas muestran cómo se ve FLUS al vender, cobrar, revisar ventas y controlar stock sin ir saltando entre herramientas.
-    </p>
+<section class="flus26-section flus26-finder" id="que-flus-necesito" data-reveal><div class="container"><div class="flus26-sectionhead flus26-sectionhead--split"><div><span class="section-kicker">Orientación rápida</span><h2>Elegí por tu forma de trabajar.</h2></div><p>Tres respuestas para saber qué edición conviene mirar primero.</p></div><div class="flus26-finder__grid" data-flus-finder><div class="flus26-finder__questions"><fieldset class="flus26-choicegroup" data-finder-group="access"><legend>1. ¿Desde dónde necesitás trabajar?</legend><div class="flus26-choicegroup__options"><button type="button" class="is-selected" data-finder-choice="web">PC, tablet o teléfono</button><button type="button" data-finder-choice="server">Quiero instalarlo en mi negocio</button></div></fieldset><fieldset class="flus26-choicegroup" data-finder-group="scale"><legend>2. ¿Cómo es tu operación?</legend><div class="flus26-choicegroup__options"><button type="button" class="is-selected" data-finder-choice="web">Quiero empezar simple y rápido</button><button type="button" data-finder-choice="server">Tengo varias cajas o necesidades especiales</button></div></fieldset><fieldset class="flus26-choicegroup" data-finder-group="custom"><legend>3. ¿Necesitás conectar otros sistemas?</legend><div class="flus26-choicegroup__options"><button type="button" class="is-selected" data-finder-choice="web">No, con lo habitual me alcanza</button><button type="button" data-finder-choice="server">Sí, tengo datos o sistemas para conectar</button></div></fieldset></div><aside class="flus26-finder__result is-web" data-finder-result aria-live="polite"><span class="flus26-finder__eyebrow">Nuestra recomendación</span><div class="flus26-finder__resulthead"><span class="flus26-finder__resulticon">W</span><div><small>PARA TU ESCENARIO</small><h3 data-finder-title>FLUS Web</h3></div></div><p data-finder-copy>Por lo que marcaste, podés comenzar con la versión Web, rápida de implementar y administrada por FLUS.</p><ul data-finder-benefits><li>Funciona en PC, tablet y teléfono</li><li>FLUS se ocupa de la parte técnica</li><li>Entrada mensual simple</li></ul><div class="flus26-finder__actions"><a class="btn btn-primary" data-finder-primary href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Quiz abrir demo">Ver la operación</a><a class="flus26-finder__secondary" data-finder-secondary href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Quiz consulta WhatsApp">Consultar por WhatsApp</a></div></aside></div></div></section>
 
-    <div class="story-carousel" data-carousel data-interval="5200">
-      <div class="story-carousel__nav" role="tablist" aria-label="Recorrido por pantallas de FLUS">
-        <button class="story-dot is-active" type="button" role="tab" aria-selected="true" aria-controls="story-slide-1" id="story-tab-1" data-slide="0">Caja y cobro</button>
-        <button class="story-dot" type="button" role="tab" aria-selected="false" aria-controls="story-slide-2" id="story-tab-2" data-slide="1">Panel general</button>
-        <button class="story-dot" type="button" role="tab" aria-selected="false" aria-controls="story-slide-3" id="story-tab-3" data-slide="2">Control de stock</button>
-        <button class="story-dot" type="button" role="tab" aria-selected="false" aria-controls="story-slide-4" id="story-tab-4" data-slide="3">Historial de ventas</button>
-      </div>
+<section class="flus26-social" data-reveal aria-labelledby="social-title"><div class="container flus26-social__inner"><div><span class="section-kicker">Casos y referencias</span><h2 id="social-title">Conocé cómo lo usan otros comercios.</h2></div><p>Estamos reuniendo historias reales para publicarlas acá. Mientras tanto, podemos compartirte referencias en una conversación.</p><a class="flus26-arrowlink" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Consultar referencias">Consultar referencias <span>→</span></a></div></section>
 
-      <div class="story-carousel__viewport">
-        <article class="story-slide is-active" id="story-slide-1" role="tabpanel" aria-labelledby="story-tab-1">
-          <div class="story-slide__copy">
-            <span class="story-slide__eyebrow">Operaci&oacute;n en caja</span>
-            <h3>Vendé y cobrá sin perder de vista el ticket</h3>
-            <p>
-              La caja reúne búsqueda, ticket, medios de pago y total a cobrar para que la operación avance con menos pasos y menos errores.
-            </p>
-            <ul class="plain-list">
-              <li>Búsqueda de producto, ticket y cobro en la misma vista.</li>
-              <li>Medios de pago visibles y monto recibido siempre a mano.</li>
-              <li>Total destacado para cerrar la venta con más seguridad.</li>
-            </ul>
-          </div>
-          <figure class="story-slide__media product-shot">
-            <picture>
-              <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
-              <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla de caja de FLUS con ticket, medios de pago y total a cobrar" width="1608" height="978" loading="lazy" decoding="async">
-            </picture>
-          </figure>
-        </article>
+<section class="flus26-section flus26-compare" id="comparar" data-reveal><div class="container"><div class="flus26-sectionhead"><span class="section-kicker">En una mirada</span><h2>La diferencia está acá.</h2><p>Una edición prioriza velocidad de puesta en marcha; la otra, control sobre la instalación.</p></div><div class="flus26-tablewrap" role="region" aria-label="Comparación entre FLUS Web y FLUS Server" tabindex="0"><table class="flus26-table"><thead><tr><th scope="col">Decisión</th><th scope="col">FLUS Web</th><th scope="col">FLUS Server</th></tr></thead><tbody><tr><th scope="row">Dónde trabajás</th><td>PC, tablet o teléfono</td><td>Instalado en tu negocio</td></tr><tr><th scope="row">Quién se ocupa de la parte técnica</th><td>FLUS</td><td>Tu equipo</td></tr><tr><th scope="row">Cómo empezás</th><td>Rápido</td><td>A medida</td></tr><tr><th scope="row">Cuándo elegirlo</th><td>Querés operar ya</td><td>Necesitás adaptar el escenario</td></tr></tbody></table></div></div></section>
 
-        <article class="story-slide" id="story-slide-2" role="tabpanel" aria-labelledby="story-tab-2" hidden>
-          <div class="story-slide__copy">
-            <span class="story-slide__eyebrow">Visi&oacute;n general</span>
-            <h3>Revisá rápido qué se vendió y cómo se está moviendo el negocio</h3>
-            <p>
-              El panel general resume ventas, productos, categorías y medios de pago para que puedas leer el día sin andar buscando datos en pantallas separadas.
-            </p>
-            <ul class="plain-list">
-              <li>Gráficos simples para leer evolución y distribución.</li>
-              <li>Top productos y categorías con foco comercial.</li>
-              <li>Útil para detectar rápido qué está funcionando mejor.</li>
-            </ul>
-          </div>
-          <figure class="story-slide__media product-shot">
-            <picture>
-              <source srcset="<?= e(asset_url('img/Dashboard.webp')) ?>" type="image/webp">
-              <img src="<?= e(asset_url('img/Dashboard.png')) ?>" alt="Dashboard de FLUS con ventas por día, top productos, métodos de pago y ventas por categoría" width="1536" height="868" loading="lazy" decoding="async">
-            </picture>
-          </figure>
-        </article>
+<section class="flus26-section flus26-pricing" id="precios" data-reveal><div class="container"><div class="flus26-sectionhead flus26-sectionhead--dark"><span class="section-kicker">Precios</span><h2>Empezá con una base clara.</h2><p>Web tiene una entrada mensual definida. Server se cotiza según el alcance.</p></div><div class="flus26-price-grid"><article class="flus26-price-card flus26-price-card--primary"><div class="flus26-price-card__top"><span class="flus26-price-card__label">FLUS Web</span><span class="flus26-price-card__badge">Para empezar</span></div><div class="flus26-price-card__amount"><small>desde</small><strong><?= e((string)($webPlan['monthly_price'] ?? '$45.000')) ?></strong><span>ARS / mes</span></div><p>Base para <b><?= e((string)($webPlan['base_scope'] ?? '1 local + 1 caja')) ?></b>, con acceso, soporte y actualizaciones incluidos.</p><a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Precios ver operación">Ver la operación</a></article><article class="flus26-price-card flus26-price-card--server"><div class="flus26-price-card__top"><span class="flus26-price-card__label">FLUS Server</span><span class="flus26-price-card__badge">A medida</span></div><div class="flus26-price-card__quote"><small>VALOR</small><strong>Cotización personalizada</strong><span>Se define por puestos, instalación y alcance.</span></div><p>Para negocios con instalación propia, varias cajas o necesidades especiales.</p><?php if (($site['whatsapp_number'] ?? '') !== ''): ?><a class="btn btn-secondary" href="<?= e(whatsapp_url('Hola, quiero cotizar FLUS Server.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Precios cotizar Server">Cotizar por WhatsApp</a><?php endif; ?></article></div><p class="flus26-price-note">Te ayudamos a elegir la edición adecuada antes de configurar nada.</p></div></section>
 
-        <article class="story-slide" id="story-slide-3" role="tabpanel" aria-labelledby="story-tab-3" hidden>
-          <div class="story-slide__copy">
-            <span class="story-slide__eyebrow">Inventario operativo</span>
-            <h3>Controlá disponibilidad y actuá antes de quedarte sin stock</h3>
-            <p>
-              La vista de stock combina indicadores, alertas, filtros y acciones rápidas para revisar disponibilidad y tomar decisiones sin depender de planillas externas.
-            </p>
-            <ul class="plain-list">
-              <li>Resumen de productos, bajo stock y sin stock.</li>
-              <li>Filtros por estado, categoría y proveedor.</li>
-              <li>Acciones directas para ajustar o revisar productos.</li>
-            </ul>
-          </div>
-          <figure class="story-slide__media product-shot">
-            <picture>
-              <source srcset="<?= e(asset_url('img/Stock.webp')) ?>" type="image/webp">
-              <img src="<?= e(asset_url('img/Stock.png')) ?>" alt="Pantalla de control de stock de FLUS con indicadores, filtros y tabla de productos" width="1599" height="854" loading="lazy" decoding="async">
-            </picture>
-          </figure>
-        </article>
+<section class="flus26-section flus26-onboarding" data-reveal><div class="container"><div class="flus26-sectionhead"><span class="section-kicker">Puesta en marcha</span><h2>De la consulta a la primera venta.</h2></div><div class="flus26-onboarding__grid"><article><span>01</span><h3>Nos contás cómo trabajás</h3><p>Vemos cajas, productos, medios de pago y qué necesitás resolver.</p></article><article><span>02</span><h3>Elegimos cómo usarlo</h3><p>Vemos si te conviene trabajar online o con una instalación propia.</p></article><article><span>03</span><h3>Dejamos todo listo</h3><p>Preparamos la base, los accesos y la carga inicial.</p></article><article><span>04</span><h3>Empezás a operar</h3><p>Probamos el flujo real y te acompañamos.</p></article></div></div></section>
 
-        <article class="story-slide" id="story-slide-4" role="tabpanel" aria-labelledby="story-tab-4" hidden>
-          <div class="story-slide__copy">
-            <span class="story-slide__eyebrow">Seguimiento comercial</span>
-            <h3>Consultá ventas y bajá al detalle cuando lo necesites</h3>
-            <p>
-              El historial permite cruzar filtros, ver indicadores y entrar al detalle de cada venta para entender qué pasó en un período sin perder continuidad.
-            </p>
-            <ul class="plain-list">
-              <li>KPIs del período para leer rendimiento rápido.</li>
-              <li>Filtros por fecha, estado y medio de pago.</li>
-              <li>Tabla con acciones para entrar al detalle sin romper el flujo.</li>
-            </ul>
-          </div>
-          <figure class="story-slide__media product-shot">
-            <picture>
-              <source srcset="<?= e(asset_url('img/ventas.webp')) ?>" type="image/webp">
-              <img src="<?= e(asset_url('img/ventas.png')) ?>" alt="Pantalla de ventas de FLUS con indicadores, filtros y listado del historial comercial" width="1440" height="900" loading="lazy" decoding="async">
-            </picture>
-          </figure>
-        </article>
-      </div>
-    </div>
-  </div>
-</section>
+<section class="resource-section resource-section--soft" id="recursos" data-reveal><div class="container"><div class="resource-head"><div><span class="section-kicker">Recursos</span><h2>Aprendé antes de elegir un sistema.</h2></div><p>Guías prácticas sobre caja, stock y gestión para resolver problemas reales del comercio.</p></div><div class="related-grid"><a class="related-card related-card--feature" href="<?= e(site_url('recursos/controlar-stock-comercio/')) ?>" data-track-event="click_resource" data-track-label="Home recurso stock"><span class="related-card__eyebrow"><b>01</b><em>Stock e inventario</em></span><strong>Cómo controlar el stock de un comercio</strong><p>Entradas, ventas, ajustes e inventario sin depender de una celda manual.</p><span class="related-card__read">Leer guía <b aria-hidden="true">↗</b></span></a><a class="related-card related-card--light" href="<?= e(site_url('recursos/como-hacer-cierre-de-caja/')) ?>" data-track-event="click_resource" data-track-label="Home recurso caja"><span class="related-card__eyebrow"><b>02</b><em>Caja y ventas</em></span><strong>Cómo hacer un cierre de caja correctamente</strong><p>Qué comparar y cómo investigar una diferencia.</p><span class="related-card__read">Leer guía <b aria-hidden="true">↗</b></span></a><a class="related-card related-card--light" href="<?= e(site_url('recursos/que-sistema-necesita-un-kiosco/')) ?>" data-track-event="click_resource" data-track-label="Home recurso kiosco"><span class="related-card__eyebrow"><b>03</b><em>Guía por rubro</em></span><strong>Qué sistema necesita un kiosco</strong><p>Las funciones que importan para vender rápido y mantener control.</p><span class="related-card__read">Leer guía <b aria-hidden="true">↗</b></span></a></div><div class="resource-section__actions"><a class="btn btn-secondary" href="<?= e(site_url('recursos/')) ?>">Ver todas las guías</a></div></div></section>
 
-<section class="section" data-reveal>
-  <div class="container">
-    <span class="section-kicker">Qué resuelve</span>
-    <h2>Lo que más suele desordenarse en un comercio</h2>
-    <p class="section-lead">
-      FLUS apunta a los puntos que más suelen generar ruido: cobrar, controlar caja, saber qué stock hay y seguir clientes o comprobantes sin depender de sistemas sueltos.
-    </p>
+<section class="flus26-section flus26-faq" data-reveal><div class="container"><div class="flus26-sectionhead"><span class="section-kicker">Preguntas frecuentes</span><h2>Lo importante antes de elegir.</h2></div><div class="flus26-faq-grid"><?php foreach ($faqItems as $index => $item): ?><details <?= $index === 0 ? 'open' : '' ?>><summary><?= e($item['question']) ?></summary><p><?= e($item['answer']) ?></p></details><?php endforeach; ?></div></div></section>
 
-    <div class="feature-grid">
-      <article class="feature-card">
-        <h3>Cobro más ágil</h3>
-        <p>La venta, el ticket y el medio de pago quedan dentro de la misma pantalla.</p>
-      </article>
-      <article class="feature-card">
-        <h3>Caja del día bajo control</h3>
-        <p>Más visibilidad sobre medios de pago, movimientos diarios y cierres.</p>
-      </article>
-      <article class="feature-card">
-        <h3>Stock con menos sorpresas</h3>
-        <p>Menos dudas sobre disponibilidad, movimientos y faltantes.</p>
-      </article>
-      <article class="feature-card">
-        <h3>Clientes y comprobantes visibles</h3>
-        <p>Historial, cuenta corriente y facturación con mejor continuidad operativa.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="section section-dark" data-reveal>
-  <div class="container">
-    <span class="section-kicker">Cómo trabaja FLUS</span>
-    <h2>Un circuito claro desde la venta hasta el seguimiento</h2>
-    <div class="steps-grid">
-      <article class="step-card">
-        <span class="step-number">01</span>
-        <h3>Registrás la venta</h3>
-        <p>Cargás productos, armás el ticket y avanzás sin salir de la pantalla principal.</p>
-      </article>
-      <article class="step-card">
-        <span class="step-number">02</span>
-        <h3>Cobrás y cerrás la operación</h3>
-        <p>El cobro queda registrado con más claridad dentro de la misma caja.</p>
-      </article>
-      <article class="step-card">
-        <span class="step-number">03</span>
-        <h3>El stock se actualiza</h3>
-        <p>La operación impacta en existencias y deja trazabilidad para revisar después.</p>
-      </article>
-      <article class="step-card">
-        <span class="step-number">04</span>
-        <h3>Consultás cliente, historial y comprobante</h3>
-        <p>La venta no queda aislada: podés seguir cliente, deuda, historial y facturación.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="section" data-reveal>
-  <div class="container split-grid">
-    <div>
-      <span class="section-kicker">Demo</span>
-      <h2>Qué vas a ver cuando te mostramos FLUS</h2>
-      <p class="section-lead">
-        La idea no es contarte una promesa general. En una demo conviene mirar cómo se resuelve una operación real del negocio.
-      </p>
-
-      <div class="link-stack">
-        <a class="stack-link" href="<?= e(site_url('sistema-pos.php')) ?>">
-          <strong>Venta y cobro en caja</strong>
-          <span>Cómo se arma el ticket, cómo se cobra y qué información queda registrada.</span>
-        </a>
-        <a class="stack-link" href="<?= e(site_url('control-de-stock.php')) ?>">
-          <strong>Stock, productos y movimientos</strong>
-          <span>Cómo se consulta disponibilidad y cómo impacta cada venta o ajuste.</span>
-        </a>
-        <a class="stack-link" href="<?= e(site_url('sistema-de-gestion.php')) ?>">
-          <strong>Historial, clientes y seguimiento</strong>
-          <span>Cómo revisar ventas, clientes, cuenta corriente y actividad del período.</span>
-        </a>
-        <a class="stack-link" href="<?= e(site_url('facturacion.php')) ?>">
-          <strong>Facturación integrada</strong>
-          <span>Cómo encaja el comprobante dentro del mismo circuito operativo.</span>
-        </a>
-      </div>
-    </div>
-
-    <div class="surface-card">
-      <h3>Dónde tiene más sentido</h3>
-      <p>
-        FLUS encaja mejor en comercios y pymes donde ya hace falta centralizar ventas, caja, stock, clientes y facturación en una sola base.
-      </p>
-      <ul class="plain-list">
-        <li>Kioscos, almacenes, dietéticas, vinotecas y otros comercios con mostrador.</li>
-        <li>Negocios con stock, precios, reposición y seguimiento diario.</li>
-        <li>Equipos que hoy dependen de planillas o memoria operativa.</li>
-        <li>Operaciones que necesitan ver ventas, caja y clientes en un solo lugar.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-
-<section class="section section-dark" id="precios" data-reveal>
-  <div class="container">
-    <div class="pricing-intro">
-      <span class="section-kicker">Planes y precios</span>
-      <h2>Elegí el plan que mejor se adapte a tu negocio</h2>
-      <p class="section-lead">Todos los planes incluyen los mismos módulos: caja, ventas, stock, clientes, cuenta corriente, facturación y reportes. La diferencia está en la modalidad de pago.</p>
-    </div>
-
-    <div class="pricing-grid">
-      <article class="pricing-card">
-        <div class="pricing-card__header">
-          <span class="pricing-card__badge">Flexible</span>
-          <h3>Mensual</h3>
-          <p class="pricing-card__tagline">Ideal para empezar sin compromiso</p>
-        </div>
-        <div class="pricing-card__price">
-          <span class="pricing-card__amount">$29.000</span>
-          <span class="pricing-card__period">/ mes</span>
-        </div>
-        <ul class="pricing-card__features">
-          <li>Todos los módulos incluidos</li>
-          <li>Soporte técnico por WhatsApp y email</li>
-          <li>Actualizaciones incluidas</li>
-          <li>Cancelás cuando quieras</li>
-        </ul>
-        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Consultar plan mensual">Consultar</a>
-      </article>
-
-      <article class="pricing-card pricing-card--featured">
-        <div class="pricing-card__highlight">Ahorrás 2 meses</div>
-        <div class="pricing-card__header">
-          <span class="pricing-card__badge">Recomendado</span>
-          <h3>Anual</h3>
-          <p class="pricing-card__tagline">El plan más elegido por comercios</p>
-        </div>
-        <div class="pricing-card__price">
-          <span class="pricing-card__amount">$290.000</span>
-          <span class="pricing-card__period">/ año</span>
-        </div>
-        <ul class="pricing-card__features">
-          <li>Todos los módulos incluidos</li>
-          <li>Soporte técnico prioritario</li>
-          <li>Actualizaciones incluidas</li>
-          <li>Equivale a $24.166 por mes</li>
-        </ul>
-        <a class="btn btn-primary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Consultar plan anual">Consultar</a>
-      </article>
-
-      <article class="pricing-card">
-        <div class="pricing-card__header">
-          <span class="pricing-card__badge">Una vez</span>
-          <h3>Permanente</h3>
-          <p class="pricing-card__tagline">Licencia instalada, sin mensualidad</p>
-        </div>
-        <div class="pricing-card__price">
-          <span class="pricing-card__amount">$590.000</span>
-          <span class="pricing-card__period">pago único</span>
-        </div>
-        <ul class="pricing-card__features">
-          <li>Todos los módulos incluidos</li>
-          <li>3 meses de soporte incluidos</li>
-          <li>Sin mensualidad obligatoria</li>
-          <li>Soporte y actualizaciones opcionales</li>
-        </ul>
-        <a class="btn btn-secondary pricing-card__btn" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Consultar licencia permanente">Consultar</a>
-      </article>
-    </div>
-
-    <p class="pricing-note">Todos los precios son en pesos argentinos e incluyen IVA. ¿Dudas sobre qué plan conviene? <a href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_contact" data-track-label="Escribinos desde precios">Escribinos</a> y te ayudamos a elegir.</p>
-  </div>
-</section>
-
-<section class="section" data-reveal>
-  <div class="container">
-    <span class="section-kicker">Preguntas frecuentes</span>
-    <h2>Preguntas que vale la pena resolver antes de arrancar</h2>
-    <div class="faq-grid">
-      <article class="faq-item">
-        <h3>&iquest;FLUS es solo un sistema de caja?</h3>
-        <p>No. También reúne ventas, caja, stock, clientes, cuenta corriente y facturación dentro de la operación diaria.</p>
-      </article>
-      <article class="faq-item">
-        <h3>&iquest;Para qué tipo de negocio tiene más sentido?</h3>
-        <p>Para comercios y pymes con ventas diarias, caja, stock y necesidad de seguir clientes, deuda o facturación sin herramientas separadas.</p>
-      </article>
-      <article class="faq-item">
-        <h3>&iquest;Todos los planes incluyen los mismos módulos?</h3>
-        <p>Sí. Caja, ventas, stock, clientes, cuenta corriente, facturación y reportes están incluidos en los tres planes. La diferencia es la modalidad de pago y el soporte.</p>
-      </article>
-      <article class="faq-item">
-        <h3>&iquest;Qué diferencia hay entre el plan anual y el permanente?</h3>
-        <p>El anual incluye soporte y actualizaciones continuas con un ahorro de 2 meses. El permanente es un pago único con 3 meses de soporte incluidos; después, soporte y actualizaciones son opcionales.</p>
-      </article>
-      <article class="faq-item">
-        <h3>&iquest;Puedo cambiar de plan después?</h3>
-        <p>Sí. Podés pasar de mensual a anual o permanente en cualquier momento. Escribinos y te ayudamos a hacer la transición.</p>
-      </article>
-      <article class="faq-item">
-        <h3>&iquest;Se puede coordinar una demo de FLUS?</h3>
-        <p>Sí. Desde la página de contacto se puede coordinar una demo para ver FLUS funcionando con ejemplos de venta, caja, stock y seguimiento comercial.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="section section-dark" data-reveal>
-  <div class="container">
-    <div class="cta-box">
-      <h2>Empezá a ordenar tu negocio con FLUS</h2>
-      <p>
-        Pedí una demo para ver cómo trabaja FLUS en una operación real, o elegí el plan que mejor se adapte a tu comercio.
-      </p>
-      <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo" data-track-label="CTA final solicitar demo">Solicitar demo</a>
-        <a class="btn btn-secondary" href="#precios">Ver planes y precios</a>
-      </div>
-    </div>
-  </div>
-</section>
+<section class="flus26-cta" data-reveal><div class="container flus26-cta__inner"><div><span>SIGUIENTE PASO</span><h2>¿Querés verlo en acción?</h2><p>Entrá a la demo o contanos cómo trabajás y te orientamos.</p></div><div class="flus26-cta__actions"><a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="CTA final abrir demo">Conocé FLUS por dentro</a><?php if (($site['whatsapp_number'] ?? '') !== ''): ?><a class="btn btn-secondary" href="<?= e(whatsapp_url('Hola, quiero saber si me conviene FLUS Web o FLUS Server.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="CTA final consulta WhatsApp">Escribir por WhatsApp</a><?php endif; ?></div></div></section>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>
