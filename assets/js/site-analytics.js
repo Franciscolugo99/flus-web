@@ -7,6 +7,7 @@
     'demo_click',
     'contact_submit',
     'pricing_view',
+    'pricing_plan_click',
     'cta_primary_click',
     'click_contact',
     'click_resource',
@@ -120,6 +121,10 @@
     }
     if (extra.result) {
       params.result = safeText(extra.result, 80);
+    }
+    if (extra.plan) {
+      // Identifica el plan consultado. No es dato personal.
+      params.plan = safeText(extra.plan, 40);
     }
 
     // generate_lead is a recommended GA4 event and represents a real form lead.
@@ -272,6 +277,8 @@
     track(eventType, {
       href: normalizeHref(target.href || target.getAttribute('href') || ''),
       label: safeText(target.getAttribute('data-track-label') || target.textContent || '', 120),
+      // Permite distinguir por que plan consulto la persona (inicio, negocio, ...).
+      plan: safeText(target.getAttribute('data-track-plan') || '', 40),
       download: eventType === 'click_download',
     });
   }, { passive: true });

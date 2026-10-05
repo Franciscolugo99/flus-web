@@ -14,6 +14,7 @@ if (!function_exists('web_analytics_allowed_events')) {
             'demo_click',
             'contact_submit',
             'pricing_view',
+            'pricing_plan_click',
             'cta_primary_click',
             // Nombres historicos que siguen emitiendose.
             'click_contact',
@@ -327,6 +328,7 @@ if (!function_exists('web_analytics_event_label')) {
             'demo_click' => 'Demo',
             'contact_submit' => 'Envio de formulario',
             'pricing_view' => 'Vista de precios',
+            'pricing_plan_click' => 'Clic en plan',
             'cta_primary_click' => 'CTA principal',
             // Nombres historicos, por si quedan eventos ya guardados.
             'click_demo' => 'Demo',

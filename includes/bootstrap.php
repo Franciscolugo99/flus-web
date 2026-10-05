@@ -29,6 +29,11 @@ $site = [
     // Esto genera https://wa.me/5492612731742 de forma correcta.
     'whatsapp_number' => '+54 9 261 273-1742',
     'demo_url' => 'https://app.flus.com.ar/',
+    // DEPRECADO: FLUS Web pasó a tener 4 planes (Inicio, Negocio, Pro, Multi) y
+    // ya NO se usa un único precio. Los precios viven en $site['plans'] y se
+    // declaran en includes/config.local.php; el registro comercial esta en
+    // includes/plans.php. Este bloque se mantiene solo para no romper una
+    // configuracion local que todavia lo defina, y no lo lee ninguna pagina.
     'commercial' => [
         'web' => [
             'name' => 'FLUS Web',
@@ -53,6 +58,9 @@ if (is_file($localConfigPath)) {
         $site = array_replace($site, $localConfig);
     }
 }
+
+// Registro comercial de planes de FLUS Web (incluye/plans para los precios).
+require_once __DIR__ . '/plans.php';
 
 // FLUS se publica en la raíz de flus.com.ar. Si alguna instalación futura usa
 // un subdirectorio, puede definir 'base_path' en config.local.php.

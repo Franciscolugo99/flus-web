@@ -11,7 +11,33 @@ require_once __DIR__ . '/includes/bootstrap.php';
  */
 $pageTitle = 'Sistema de gestión para comercios | FLUS Web y Server';
 $pageDescription = 'Sistema de gestión para comercios con caja POS, ventas, stock, compras y proveedores. Usá FLUS Web desde PC y móvil o implementá FLUS Server en infraestructura propia.';
-$webPlan = $site['commercial']['web'] ?? [];
+
+// El schema Offer se construye desde el registro de planes.
+// IMPORTANTE: si un plan todavia no tiene precio configurado NO se declara
+// "price" — publicar un numero inventado en datos estructurados seria peor que
+// no declararlo. Ver flus_plan_price() en includes/plans.php.
+$planOffers = [];
+foreach (flus_web_plans() as $planId => $plan) {
+    $offer = [
+        '@type' => 'Offer',
+        'name' => $plan['name'],
+        'description' => $plan['tagline'] . ' ' . $plan['audience'],
+        'category' => 'Suscripción mensual',
+    ];
+
+    $capacity = flus_plan_capacity_label($planId);
+    if ($capacity !== '') {
+        $offer['description'] .= ' Incluye ' . $capacity . '.';
+    }
+
+    $price = flus_plan_price($planId);
+    if ($price !== '') {
+        $offer['price'] = preg_replace('/[^\d.,]/', '', $price);
+        $offer['priceCurrency'] = 'ARS';
+    }
+
+    $planOffers[] = $offer;
+}
 
 // Preguntas del schema == preguntas visibles en la HOME (extraidas del markup).
 $faqItems = [
@@ -24,7 +50,7 @@ $faqItems = [
 ];
 
 $pageSchemas = [
-    ['@context' => 'https://schema.org', '@type' => 'SoftwareApplication', 'name' => 'FLUS', 'applicationCategory' => 'BusinessApplication', 'operatingSystem' => 'Web, Windows, Server', 'description' => $pageDescription, 'url' => page_url(), 'offers' => [['@type' => 'Offer', 'name' => 'FLUS Web', 'priceCurrency' => 'ARS', 'price' => preg_replace('/\D+/', '', (string)($webPlan['monthly_price'] ?? '45000')), 'description' => 'Abono mensual base para 1 local y 1 caja.']]],
+    ['@context' => 'https://schema.org', '@type' => 'SoftwareApplication', 'name' => 'FLUS Web', 'applicationCategory' => 'BusinessApplication', 'operatingSystem' => 'Web, Windows, Server', 'description' => $pageDescription, 'url' => page_url(), 'offers' => $planOffers],
     ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(static function (array $item): array { return ['@type' => 'Question', 'name' => $item['question'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $item['answer']]]; }, $faqItems)],
 ];
 
@@ -152,9 +178,15 @@ require __DIR__ . '/includes/header.php';
         <h3>FLUS Web</h3>
         <p class="flus26-edition__lead">Tu sistema listo para usar desde navegador, PC, tablet, Android o iPhone, sin montar un servidor dentro del negocio.</p>
         <div class="flus26-edition__price">
-          <span>Desde</span>
-          <strong>$45.000</strong>
-          <small>ARS / mes</small>
+          <?php if (flus_plan_price('inicio') !== ''): ?>
+            <span>Desde</span>
+            <strong><?= e(flus_plan_price('inicio')) ?></strong>
+            <small>ARS / mes</small>
+          <?php else: ?>
+            <span>Plan de entrada</span>
+            <strong class="is-placeholder"><?= e(flus_plan_price_text('inicio')) ?></strong>
+            <small>Precios en definición</small>
+          <?php endif; ?>
         </div>
         <ul class="flus26-checks">
           <li>1 local + 1 caja en la propuesta base</li>
@@ -241,7 +273,7 @@ require __DIR__ . '/includes/header.php';
         <ul data-finder-benefits>
           <li>Acceso desde navegador y PWA</li>
           <li>Infraestructura administrada</li>
-          <li>Desde $45.000 ARS / mes</li>
+          <li>Desde el plan de entrada, con las funciones centrales incluidas</li>
         </ul>
         <div class="flus26-finder__actions">
           <a class="btn btn-primary" data-finder-primary href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener">Probar FLUS Web</a>
@@ -402,35 +434,118 @@ require __DIR__ . '/includes/header.php';
 <section class="flus26-section flus26-pricing" id="precios" data-reveal>
   <div class="container">
     <div class="flus26-sectionhead flus26-sectionhead--dark">
-      <span class="section-kicker">Precios</span>
-      <h2>Empezá por la opción que encaja con tu negocio.</h2>
-      <p>FLUS Web tiene una entrada simple y previsible. FLUS Server se arma a medida para no cobrarte una instalación genérica que quizá no necesitás.</p>
+      <span class="section-kicker">Planes</span>
+      <h2>Empezá con lo que necesitás hoy. FLUS crece con tu negocio.</h2>
+      <p>Todos los planes son FLUS Web: la misma plataforma con distinta capacidad. Las funciones centrales están desde el primer plan; la diferencia está en cuántos locales, cajas y usuarios necesitás.</p>
     </div>
 
-    <div class="flus26-price-grid">
-      <article class="flus26-price-card flus26-price-card--primary">
-        <div class="flus26-price-card__top"><span class="flus26-price-card__label">FLUS Web</span><span class="flus26-price-card__badge">Para empezar</span></div>
-        <div class="flus26-price-card__amount"><small>desde</small><strong>$45.000</strong><span>ARS / mes</span></div>
-        <p>Una base clara para <b>1 local + 1 caja</b>, con la infraestructura administrada.</p>
-        <div class="flus26-price-card__line"><span>Hosting + soporte + actualizaciones</span><b>Incluidos</b></div>
-        <div class="flus26-price-card__line"><span>Puesta en marcha</span><b>Según configuración</b></div>
-        <div class="flus26-price-card__line"><span>Cajas / alcance adicional</span><b>Se amplía cuando lo necesitás</b></div>
-        <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="Precio FLUS Web">Probar FLUS Web</a>
-        <a class="flus26-price-card__textlink" href="<?= e(site_url('contacto.php')) ?>#formulario-contacto">Quiero una demo guiada →</a>
-      </article>
+    <div class="flus26-price-grid flus26-price-grid--plans">
+      <?php foreach (flus_web_plans() as $planId => $plan):
+        $isHighlight = ($plan['highlight'] ?? null) !== null;
+        $priceText = flus_plan_price_text($planId);
+        $hasPrice = flus_plan_price($planId) !== '';
+      ?>
+      <article class="flus26-price-card flus26-price-card--plan<?= $isHighlight ? ' flus26-price-card--highlight' : '' ?>">
+        <div class="flus26-price-card__top">
+          <span class="flus26-price-card__label"><?= e($plan['name']) ?></span>
+          <?php if ($isHighlight): ?>
+            <span class="flus26-price-card__badge"><?= e((string) $plan['highlight']) ?></span>
+          <?php endif; ?>
+        </div>
 
-      <article class="flus26-price-card flus26-price-card--server">
-        <div class="flus26-price-card__top"><span class="flus26-price-card__label">FLUS Server</span><span class="flus26-price-card__badge">A medida</span></div>
-        <div class="flus26-price-card__quote"><small>VALOR</small><strong>Cotización personalizada</strong><span>La propuesta se arma según el escenario real.</span></div>
-        <p>Para operaciones que necesitan infraestructura propia, más puestos, migraciones o integraciones específicas.</p>
-        <div class="flus26-price-card__line"><span>Puestos / cajas</span><b>Según proyecto</b></div>
-        <div class="flus26-price-card__line"><span>Migración / configuración</span><b>Según alcance</b></div>
-        <div class="flus26-price-card__line"><span>Integraciones / fiscal</span><b>Según necesidad</b></div>
-        <a class="btn btn-secondary" href="<?= e(whatsapp_url("Hola, quiero cotizar FLUS Server. Tengo una consulta sobre puestos, infraestructura y alcance.")) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Precio FLUS Server">Hablar por WhatsApp</a>
-        <a class="flus26-price-card__textlink" href="<?= e(site_url('contacto.php')) ?>#formulario-contacto">Solicitar propuesta →</a>
+        <p class="flus26-price-card__tagline"><?= e($plan['tagline']) ?></p>
+
+        <div class="flus26-price-card__amount">
+          <?php if ($hasPrice && $plan['price_from']): ?><small>Desde</small><?php endif; ?>
+          <strong class="<?= $hasPrice ? '' : 'is-placeholder' ?>"><?= e($priceText) ?></strong>
+          <?php if ($hasPrice): ?><span>ARS / mes</span><?php endif; ?>
+        </div>
+
+        <p class="flus26-price-card__audience"><?= e($plan['audience']) ?></p>
+
+        <ul class="flus26-price-card__specs">
+          <?php foreach ($plan['specs'] as $spec): ?>
+            <li><?= e($spec) ?></li>
+          <?php endforeach; ?>
+        </ul>
+
+        <a
+          class="btn <?= ($plan['cta'] ?? 'demo') === 'consulta' ? 'btn-secondary' : 'btn-primary' ?>"
+          href="<?= e(flus_plan_cta_url($planId)) ?>"
+          <?= ($plan['cta'] ?? 'demo') === 'consulta' ? '' : 'target="_blank" rel="noopener"' ?>
+
+          data-track-event="pricing_plan_click"
+          data-track-plan="<?= e($planId) ?>"
+          data-track-label="Plan <?= e($plan['name']) ?>"
+        ><?= e(flus_plan_cta_label($planId)) ?></a>
       </article>
+      <?php endforeach; ?>
     </div>
-    <p class="flus26-price-note">La puesta en marcha y cualquier ampliación se definen según el alcance. Antes de contratar, te ayudamos a elegir la edición adecuada para no sobredimensionar la solución.</p>
+
+    <?php if (!flus_plans_have_prices()): ?>
+      <p class="flus26-price-note flus26-price-note--pending">
+        Los valores de los planes se están definiendo y todavía no están publicados.
+        Escribinos y te pasamos la propuesta para tu operación.
+      </p>
+    <?php endif; ?>
+
+    <div class="flus26-compare">
+      <h3 class="flus26-compare__title">Comparar todos los planes</h3>
+      <div class="flus26-tablewrap" role="region" aria-label="Comparación de los planes de FLUS Web" tabindex="0">
+        <table class="flus26-table flus26-table--plans">
+          <caption class="sr-only">Capacidad incluida en cada plan de FLUS Web</caption>
+          <thead>
+            <tr>
+              <th scope="col">Característica</th>
+              <?php foreach (flus_web_plans() as $plan): ?>
+                <th scope="col"><?= e($plan['name']) ?></th>
+              <?php endforeach; ?>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $rows = [
+                'locales' => 'Locales',
+                'cajas' => 'Cajas / puestos',
+                'usuarios' => 'Usuarios',
+                'productos' => 'Productos',
+                'soporte' => 'Soporte',
+                'crecimiento' => 'Crecimiento',
+            ];
+            foreach ($rows as $key => $label): ?>
+              <tr>
+                <th scope="row"><?= e($label) ?></th>
+                <?php foreach (flus_web_plans() as $plan): ?>
+                  <td><?= e((string) ($plan['comparison'][$key] ?? '')) ?></td>
+                <?php endforeach; ?>
+              </tr>
+            <?php endforeach; ?>
+            <tr>
+              <th scope="row">Funciones centrales</th>
+              <?php foreach (flus_web_plans() as $plan): ?>
+                <td>Incluidas</td>
+              <?php endforeach; ?>
+            </tr>
+            <tr>
+              <th scope="row">Facturación / ARCA</th>
+              <?php foreach (flus_web_plans() as $plan): ?>
+                <td>Según implementación</td>
+              <?php endforeach; ?>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="flus26-compare__foot">
+        Todas las capacidades se pueden ampliar. Si necesitás un usuario o una caja más,
+        evaluamos el complemento antes de cambiar de plan.
+      </p>
+    </div>
+
+    <div class="flus26-server-note">
+      <h3>¿Necesitás una implementación propia?</h3>
+      <p><b>FLUS Server</b> es otra modalidad, no un plan más: instalación en tu infraestructura, varios puestos, migraciones, integraciones y escenarios especiales.</p>
+      <a class="btn btn-secondary" href="<?= e(site_url('flus-server.php')) ?>" data-track-event="pricing_plan_click" data-track-plan="server" data-track-label="Plan FLUS Server">Consultar FLUS Server</a>
+    </div>
   </div>
 </section>
 

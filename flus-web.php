@@ -7,7 +7,13 @@ $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'FLUS Web', 'url' => page_url('flus-web.php')],
 ];
-$webPlan = $site['commercial']['web'] ?? [];
+// Los planes de FLUS Web salen del registro comercial (includes/plans.php) y sus
+// precios de configuracion. No se declaran precios que no esten definidos.
+$inicioOffer = ['@type' => 'Offer', 'name' => 'FLUS Inicio', 'description' => 'Plan de entrada: 1 local, 1 caja, 1 usuario. Funciones centrales incluidas.', 'category' => 'Suscripción mensual'];
+if (flus_plan_price('inicio') !== '') {
+    $inicioOffer['price'] = preg_replace('/[^\d.,]/', '', flus_plan_price('inicio'));
+    $inicioOffer['priceCurrency'] = 'ARS';
+}
 $pageSchemas = [
     [
         '@context' => 'https://schema.org',
@@ -17,12 +23,7 @@ $pageSchemas = [
         'operatingSystem' => 'Web, Android, iOS, Windows, macOS',
         'description' => 'Sistema de gestión web para comercios con caja POS, ventas, productos, stock, compras, proveedores, usuarios y terminales.',
         'url' => page_url('flus-web.php'),
-        'offers' => [[
-            '@type' => 'Offer',
-            'priceCurrency' => 'ARS',
-            'price' => preg_replace('/\D+/', '', (string)($webPlan['monthly_price'] ?? '45000')),
-            'description' => 'Abono mensual base para 1 local y 1 caja. Puesta en marcha según configuración.',
-        ]],
+        'offers' => [$inicioOffer],
         'featureList' => 'Caja POS, ventas, productos, stock, compras, proveedores, usuarios, terminales, lector y cámara para códigos de barras',
     ],
     [
@@ -71,7 +72,7 @@ require __DIR__ . '/includes/header.php';
 </section>
 <section class="growth-section growth-section--soft">
   <div class="container growth-split">
-    <div class="growth-panel"><span class="section-kicker">Precio de entrada</span><div class="growth-price"><strong><?= e((string)($webPlan['monthly_price'] ?? '$45.000')) ?></strong><span>ARS / mes</span></div><p class="growth-note">Propuesta base para 1 local + 1 caja. La puesta en marcha se define según configuración y necesidades del comercio.</p><div class="growth-hero__actions"><a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="FLUS Web precio demo">Probar FLUS</a></div></div>
+    <div class="growth-panel"><span class="section-kicker">Planes</span><div class="growth-price"><strong<?= flus_plan_price('inicio') === '' ? ' class="is-placeholder"' : '' ?>><?= e(flus_plan_price_text('inicio')) ?></strong><?php if (flus_plan_price('inicio') !== ''): ?><span>ARS / mes</span><?php endif; ?></div><p class="growth-note">El plan de entrada es <b>FLUS Inicio</b>: 1 local, 1 caja y 1 usuario, con las funciones centrales incluidas. Desde ahí sumás capacidad cuando la operación lo pide. <a href="<?= e(site_url()) ?>#precios">Ver todos los planes →</a></p><div class="growth-hero__actions"><a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="FLUS Web precio demo">Probar FLUS</a></div></div>
     <div class="growth-panel"><h3>¿Para quién encaja mejor?</h3><ul class="growth-list"><li>Comercios que hoy trabajan con Excel, cuadernos o un sistema viejo.</li><li>Negocios que quieren empezar sin instalar un servidor local.</li><li>Operaciones que necesitan consultar o trabajar también desde móvil.</li><li>Comercios con una o varias cajas que buscan una base simple para crecer.</li></ul></div>
   </div>
 </section>

@@ -826,7 +826,7 @@ moduleMarquees.forEach((marquee) => {
       icon.textContent = 'W';
       title.textContent = 'FLUS Web';
       copy.textContent = 'Por lo que marcaste, te conviene empezar con la versión Web: rápida de implementar, administrada por FLUS y lista para usar desde distintos dispositivos.';
-      benefits.innerHTML = '<li>Acceso desde navegador y PWA</li><li>Infraestructura administrada</li><li>Entrada mensual simple para empezar</li>';
+      benefits.innerHTML = '<li>Acceso desde navegador y PWA</li><li>Infraestructura administrada</li><li>Funciones centrales desde el plan de entrada</li>';
       primary.textContent = 'Probar FLUS Web';
       primary.setAttribute('href', webDemoUrl);
       primary.setAttribute('target', '_blank');
