@@ -156,17 +156,36 @@
     });
   }
 
+  /**
+   * Publica el alto REAL del banner en --consent-banner-h.
+   *
+   * El boton flotante de WhatsApp es fixed abajo a la derecha y el banner lo
+   * tapa mientras esta visible. El CSS usa esta variable para subirlo, asi no
+   * hay que mantener un valor fijo (el banner cambia de alto en movil).
+   */
+  function syncBannerHeight() {
+    if (!banner) return;
+    var h = Math.ceil(banner.getBoundingClientRect().height);
+    if (h > 0) {
+      document.documentElement.style.setProperty('--consent-banner-h', h + 'px');
+    }
+  }
+
   function show() {
     if (!banner) buildBanner();
     // Un frame para que la transicion CSS se aplique.
     requestAnimationFrame(function () { banner.classList.add('is-visible'); });
     document.body.classList.add('has-consent-banner');
+    syncBannerHeight();
+    window.addEventListener('resize', syncBannerHeight);
   }
 
   function hide() {
     if (!banner) return;
+    window.removeEventListener('resize', syncBannerHeight);
     banner.classList.remove('is-visible');
     document.body.classList.remove('has-consent-banner');
+    document.documentElement.style.removeProperty('--consent-banner-h');
     window.setTimeout(function () {
       if (banner && banner.parentNode) banner.parentNode.removeChild(banner);
       banner = null;

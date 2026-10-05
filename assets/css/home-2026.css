@@ -310,7 +310,7 @@
 .flus26-price-card--primary { border-color: rgba(196,181,253,.26); background: linear-gradient(145deg, rgba(139,92,246,.17), rgba(255,255,255,.05)); }
 .flus26-price-card__label { color: #c4b5fd; font-size: .78rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .flus26-price-card__amount { display: flex; flex-wrap: wrap; align-items: baseline; gap: 9px; margin: 20px 0 12px; }
-.flus26-price-card__amount small { width: 100%; color: rgba(255,255,255,.42); text-transform: uppercase; font-size: .68rem; letter-spacing: .06em; }
+.flus26-price-card__amount small { width: 100%; color: rgba(255,255,255,.58); text-transform: uppercase; font-size: .68rem; letter-spacing: .06em; }
 .flus26-price-card__amount strong { font-size: clamp(2.7rem, 5vw, 4.8rem); line-height: .95; letter-spacing: -.06em; }
 .flus26-price-card__amount span { color: rgba(255,255,255,.5); font-size: .8rem; font-weight: 800; }
 .flus26-price-card > p { color: rgba(255,255,255,.55); font-size: .9rem; }
@@ -465,6 +465,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .flus26-screen img, .flus26-arrowlink span { transition: none; }
+  /* El telefono flota con una animacion infinita y lleva drop-shadow: el filtro
+     se recalcula en cada frame. Quien pide menos movimiento no solo evita la
+     animacion, tambien deja de pagar ese costo por frame. */
+  .flus26-phone-wrap { animation: none; }
 }
 
 /* 2026 edition cards: prevent footer/features overlap and improve rhythm */

@@ -77,9 +77,9 @@ require __DIR__ . '/includes/header.php';
       </div>
     </div>
 
-    <div class="flus26-hero__visual" aria-label="FLUS funcionando en escritorio y teléfono">
-      <div class="flus26-orbit flus26-orbit--one"></div>
-      <div class="flus26-orbit flus26-orbit--two"></div>
+    <div class="flus26-hero__visual">
+      <div class="flus26-orbit flus26-orbit--one" aria-hidden="true"></div>
+      <div class="flus26-orbit flus26-orbit--two" aria-hidden="true"></div>
 
       <div class="flus26-desktop-stage">
         <div class="flus26-product-window flus26-product-window--main">
@@ -95,9 +95,13 @@ require __DIR__ . '/includes/header.php';
         </div>
       </div>
 
-      <div class="flus26-phone-wrap" aria-label="Demostración animada de FLUS Web en teléfono">
-        <div class="flus26-phone-badge"><span class="flus26-version-dot"></span><b>FLUS Web</b><small>Móvil + PWA</small></div>
-        <div class="flus26-phone">
+      <?php /* Mockup decorativo: el texto de adentro es contenido de ejemplo (productos,
+              totales, stock) y un lector de pantalla lo anunciaria como si fuera real.
+              La imagen real de la caja POS del stage de escritorio SI queda accesible:
+              es el unico contenido con informacion verdadera de esta zona. */ ?>
+      <div class="flus26-phone-wrap" role="img" aria-label="FLUS Web en el teléfono: caja, stock y resumen de ventas del día">
+        <div class="flus26-phone-badge" aria-hidden="true"><span class="flus26-version-dot"></span><b>FLUS Web</b><small>Móvil + PWA</small></div>
+        <div class="flus26-phone" aria-hidden="true">
           <div class="flus26-phone__island"></div>
           <div class="flus26-phone__screen">
             <div class="flus26-phone__status"><b>9:41</b><span>● ᴡɪꜰɪ ▰</span></div>

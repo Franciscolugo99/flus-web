@@ -3748,6 +3748,21 @@ h1, h2, h3, .brand-name {
 .consent-banner.is-visible {
   transform: translateY(0);
 }
+/* Mientras el banner esta visible tapa el boton flotante de WhatsApp (que es
+   fixed abajo a la derecha, z-index 200, contra el 900 del banner). Se sube el
+   boton lo que ocupa el banner para que no quede detras.
+   consent.js publica el alto REAL medido en --consent-banner-h. Los valores de
+   respaldo son calculos del peor caso (banner de 2 lineas) por si el CSS se
+   aplicara antes de que el JS mida: conviene que sobre, no que falte. */
+body.has-consent-banner .whatsapp-fab {
+  bottom: calc(24px + var(--consent-banner-h, 132px));
+}
+@media (max-width: 640px) {
+  /* En movil el texto se envuelve y los botones van en columna: mas alto. */
+  body.has-consent-banner .whatsapp-fab {
+    bottom: calc(16px + var(--consent-banner-h, 270px));
+  }
+}
 .consent-banner__inner {
   max-width: 1160px;
   margin: 0 auto;
