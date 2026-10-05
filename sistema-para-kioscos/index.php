@@ -15,8 +15,9 @@ $kioscoOffer = [
   'description' => 'Plan de entrada para kioscos: 1 local, 1 caja, 1 usuario, con las funciones centrales incluidas.',
   'category' => 'Suscripción mensual',
 ];
-if (flus_plan_price('inicio') !== '') {
-  $kioscoOffer['price'] = preg_replace('/[^\d.,]/', '', flus_plan_price('inicio'));
+if (flus_plan_price_value('inicio') !== '') {
+  // Valor numerico para el schema, no el texto con formato de moneda.
+  $kioscoOffer['price'] = flus_plan_price_value('inicio');
   $kioscoOffer['priceCurrency'] = 'ARS';
 }
 $pageSchemas = [[

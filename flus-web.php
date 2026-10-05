@@ -10,8 +10,9 @@ $pageBreadcrumbs = [
 // Los planes de FLUS Web salen del registro comercial (includes/plans.php) y sus
 // precios de configuracion. No se declaran precios que no esten definidos.
 $inicioOffer = ['@type' => 'Offer', 'name' => 'FLUS Inicio', 'description' => 'Plan de entrada: 1 local, 1 caja, 1 usuario. Funciones centrales incluidas.', 'category' => 'Suscripción mensual'];
-if (flus_plan_price('inicio') !== '') {
-    $inicioOffer['price'] = preg_replace('/[^\d.,]/', '', flus_plan_price('inicio'));
+if (flus_plan_price_value('inicio') !== '') {
+    // Valor numerico para el schema, no el texto con formato de moneda.
+    $inicioOffer['price'] = flus_plan_price_value('inicio');
     $inicioOffer['priceCurrency'] = 'ARS';
 }
 $pageSchemas = [

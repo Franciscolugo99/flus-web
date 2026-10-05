@@ -30,9 +30,11 @@ foreach (flus_web_plans() as $planId => $plan) {
         $offer['description'] .= ' Incluye ' . $capacity . '.';
     }
 
-    $price = flus_plan_price($planId);
+    $price = flus_plan_price_value($planId);
     if ($price !== '') {
-        $offer['price'] = preg_replace('/[^\d.,]/', '', $price);
+        // El schema debe llevar un valor NUMERICO ("24900"), nunca el texto
+        // formateado ("$24.900").
+        $offer['price'] = $price;
         $offer['priceCurrency'] = 'ARS';
     }
 
@@ -508,7 +510,7 @@ require __DIR__ . '/includes/header.php';
                 'locales' => 'Locales',
                 'cajas' => 'Cajas / puestos',
                 'usuarios' => 'Usuarios',
-                'productos' => 'Productos',
+                'operacion' => 'Tipo de operación',
                 'soporte' => 'Soporte',
                 'crecimiento' => 'Crecimiento',
             ];
@@ -521,6 +523,12 @@ require __DIR__ . '/includes/header.php';
               </tr>
             <?php endforeach; ?>
             <tr>
+              <th scope="row">Catálogo</th>
+              <?php foreach (flus_web_plans() as $plan): ?>
+                <td><?= e((string) ($plan['catalog'] ?? '')) ?></td>
+              <?php endforeach; ?>
+            </tr>
+            <tr>
               <th scope="row">Funciones centrales</th>
               <?php foreach (flus_web_plans() as $plan): ?>
                 <td>Incluidas</td>
@@ -532,12 +540,19 @@ require __DIR__ . '/includes/header.php';
                 <td>Según implementación</td>
               <?php endforeach; ?>
             </tr>
+            <tr>
+              <th scope="row">Ventas</th>
+              <?php foreach (flus_web_plans() as $plan): ?>
+                <td>Sin límite</td>
+              <?php endforeach; ?>
+            </tr>
           </tbody>
         </table>
       </div>
       <p class="flus26-compare__foot">
-        Todas las capacidades se pueden ampliar. Si necesitás un usuario o una caja más,
-        evaluamos el complemento antes de cambiar de plan.
+        La cantidad de productos es una <b>orientación de catálogo</b>, no un límite del sistema:
+        se puede ampliar sin cambiar de plan. Lo que define el plan son los locales, las cajas y
+        los usuarios. Las ventas no tienen tope en ningún plan.
       </p>
     </div>
 

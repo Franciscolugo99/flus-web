@@ -44,19 +44,20 @@ if (!function_exists('flus_web_plans')) {
                     '1 local',
                     '1 caja',
                     '1 usuario',
-                    'Acceso desde PC, tablet y móvil',
+                    'Operación simple',
                     'Soporte estándar',
                 ],
                 'price_from' => true,
                 'price_fallback' => 'A definir',
                 'cta' => 'demo',
                 'highlight' => null,
-                'capacity' => ['locales' => '1', 'cajas' => '1', 'usuarios' => '1', 'productos' => '~2.000'],
+                'capacity' => ['locales' => '1', 'cajas' => '1', 'usuarios' => '1', 'operacion' => 'Operación simple'],
+                'catalog' => 'Hasta ~2.000 productos (orientativo)',
                 'comparison' => [
                     'locales' => '1',
                     'cajas' => '1',
                     'usuarios' => '1',
-                    'productos' => '~2.000',
+                    'operacion' => 'Operación simple',
                     'soporte' => 'Estándar',
                     'crecimiento' => 'Sumás capacidad cuando lo necesitás',
                 ],
@@ -70,18 +71,20 @@ if (!function_exists('flus_web_plans')) {
                     '1 local',
                     'Hasta 2 cajas',
                     'Hasta 3 usuarios',
+                    'Operación con equipo',
                     'Soporte estándar',
                 ],
                 'price_from' => true,
                 'price_fallback' => 'A definir',
                 'cta' => 'demo',
                 'highlight' => 'Más elegido',
-                'capacity' => ['locales' => '1', 'cajas' => 'hasta 2', 'usuarios' => 'hasta 3', 'productos' => '~6.000'],
+                'capacity' => ['locales' => '1', 'cajas' => 'hasta 2', 'usuarios' => 'hasta 3', 'operacion' => 'Operación con equipo'],
+                'catalog' => 'Hasta ~6.000 productos (orientativo)',
                 'comparison' => [
                     'locales' => '1',
                     'cajas' => 'Hasta 2',
                     'usuarios' => 'Hasta 3',
-                    'productos' => '~6.000',
+                    'operacion' => 'Operación con equipo',
                     'soporte' => 'Estándar',
                     'crecimiento' => 'Sumás capacidad cuando lo necesitás',
                 ],
@@ -95,18 +98,20 @@ if (!function_exists('flus_web_plans')) {
                     'Hasta 2 locales',
                     'Hasta 4 cajas',
                     'Hasta 8 usuarios',
+                    'Mayor volumen',
                     'Soporte prioritario',
                 ],
                 'price_from' => true,
                 'price_fallback' => 'A definir',
                 'cta' => 'demo',
                 'highlight' => null,
-                'capacity' => ['locales' => 'hasta 2', 'cajas' => 'hasta 4', 'usuarios' => 'hasta 8', 'productos' => '~20.000'],
+                'capacity' => ['locales' => 'hasta 2', 'cajas' => 'hasta 4', 'usuarios' => 'hasta 8', 'operacion' => 'Mayor volumen'],
+                'catalog' => 'Hasta ~20.000 productos (orientativo)',
                 'comparison' => [
                     'locales' => 'Hasta 2',
                     'cajas' => 'Hasta 4',
                     'usuarios' => 'Hasta 8',
-                    'productos' => '~20.000',
+                    'operacion' => 'Mayor volumen',
                     'soporte' => 'Prioritario',
                     'crecimiento' => 'Sumás capacidad cuando lo necesitás',
                 ],
@@ -119,19 +124,20 @@ if (!function_exists('flus_web_plans')) {
                 'specs' => [
                     'Varias sucursales',
                     'Múltiples cajas y usuarios',
-                    'Gran volumen de productos',
+                    'Gran volumen de catálogo',
                     'Configuración según operación',
                 ],
                 'price_from' => false,
                 'price_fallback' => 'Según operación',
                 'cta' => 'consulta',
                 'highlight' => null,
-                'capacity' => ['locales' => 'varios', 'cajas' => 'múltiples', 'usuarios' => 'múltiples', 'productos' => 'gran volumen'],
+                'capacity' => ['locales' => 'varios', 'cajas' => 'múltiples', 'usuarios' => 'múltiples', 'operacion' => 'A convenir'],
+                'catalog' => 'Sin tope definido: se dimensiona con la operación',
                 'comparison' => [
                     'locales' => 'Varias sucursales',
                     'cajas' => 'Múltiples',
                     'usuarios' => 'Múltiples',
-                    'productos' => 'Gran volumen',
+                    'operacion' => 'A convenir',
                     'soporte' => 'A convenir',
                     'crecimiento' => 'Configuración según operación',
                 ],
@@ -198,6 +204,69 @@ if (!function_exists('flus_plan_price_text')) {
         }
 
         return $price;
+    }
+}
+
+if (!function_exists('flus_plan_price_value')) {
+    /**
+     * Valor NUMERICO del precio para datos estructurados (schema.org).
+     *
+     * Devuelve '24900' a partir de '$24.900'. Es importante NO usar un simple
+     * preg_replace('/[^\d.,]/'): en formato argentino el punto es separador de
+     * miles, asi que "24.900" debe ser 24900 y no 24.9.
+     *
+     * Criterio:
+     *   - si hay un solo separador con exactamente 3 digitos detras y ningun otro
+     *     separador, es separador de MILES  -> "24.900" => 24900
+     *   - si hay ambos separadores, el ultimo es el decimal -> "1.234,56" => 1234.56
+     *   - si el ultimo grupo no tiene 3 digitos, es decimal -> "24900,5" => 24900.5
+     *   - los decimales ,00 se descartan (los precios se muestran enteros)
+     *
+     * Devuelve '' si no hay un numero utilizable.
+     */
+    function flus_plan_price_value(string $id): string
+    {
+        $clean = preg_replace('/[^\d.,]/', '', flus_plan_price($id));
+        if ($clean === null || $clean === '' || !preg_match('/\d/', $clean)) {
+            return '';
+        }
+
+        $lastDot = strrpos($clean, '.');
+        $lastComma = strrpos($clean, ',');
+        $dotCount = substr_count($clean, '.');
+        $commaCount = substr_count($clean, ',');
+
+        $decSep = '';
+        if ($lastDot !== false && $lastComma !== false) {
+            // Ambos: el que aparece mas a la derecha es el decimal.
+            $decSep = $lastDot > $lastComma ? '.' : ',';
+        } elseif ($dotCount === 1 && $lastDot !== false && strlen(substr($clean, $lastDot + 1)) === 3) {
+            // "24.900": separador de miles, sin decimales.
+            $decSep = '';
+        } elseif ($commaCount === 1 && $lastComma !== false && strlen(substr($clean, $lastComma + 1)) === 3) {
+            // "24,900": idem en notacion con coma.
+            $decSep = '';
+        } elseif ($dotCount === 1) {
+            $decSep = '.';
+        } elseif ($commaCount === 1) {
+            $decSep = ',';
+        }
+
+        if ($decSep === '') {
+            $int = preg_replace('/\D/', '', $clean);
+            return $int === '' ? '' : (string) (int) $int;
+        }
+
+        $thousands = $decSep === '.' ? ',' : '.';
+        $normalized = str_replace($thousands, '', $clean);
+        $normalized = str_replace($decSep, '.', $normalized);
+        // Se descartan los decimales nulos.
+        $normalized = rtrim(rtrim($normalized, '0'), '.');
+        if ($normalized === '' || !is_numeric($normalized)) {
+            return '';
+        }
+
+        return $normalized;
     }
 }
 
