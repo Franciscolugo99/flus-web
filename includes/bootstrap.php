@@ -77,6 +77,7 @@ if ($basePath === '') {
     $script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
     $isLocalHost = $host === 'localhost' || str_starts_with($host, 'localhost:')
         || $host === '127.0.0.1' || str_starts_with($host, '127.0.0.1:')
+        || $host === '0.0.0.0' || str_starts_with($host, '0.0.0.0:')
         || $host === '::1' || str_starts_with($host, '[::1]:');
     if ($isLocalHost && (str_starts_with($script, '/flus-web/') || $script === '/flus-web')) {
         $basePath = '/flus-web';

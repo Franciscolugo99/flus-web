@@ -368,9 +368,12 @@
 .flus26-compare { margin-top: 40px; }
 .flus26-compare__title { margin: 0 0 16px; color: #fff; font-size: clamp(1.15rem, 1.6vw, 1.45rem); letter-spacing: -.02em; }
 .flus26-table--plans { min-width: 720px; }
-.flus26-table--plans th[scope="row"] { color: rgba(255,255,255,.62); font-weight: 700; }
-.flus26-table--plans tbody td { color: #fff; }
-.flus26-compare__foot { margin: 14px 0 0; color: rgba(255,255,255,.5); font-size: .8rem; line-height: 1.6; }
+/* La tabla tiene su PROPIO fondo claro (.flus26-tablewrap es #fff), asi que el
+   texto va oscuro. Ponerlo blanco la volvia ilegible: la primera columna y las
+   columnas Negocio/Pro/Multi quedaban invisibles. Se respetan los colores base
+   de .flus26-table y solo se ajusta el ancho de la primera columna. */
+.flus26-table--plans tbody th { width: 22%; }
+.flus26-compare__foot { margin: 14px 0 0; color: rgba(255,255,255,.62); font-size: .8rem; line-height: 1.6; }
 
 /* ── FLUS Server: modalidad aparte, fuera de los planes Web ── */
 .flus26-server-note {
