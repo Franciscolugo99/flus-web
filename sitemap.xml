@@ -85,6 +85,12 @@
     <priority>0.82</priority>
   </url>
   <url>
+    <loc>https://flus.com.ar/politica-de-cookies.php</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://flus.com.ar/aviso-legal.php</loc>
     <lastmod>2026-10-05</lastmod>
     <changefreq>yearly</changefreq>
@@ -96,10 +102,11 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
-  <url>
-    <loc>https://flus.com.ar/politica-de-cookies.php</loc>
-    <lastmod>2026-10-05</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
+  <!--
+    Las tres paginas legales se listan porque es su estado final.
+    Mientras includes/config.local.php no tenga completos los datos del titular,
+    aviso-legal.php y politica-de-privacidad.php responden 503 (fallo seguro,
+    ver includes/legal.php) y ningun buscador las va a indexar en ese estado.
+    politica-de-cookies.php no depende de datos del titular.
+  -->
 </urlset>

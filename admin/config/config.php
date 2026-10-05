@@ -37,6 +37,11 @@ if (!function_exists('admin_config')) {
                 'analytics' => [
                     'exclude_local_requests' => true,
                     'exclude_admin_sessions' => true,
+                    // Meses que se conservan los eventos de web_events. Debe
+                    // coincidir con lo que declara la politica de privacidad y
+                    // con analytics_retention_months de includes/config.local.php.
+                    // La purga real la ejecuta web_analytics_purge_expired_events().
+                    'retention_months' => 14,
                     'excluded_ips' => [
                         '127.0.0.1',
                         '::1',

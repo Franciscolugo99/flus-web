@@ -1,5 +1,10 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/includes/legal.php';
+
+// Fallo seguro: si falta cualquier dato legal requerido, esta pagina no se
+// publica. Responde 503 en lugar de mostrar informacion incompleta.
+flus_legal_require_ready();
 
 $pageTitle = 'Aviso legal | FLUS';
 $pageDescription = 'Aviso legal e identificación del titular del sitio flus.com.ar, condiciones de uso y alcance de la información publicada.';
@@ -26,23 +31,16 @@ require __DIR__ . '/includes/header.php';
 <section class="section">
   <div class="container legal-doc">
 
-    <div class="form-alert form-alert-error" role="note" style="margin-bottom:28px;">
-      <strong>Datos pendientes de completar por el titular.</strong>
-      La información marcada como <em>[COMPLETAR]</em> no fue inventada ni asumida: debe
-      cargarla el propietario de FLUS con los datos registrales reales antes de publicar
-      esta página como definitiva.
-    </div>
-
     <h2>1. Titular del sitio</h2>
     <p>El sitio <?= e($site['domain']) ?> es operado por:</p>
     <ul class="plain-list">
-      <li><strong>Razón social / titular:</strong> [COMPLETAR — razón social o nombre y apellido del titular]</li>
-      <li><strong>CUIT:</strong> [COMPLETAR — CUIT]</li>
-      <li><strong>Domicilio legal:</strong> [COMPLETAR — calle, número, localidad, provincia, código postal]</li>
-      <li><strong>Condición frente al IVA:</strong> [COMPLETAR — responsable inscripto / monotributo / etc.]</li>
+      <li><strong>Razón social / titular:</strong> <?= e(flus_legal('legal_name')) ?></li>
+      <li><strong>CUIT:</strong> <?= e(flus_legal('legal_cuit')) ?></li>
+      <li><strong>Domicilio legal:</strong> <?= e(flus_legal('legal_address')) ?></li>
+      <li><strong>Condición frente al IVA:</strong> <?= e(flus_legal('legal_tax_status')) ?></li>
       <li><strong>Correo de contacto:</strong> <?= e($site['contact_email']) ?></li>
       <li><strong>Teléfono / WhatsApp comercial:</strong> <?= e($site['contact_phone']) ?></li>
-      <li><strong>Inscripción registral (si corresponde):</strong> [COMPLETAR — datos de inscripción, o indicar "No corresponde"]</li>
+      <li><strong>Inscripción registral:</strong> <?= e(flus_legal('legal_registration')) ?></li>
     </ul>
 
     <h2>2. Objeto del sitio</h2>

@@ -47,4 +47,28 @@ return [
     // whatsapp_url() agrega el 9 automaticamente si falta, pero lo ideal es
     // cargarlo ya correcto.
     'whatsapp_number' => '+54 9 261-000-0000',
+
+    // ── Datos legales del titular ───────────────────────────────
+    // Los consumen aviso-legal.php y politica-de-privacidad.php. NO se
+    // hardcodean en esas paginas: este repositorio es publico y estos datos
+    // identifican al titular, por eso viven solo aca.
+    //
+    // IMPORTANTE: si falta cualquiera de los valores marcados como requeridos,
+    // las paginas legales NO se publican: responden 503 en lugar de mostrar
+    // datos incompletos. Ver includes/legal.php.
+    'legal_name' => '',          // req. Razon social, o nombre y apellido si es persona fisica
+    'legal_cuit' => '',          // req. Formato 20-12345678-9
+    'legal_address' => '',       // req. Domicilio legal completo, tal como se quiere publicar
+    'legal_tax_status' => '',    // req. 'Responsable inscripto' | 'Monotributo' | 'Exento' | ...
+    'legal_registration' => '',  // req. Datos registrales, o el texto 'No corresponde'
+
+    // ── Hosting / transferencia de datos ────────────────────────
+    'hosting_provider' => '',    // req. Ej: 'Wiroos Internet Hosting'
+    'hosting_country' => '',     // req. Pais del datacenter. Confirmar con el proveedor:
+                                 //      no se asume que sea Argentina.
+
+    // ── Plazos de conservacion declarados ───────────────────────
+    // Deben coincidir con el comportamiento real, no solo con el texto legal.
+    'form_retention_months' => 24,        // Consultas del formulario: meses desde el ultimo contacto
+    'analytics_retention_months' => 14,   // Analitica propia: la purga real usa este valor
 ];

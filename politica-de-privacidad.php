@@ -1,5 +1,9 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/includes/legal.php';
+
+// Fallo seguro: sin datos legales completos esta pagina no se publica.
+flus_legal_require_ready();
 
 $pageTitle = 'Política de privacidad | FLUS';
 $pageDescription = 'Qué datos recopila flus.com.ar, con qué finalidad, por cuánto tiempo se conservan y cómo ejercer tus derechos sobre ellos.';
@@ -27,17 +31,12 @@ require __DIR__ . '/includes/header.php';
 <section class="section">
   <div class="container legal-doc">
 
-    <div class="form-alert form-alert-error" role="note" style="margin-bottom:28px;">
-      <strong>Datos pendientes de completar por el titular.</strong>
-      Lo marcado como <em>[COMPLETAR]</em> no fue inventado: debe cargarlo el propietario de
-      FLUS antes de publicar esta página como definitiva.
-    </div>
-
     <h2>1. Responsable del tratamiento</h2>
     <ul class="plain-list">
-      <li><strong>Responsable:</strong> [COMPLETAR — razón social o nombre y apellido]</li>
-      <li><strong>CUIT:</strong> [COMPLETAR — CUIT]</li>
-      <li><strong>Domicilio:</strong> [COMPLETAR — domicilio legal completo]</li>
+      <li><strong>Responsable:</strong> <?= e(flus_legal('legal_name')) ?></li>
+      <li><strong>CUIT:</strong> <?= e(flus_legal('legal_cuit')) ?></li>
+      <li><strong>Domicilio:</strong> <?= e(flus_legal('legal_address')) ?></li>
+      <li><strong>Condición frente al IVA:</strong> <?= e(flus_legal('legal_tax_status')) ?></li>
       <li><strong>Correo para ejercer derechos:</strong> <?= e($site['contact_email']) ?></li>
     </ul>
 
@@ -89,8 +88,9 @@ require __DIR__ . '/includes/header.php';
     <p>
       El servidor de hosting puede registrar accesos (dirección IP, fecha y hora, recurso
       solicitado y agente de usuario) como parte de su funcionamiento normal y por razones de
-      seguridad. [COMPLETAR — indicar el plazo de conservación de logs que aplica el hosting
-      y si el titular accede a ellos.]
+      seguridad. Esos registros los administra el proveedor de hosting
+      (<?= e(flus_legal('hosting_provider')) ?>) según su propia política y sus plazos de
+      conservación; no se utilizan para perfilarte ni con fines comerciales.
     </p>
 
     <h2>3. Finalidad y base legal del tratamiento</h2>
@@ -104,7 +104,7 @@ require __DIR__ . '/includes/header.php';
     <h2>4. Destinatarios y transferencias</h2>
     <p>No vendemos ni alquilamos datos personales. Los datos pueden ser tratados por:</p>
     <ul class="plain-list">
-      <li><strong>Proveedor de hosting y correo</strong> del sitio (infraestructura donde se aloja la aplicación y donde se reciben las consultas). [COMPLETAR — nombre del proveedor de hosting y país donde se alojan los datos.]</li>
+      <li><strong>Proveedor de hosting y correo:</strong> <?= e(flus_legal('hosting_provider')) ?>, con servidores ubicados en <?= e(flus_legal('hosting_country')) ?>. Es la infraestructura donde se aloja la aplicación y donde se reciben las consultas.</li>
       <li><strong>Google</strong>, únicamente si aceptaste la analítica, y solo para las finalidades de medición descritas.</li>
       <li><strong>Cloudflare</strong>, si la verificación anti-spam del formulario está activa, para validar que el envío proviene de una persona.</li>
       <li><strong>Autoridades públicas</strong>, cuando exista un requerimiento legal fundado.</li>
@@ -127,8 +127,9 @@ require __DIR__ . '/includes/header.php';
 
     <h2>6. Plazo de conservación</h2>
     <ul class="plain-list">
-      <li><strong>Consultas del formulario:</strong> mientras sea necesario para atender tu consulta y el seguimiento comercial posterior. [COMPLETAR — plazo concreto que definirá el titular, por ejemplo 24 meses desde el último contacto.]</li>
-      <li><strong>Eventos de analítica:</strong> [COMPLETAR — plazo, por ejemplo 14 meses.]</li>
+      <li><strong>Consultas del formulario:</strong> <?= e((string) flus_legal_int('form_retention_months')) ?> meses desde el último contacto. Transcurrido ese plazo se eliminan.</li>
+      <li><strong>Eventos de analítica propia:</strong> <?= e((string) flus_legal_int('analytics_retention_months')) ?> meses. La base de datos aplica una purga automática de los eventos más antiguos, de modo que este plazo refleja el comportamiento real del sistema y no sólo una declaración.</li>
+      <li><strong>Datos de Google Analytics 4:</strong> se conservan según el plazo configurado en la propiedad de GA4 de FLUS. El máximo que ofrece la plataforma para datos de eventos es de 14 meses; la configuración se verifica periódicamente para que coincida con lo aquí declarado.</li>
       <li><strong>Registros técnicos y de seguridad:</strong> el tiempo necesario para prevenir abuso y cumplir obligaciones legales.</li>
     </ul>
 

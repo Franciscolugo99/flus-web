@@ -461,9 +461,53 @@ if (!function_exists('web_analytics_store_event')) {
                 :extra_json
             )');
 
-            return $stmt->execute($data);
+            $stored = $stmt->execute($data);
+            if ($stored) {
+                web_analytics_purge_expired_events($pdo);
+            }
+
+            return $stored;
         } catch (Throwable $e) {
             return false;
+        }
+    }
+}
+
+if (!function_exists('web_analytics_purge_expired_events')) {
+    /**
+     * Borra eventos de analitica mas antiguos que el plazo de conservacion
+     * declarado en la politica de privacidad.
+     *
+     * Se ejecuta de forma probabilistica (1 de cada 100 escrituras), igual que
+     * la limpieza de security_rate_limits, para no pagar un DELETE en cada
+     * visita. Nunca lanza: si falla, no debe afectar ni a la visita en curso ni
+     * al registro del evento.
+     *
+     * El plazo lo resuelve flus_analytics_retention_months() (includes/legal.php),
+     * de modo que la politica de privacidad y la purga real usan el mismo valor y
+     * no pueden divergir.
+     */
+    function web_analytics_purge_expired_events($pdo): void
+    {
+        try {
+            if (random_int(1, 100) !== 1) {
+                return;
+            }
+
+            require_once __DIR__ . '/legal.php';
+
+            $months = flus_analytics_retention_months();
+            if ($months < 1) {
+                $months = 14;
+            }
+
+            $stmt = $pdo->prepare(
+                'DELETE FROM web_events WHERE created_at < DATE_SUB(NOW(), INTERVAL :months MONTH)'
+            );
+            $stmt->bindValue(':months', $months, PDO::PARAM_INT);
+            $stmt->execute();
+        } catch (Throwable $e) {
+            // La purga es mantenimiento: nunca debe romper la peticion.
         }
     }
 }
