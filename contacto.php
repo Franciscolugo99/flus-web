@@ -79,6 +79,7 @@ $contactErrors = [];
 $contactNotice = null;
 $contactNoticeType = 'success';
 $privacyAccepted = false;
+$rateLimitUnavailable = false;
 $turnstileEnabled = turnstile_enabled();
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
@@ -99,16 +100,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $turnstileToken = trim((string) ($_POST['cf-turnstile-response'] ?? ''));
     $privacyAccepted = (string) ($_POST['privacy'] ?? '') !== '';
 
+    // Rate limit. Si no se puede consultar (por ejemplo la base de datos no
+    // responde) NO se bloquea el envio: se registra en el log y se sigue. Antes
+    // se agregaba un error que impedia enviar, de modo que una caida de la base
+    // tumbaba el canal de contacto entero. La proteccion antispam efectiva sigue
+    // siendo el honeypot (y Turnstile cuando esta configurado).
+    $rateLimitUnavailable = false;
     try {
         $contactLimit = security_rate_limit('contact_form_ip', security_client_ip(), 5, 900);
         if (!$contactLimit['allowed']) {
             http_response_code(429);
             header('Retry-After: ' . $contactLimit['retry_after']);
-            $contactErrors['rate_limit'] = 'Esperá unos minutos antes de volver a enviar.';
+            $contactErrors['rate_limit'] =
+                'Esperá unos minutos antes de volver a enviar.';
         }
     } catch (Throwable $e) {
-        error_log('[FLUS Web] contact rate limit: ' . $e->getMessage());
-        $contactErrors['rate_limit'] = 'No pudimos validar el envío en este momento.';
+        $rateLimitUnavailable = true;
+        error_log('[FLUS Web] rate limit no disponible, se permite el envio: ' . $e->getMessage());
     }
 
     // CSRF: exige token en el cuerpo + cookie coincidente (double submit).
@@ -173,7 +181,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 
     if ($websiteField !== '') {
+        // Honeypot: se simula exito y no se envia nada. Hay que forzar el tipo
+        // 'success' porque si alguna validacion previa marco error, el aviso
+        // quedaria como error y delataria la trampa al bot.
         $contactNotice = 'Gracias. Recibimos tu consulta.';
+        $contactNoticeType = 'success';
+        $contactErrors = [];
     } elseif ($contactErrors === []) {
         $mailTo = trim((string) ($site['mail_to'] ?? $site['contact_email']));
         $mailFrom = trim((string) ($site['mail_from'] ?? $site['contact_email']));
@@ -213,6 +226,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
         if ($mailSent) {
             $contactNotice = 'Gracias. Tu mensaje fue enviado y te vamos a responder a la brevedad.';
+            $contactNoticeType = 'success';
             $contactForm = [
                 'name' => '',
                 'email' => '',
@@ -249,11 +263,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST' && isset($_GET['enviado']))
 // el header empiece a imprimir HTML: setcookie() falla si ya hay salida.
 security_csrf_token();
 
-// Si el token CSRF fallo, ese es el mensaje accionable que debe ver la persona
-// (el resto de los errores no le sirven de nada hasta que reenvie el formulario).
+// Prioridad de mensajes: CSRF es lo unico que impide avanzar; si la validacion
+// del rate limit no esta disponible pero todo lo demas esta bien, no alarmamos
+// al visitante (el problema es interno y ya quedo en el log).
 if (isset($contactErrors['csrf'])) {
     $contactNotice = $contactErrors['csrf'];
     $contactNoticeType = 'error';
+} elseif ($rateLimitUnavailable && $contactErrors === [] && $contactNoticeType === 'success') {
+    $contactNotice = null;
 }
 
 require __DIR__ . '/includes/header.php';
