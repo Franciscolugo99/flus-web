@@ -253,22 +253,22 @@
 .flus26-edition__tag, .flus26-edition__code { font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .flus26-edition__tag { color: #5b21b6; }
 .flus26-edition--server .flus26-edition__tag { color: #c4b5fd; }
-.flus26-edition__code { color: #aaa3b5; }
+.flus26-edition__code { color: #6a5f79; }
 .flus26-edition h3 { margin: 34px 0 10px; font-size: clamp(2.6rem, 4.2vw, 4.4rem); line-height: .95; letter-spacing: -.055em; }
 .flus26-edition__lead { min-height: 78px; color: #746d7f; line-height: 1.65; }
 .flus26-edition--server .flus26-edition__lead { color: rgba(245,243,255,.62); }
 .flus26-edition__price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin: 28px 0; padding: 20px 0; border-top: 1px solid #ece8f1; border-bottom: 1px solid #ece8f1; }
 .flus26-edition--server .flus26-edition__price { border-color: rgba(255,255,255,.09); }
-.flus26-edition__price > span { width: 100%; color: #9b94a5; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; }
+.flus26-edition__price > span { width: 100%; color: #635c70; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; }
 .flus26-edition__price strong { font-size: clamp(2.35rem, 4vw, 3.8rem); line-height: 1; letter-spacing: -.05em; }
-.flus26-edition__price small { color: #8e8797; font-weight: 800; }
+.flus26-edition__price small { color: #665f73; font-weight: 800; }
 .flus26-checks { display: grid; gap: 12px; list-style: none; }
 .flus26-checks li { position: relative; padding-left: 28px; color: #514b5a; font-size: .91rem; }
 .flus26-edition--server .flus26-checks li { color: rgba(245,243,255,.68); }
 .flus26-checks li::before { content: "✓"; position: absolute; left: 0; top: -.05em; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; color: #4c1d95; background: #ede9fe; font-size: .68rem; font-weight: 900; }
 .flus26-edition__foot { position: absolute; left: 34px; right: 34px; bottom: 30px; display: grid; gap: 14px; padding-top: 20px; border-top: 1px solid #ece8f1; }
 .flus26-edition--server .flus26-edition__foot { border-color: rgba(255,255,255,.09); }
-.flus26-edition__foot > span { color: #8a8393; font-size: .78rem; }
+.flus26-edition__foot > span { color: #665f73; font-size: .78rem; }
 .flus26-arrowlink { display: inline-flex; align-items: center; justify-content: space-between; color: #4c1d95; font-weight: 900; }
 .flus26-edition--server .flus26-arrowlink { color: #ddd6fe; }
 .flus26-arrowlink span { font-size: 1.3rem; transition: transform .2s ease; }
@@ -292,7 +292,7 @@
 .flus26-screen:hover img { transform: scale(1.015); }
 .flus26-screen figcaption { display: flex; justify-content: space-between; gap: 18px; align-items: center; min-height: 72px; padding: 16px 18px; }
 .flus26-screen figcaption b { color: #1c1723; }
-.flus26-screen figcaption span { color: #837c8c; font-size: .8rem; text-align: right; }
+.flus26-screen figcaption span { color: #665f73; font-size: .8rem; text-align: right; }
 
 .flus26-compare { background: #f7f6fb; }
 .flus26-tablewrap { overflow-x: auto; border: 1px solid #dfd9e8; border-radius: 24px; background: #fff; box-shadow: 0 20px 50px rgba(27,19,45,.05); }
@@ -1382,7 +1382,7 @@
 .flus26-tour__num {
   align-self: start;
   padding-top: 4px;
-  color: #9d94a8;
+  color: #6a5f79;
   font-size: .68rem;
   font-weight: 900;
   letter-spacing: .06em;
@@ -1390,7 +1390,7 @@
 .flus26-tour__tab.is-active .flus26-tour__num { color: #c4b5fd; }
 .flus26-tour__tabcopy { display: grid; gap: 5px; }
 .flus26-tour__tabcopy strong { font-size: 1rem; letter-spacing: -.015em; }
-.flus26-tour__tabcopy small { color: #82798b; font-size: .76rem; line-height: 1.45; }
+.flus26-tour__tabcopy small { color: #665f73; font-size: .76rem; line-height: 1.45; }
 .flus26-tour__tab.is-active .flus26-tour__tabcopy small { color: rgba(255,255,255,.58); }
 .flus26-tour__arrow { color: #8b5cf6; font-size: 1.1rem; opacity: .45; transition: transform .2s ease, opacity .2s ease; }
 .flus26-tour__tab.is-active .flus26-tour__arrow { color: #ddd6fe; opacity: 1; transform: translateX(2px); }

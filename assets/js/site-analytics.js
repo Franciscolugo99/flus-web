@@ -2,17 +2,41 @@
   const endpoint = window.FLUS_ANALYTICS_ENDPOINT || '/track.php';
   const allowedEvents = new Set([
     'page_view',
+    // Eventos canonicos del sitio comercial.
     'click_whatsapp',
+    'demo_click',
+    'contact_submit',
+    'pricing_view',
+    'cta_primary_click',
     'click_contact',
-    'click_demo',
+    'click_resource',
     'click_download',
     'lead_form_success',
     'finder_result',
+    'view_resource_article',
+    'view_industry_landing',
   ]);
+
+  // Nombres historicos -> nombres canonicos. Permite migrar el marcado sin
+  // perder datos ya recogidos ni duplicar eventos.
+  const eventAliases = {
+    click_demo: 'demo_click',
+  };
+
+  function canonicalEvent(name) {
+    return eventAliases[name] || name;
+  }
 
   const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
   if (localHosts.has(window.location.hostname) || window.location.hostname.endsWith('.local')) {
     return;
+  }
+
+  // La analitica es no esencial: sin consentimiento explicito no se envia ni
+  // se escribe nada. consent.js carga este archivo solo despues de aceptar,
+  // pero el guard se mantiene por defensa en profundidad.
+  function consentGranted() {
+    return window.FLUSAnalyticsAllowed === true;
   }
 
   function safeText(value, maxLength = 190) {
@@ -137,13 +161,18 @@
   }
 
   function track(eventType, extra = {}) {
-    if (!allowedEvents.has(eventType)) {
+    if (!consentGranted()) {
+      return;
+    }
+
+    const canonical = canonicalEvent(eventType);
+    if (!allowedEvents.has(canonical)) {
       return;
     }
 
     const firstTouch = getFirstTouch();
     const payload = {
-      event_type: eventType,
+      event_type: canonical,
       page_url: safeText(window.location.pathname + window.location.search, 255) || '/',
       page_title: safeText(document.title, 190),
       referrer: firstTouch.referrer || safeText(document.referrer, 255),
@@ -154,7 +183,7 @@
       extra: Object.assign({ landing_page: firstTouch.landing_page || '/' }, extra),
     };
 
-    sendToGa4(eventType, extra);
+    sendToGa4(canonical, extra);
     sendPayload(payload);
   }
 
@@ -192,10 +221,42 @@
     track,
   };
 
-  if (!window.__flusAnalyticsPageTracked) {
+  function firePageView() {
+    if (window.__flusAnalyticsPageTracked) {
+      return;
+    }
     window.__flusAnalyticsPageTracked = true;
     track('page_view');
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', firePageView, { once: true });
+  } else {
+    firePageView();
+  }
+
+  // pricing_view: se dispara una sola vez cuando la seccion de precios entra
+  // en pantalla, para medir interes comercial real (no solo el pageview).
+  (function observePricing() {
+    const pricing = document.getElementById('precios');
+    if (!pricing || typeof IntersectionObserver !== 'function') {
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) {
+          return;
+        }
+        observer.disconnect();
+        track('pricing_view', {
+          label: safeText(pricing.querySelector('h2')?.textContent || 'Precios', 120),
+        });
+      });
+    }, { threshold: 0.35 });
+
+    observer.observe(pricing);
+  })();
 
   document.addEventListener('click', (event) => {
     const target = event.target.closest('[data-track-event], a[href]');
@@ -204,7 +265,7 @@
     }
 
     const eventType = autoEventFromElement(target);
-    if (!allowedEvents.has(eventType)) {
+    if (!allowedEvents.has(canonicalEvent(eventType))) {
       return;
     }
 
@@ -226,7 +287,7 @@
     }
 
     const eventType = form.getAttribute('data-track-event') || '';
-    if (!allowedEvents.has(eventType)) {
+    if (!allowedEvents.has(canonicalEvent(eventType))) {
       return;
     }
 

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/consent.php';
 
 if (!isset($pageTitle)) {
     $pageTitle = 'FLUS | Sistema de gestión comercial';
@@ -109,17 +110,22 @@ $bodyClass = isset($pageBodyClass) && is_string($pageBodyClass) && $pageBodyClas
 <?php foreach ($schemas as $schema): ?>
   <script type="application/ld+json"><?= json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?></script>
 <?php endforeach; ?>
-<?php if (preg_match('/^G-[A-Z0-9]+$/', trim((string)($site['ga4_measurement_id'] ?? '')))): ?>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=<?= e((string)$site['ga4_measurement_id']) ?>"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', <?= json_encode((string)$site['ga4_measurement_id']) ?>, {anonymize_ip: true});
-  </script>
-<?php endif; ?>
+<?php
+// Consentimiento + analitica. Debe ir ANTES de cualquier script de medicion:
+// GA4 ya no se inyecta desde el HTML, lo carga consent.js solo si hay
+// consentimiento explicito (opt-in real, sin cookies antes de aceptar).
+$consentScriptPath = __DIR__ . '/../assets/js/consent.js';
+$consentScriptSrc = asset_url('js/consent.js');
+if (is_file($consentScriptPath)) {
+    $consentScriptSrc .= '?v=' . filemtime($consentScriptPath);
+}
+?>
+  <?= flus_consent_bootstrap_script() ?>
+  <script>window.__flusAnalyticsSrc = <?= json_encode(asset_url('js/site-analytics.js')) ?>;</script>
+  <script src="<?= e($consentScriptSrc) ?>"></script>
 </head>
 <body class="<?= e($bodyClass) ?>">
+  <a class="skip-link" href="#main-content">Saltar al contenido</a>
   <header class="site-header" id="site-header">
     <div class="container header-inner">
       <a class="brand" href="<?= e(site_url()) ?>" aria-label="Ir al inicio de FLUS">
@@ -189,10 +195,10 @@ $bodyClass = isset($pageBodyClass) && is_string($pageBodyClass) && $pageBodyClas
           <a href="<?= e(site_url('recursos/')) ?>" class="<?= is_active_section('recursos') ? 'active' : '' ?>" <?= is_active_section('recursos') ? 'aria-current="page"' : '' ?>>Recursos</a>
           <a href="<?= e(site_url()) ?>#precios">Precios</a>
           <a href="<?= e(site_url('contacto.php')) ?>" class="<?= is_active_page('contacto.php') ? 'active' : '' ?>" <?= is_active_page('contacto.php') ? 'aria-current="page"' : '' ?> data-track-event="click_contact" data-track-label="Header contacto">Contacto</a>
-          <a href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" class="nav-cta" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Header demo">Ver demo</a>
+          <a href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" class="nav-cta" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="Header probar FLUS">Probar FLUS</a>
         </nav>
       </div>
     </div>
   </header>
 
-  <main>
+  <main id="main-content">

@@ -67,7 +67,7 @@ require __DIR__ . '/../includes/header.php';
   <div class="container">
     <div class="growth-cta">
       <div><h2>¿Querés ver estos procesos funcionando?</h2><p>FLUS Web reúne caja, ventas, productos y stock en una misma operación y podés probarlo desde el navegador.</p></div>
-      <div class="growth-cta__actions"><a class="btn btn-primary" href="<?= e((string)$site['demo_url']) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Recursos CTA demo">Abrir demo Web</a><a class="btn btn-secondary" href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" data-track-event="click_contact" data-track-label="Recursos CTA contacto">Contarnos tu caso</a></div>
+      <div class="growth-cta__actions"><a class="btn btn-primary" href="<?= e((string)$site['demo_url']) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="Recursos CTA demo">Probar FLUS</a><a class="btn btn-secondary" href="<?= e(site_url('contacto.php')) ?>#formulario-contacto" data-track-event="click_contact" data-track-label="Recursos CTA contacto">Contarnos tu caso</a></div>
     </div>
   </div>
 </section>

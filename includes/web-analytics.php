@@ -9,10 +9,21 @@ if (!function_exists('web_analytics_allowed_events')) {
     {
         return [
             'page_view',
+            // Eventos canonicos del sitio comercial.
             'click_whatsapp',
+            'demo_click',
+            'contact_submit',
+            'pricing_view',
+            'cta_primary_click',
+            // Nombres historicos que siguen emitiendose.
             'click_contact',
             'click_demo',
+            'click_resource',
             'click_download',
+            'lead_form_success',
+            'finder_result',
+            'view_resource_article',
+            'view_industry_landing',
         ];
     }
 }
@@ -173,7 +184,26 @@ if (!function_exists('web_analytics_ip_hash')) {
             return null;
         }
 
-        $salt = 'flus-web-analytics-v1';
+        // El salt NO debe ser un literal publico en el repo: con un salt
+        // conocido el hash de una IPv4 se revierte por fuerza bruta. Se lee de
+        // configuracion (misma convencion que security.rate_limit_salt) y, si
+        // no esta definido, se deriva uno estable por instalacion para no
+        // romper la deduplicacion entre requests.
+        $salt = trim((string) (
+            admin_config('analytics')['ip_hash_salt']
+            ?? admin_config('security')['rate_limit_salt']
+            ?? ''
+        ));
+
+        if ($salt === '') {
+            $salt = getenv('FLUS_ANALYTICS_IP_SALT') ?: '';
+        }
+
+        if ($salt === '') {
+            // Fallback estable por instalacion, sin exponer el valor.
+            $salt = 'flus-web-analytics-v2|' . (string) ($_SERVER['SERVER_NAME'] ?? 'flus.com.ar');
+        }
+
         return hash('sha256', $salt . '|' . $ip);
     }
 }
@@ -294,8 +324,18 @@ if (!function_exists('web_analytics_event_label')) {
             'page_view' => 'Vista de pagina',
             'click_whatsapp' => 'WhatsApp',
             'click_contact' => 'Contacto',
+            'demo_click' => 'Demo',
+            'contact_submit' => 'Envio de formulario',
+            'pricing_view' => 'Vista de precios',
+            'cta_primary_click' => 'CTA principal',
+            // Nombres historicos, por si quedan eventos ya guardados.
             'click_demo' => 'Demo',
             'click_download' => 'Descarga',
+            'click_resource' => 'Recurso',
+            'lead_form_success' => 'Lead enviado',
+            'finder_result' => 'Resultado del orientador',
+            'view_resource_article' => 'Vista de articulo',
+            'view_industry_landing' => 'Vista de landing por rubro',
         ];
 
         return $labels[$eventType] ?? $eventType;

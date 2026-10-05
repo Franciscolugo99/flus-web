@@ -27,6 +27,7 @@ $contactForm = [
 $contactErrors = [];
 $contactNotice = null;
 $contactNoticeType = 'success';
+$privacyAccepted = false;
 $turnstileEnabled = turnstile_enabled();
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
@@ -39,6 +40,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     ];
     $websiteField = trim((string) ($_POST['website'] ?? ''));
     $turnstileToken = trim((string) ($_POST['cf-turnstile-response'] ?? ''));
+    $privacyAccepted = (string) ($_POST['privacy'] ?? '') !== '';
 
     try {
         $contactLimit = security_rate_limit('contact_form_ip', security_client_ip(), 5, 900);
@@ -50,6 +52,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } catch (Throwable $e) {
         error_log('[FLUS Web] contact rate limit: ' . $e->getMessage());
         $contactErrors['rate_limit'] = 'No pudimos validar el envío en este momento.';
+    }
+
+    // CSRF: exige token en el cuerpo + cookie coincidente (double submit).
+    if (!security_csrf_validate()) {
+        $contactErrors['csrf'] = 'Tu sesión de formulario expiró. Volvé a enviar la consulta.';
+    }
+
+    if (!$privacyAccepted) {
+        $contactErrors['privacy'] = 'Para enviar la consulta tenés que aceptar la política de privacidad.';
     }
 
     if ($contactForm['name'] === '') {
@@ -138,14 +149,40 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 'company' => '',
                 'message' => '',
             ];
+            $privacyAccepted = false;
         } else {
-            $contactNotice = 'No pudimos enviar el mensaje en este momento. Probá por WhatsApp o escribinos a info@flus.com.ar.';
+            error_log('[FLUS Web] envio SMTP de contacto fallo (mail_to=' . $mailTo . ').');
+            $contactNotice = 'No pudimos enviar el mensaje en este momento. Probá por WhatsApp o escribinos a ' . ($site['contact_email'] ?? 'nuestro correo') . '.';
             $contactNoticeType = 'error';
         }
     } else {
         $contactNotice = 'Revisá los campos marcados para poder enviar la consulta.';
         $contactNoticeType = 'error';
     }
+
+    // PRG: si el envio fue exitoso, redirigimos para que un refresh no reenvie.
+    if ($contactNoticeType === 'success' && $contactNotice !== null && $contactErrors === []) {
+        header('Location: ' . site_url('contacto.php') . '?enviado=1#formulario-contacto', true, 303);
+        exit;
+    }
+}
+
+// Retorno del PRG: mostramos la confirmacion y habilitamos el evento de lead.
+$trackLeadSuccess = false;
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST' && isset($_GET['enviado'])) {
+    $contactNotice = 'Gracias. Tu mensaje fue enviado y te vamos a responder a la brevedad.';
+    $trackLeadSuccess = true;
+}
+
+// El token CSRF debe generarse (y por lo tanto emitir su cookie) ANTES de que
+// el header empiece a imprimir HTML: setcookie() falla si ya hay salida.
+security_csrf_token();
+
+// Si el token CSRF fallo, ese es el mensaje accionable que debe ver la persona
+// (el resto de los errores no le sirven de nada hasta que reenvie el formulario).
+if (isset($contactErrors['csrf'])) {
+    $contactNotice = $contactErrors['csrf'];
+    $contactNoticeType = 'error';
 }
 
 require __DIR__ . '/includes/header.php';
@@ -161,7 +198,7 @@ require __DIR__ . '/includes/header.php';
       </p>
       <div class="hero-actions">
         <?php if ($site['whatsapp_number'] !== ''): ?>
-          <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Hero contacto WhatsApp">Escribir por WhatsApp</a>
+          <a class="btn btn-primary" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS y coordinar una demo.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Hero contacto WhatsApp">Hablar por WhatsApp</a>
         <?php endif; ?>
         <?php if ($site['contact_email'] !== ''): ?>
           <a class="btn btn-secondary" href="mailto:<?= e($site['contact_email']) ?>" data-track-event="click_contact" data-track-label="Hero contacto correo">Enviar correo</a>
@@ -199,7 +236,7 @@ require __DIR__ . '/includes/header.php';
       <?php if ($contactNotice !== null && $contactNoticeType === 'success'): ?>
         <div class="form-success-panel" role="status" aria-live="polite">
           <div class="form-success-icon" aria-hidden="true">
-            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 48 48" fill="none">
               <circle class="form-success-icon__circle" cx="24" cy="24" r="21" stroke="currentColor" stroke-width="2.5"/>
               <path class="form-success-icon__check" d="M14 24.5l7.5 7.5 12.5-14" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -214,7 +251,8 @@ require __DIR__ . '/includes/header.php';
         </div>
       <?php else: ?>
 
-      <form class="contact-form" data-contact-form data-track-event="click_contact" action="<?= e(site_url('contacto.php')) ?>#formulario-contacto" method="post" novalidate>
+      <form class="contact-form" data-contact-form data-track-event="contact_submit" action="<?= e(site_url('contacto.php')) ?>#formulario-contacto" method="post" novalidate>
+        <?= security_csrf_input() ?>
         <div class="form-grid">
 
           <div class="form-field form-field--float<?= $contactForm['name'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['name']) ? ' has-error' : '' ?>">
@@ -224,9 +262,11 @@ require __DIR__ . '/includes/header.php';
               maxlength="120" value="<?= e($contactForm['name']) ?>"
               autocomplete="name" required placeholder=" "
               data-validate="required" data-error-required="Ingresá tu nombre."
+              <?= isset($contactErrors['name']) ? 'aria-invalid="true"' : '' ?>
+              aria-describedby="field-name-error"
             >
             <label class="form-label" for="field-name">Nombre <span class="form-required" aria-hidden="true">*</span></label>
-            <small class="form-error" aria-live="polite"><?= isset($contactErrors['name']) ? e($contactErrors['name']) : '' ?></small>
+            <small class="form-error" id="field-name-error" aria-live="polite"><?= isset($contactErrors['name']) ? e($contactErrors['name']) : '' ?></small>
           </div>
 
           <div class="form-field form-field--float<?= $contactForm['email'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['email']) ? ' has-error' : '' ?>">
@@ -238,9 +278,11 @@ require __DIR__ . '/includes/header.php';
               data-validate="required|email"
               data-error-required="Ingresá un correo para responderte."
               data-error-email="Ingresá un correo válido."
+              <?= isset($contactErrors['email']) ? 'aria-invalid="true"' : '' ?>
+              aria-describedby="field-email-error"
             >
             <label class="form-label" for="field-email">Correo <span class="form-required" aria-hidden="true">*</span></label>
-            <small class="form-error" aria-live="polite"><?= isset($contactErrors['email']) ? e($contactErrors['email']) : '' ?></small>
+            <small class="form-error" id="field-email-error" aria-live="polite"><?= isset($contactErrors['email']) ? e($contactErrors['email']) : '' ?></small>
           </div>
 
           <div class="form-field form-field--float<?= $contactForm['phone'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['phone']) ? ' has-error' : '' ?>">
@@ -249,9 +291,11 @@ require __DIR__ . '/includes/header.php';
               type="text" name="phone" id="field-phone"
               maxlength="60" value="<?= e($contactForm['phone']) ?>"
               autocomplete="tel" placeholder=" "
+              <?= isset($contactErrors['phone']) ? 'aria-invalid="true"' : '' ?>
+              aria-describedby="field-phone-error"
             >
             <label class="form-label" for="field-phone">Teléfono</label>
-            <small class="form-error" aria-live="polite"><?= isset($contactErrors['phone']) ? e($contactErrors['phone']) : '' ?></small>
+            <small class="form-error" id="field-phone-error" aria-live="polite"><?= isset($contactErrors['phone']) ? e($contactErrors['phone']) : '' ?></small>
           </div>
 
           <div class="form-field form-field--float<?= $contactForm['company'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['company']) ? ' has-error' : '' ?>">
@@ -260,9 +304,11 @@ require __DIR__ . '/includes/header.php';
               type="text" name="company" id="field-company"
               maxlength="120" value="<?= e($contactForm['company']) ?>"
               autocomplete="organization" placeholder=" "
+              <?= isset($contactErrors['company']) ? 'aria-invalid="true"' : '' ?>
+              aria-describedby="field-company-error"
             >
             <label class="form-label" for="field-company">Negocio</label>
-            <small class="form-error" aria-live="polite"><?= isset($contactErrors['company']) ? e($contactErrors['company']) : '' ?></small>
+            <small class="form-error" id="field-company-error" aria-live="polite"><?= isset($contactErrors['company']) ? e($contactErrors['company']) : '' ?></small>
           </div>
 
         </div>
@@ -274,14 +320,34 @@ require __DIR__ . '/includes/header.php';
             rows="5" maxlength="3000" required placeholder=" "
             data-validate="required" data-error-required="Contanos un poco sobre tu consulta."
             data-char-counter
+            <?= isset($contactErrors['message']) ? 'aria-invalid="true"' : '' ?>
+            aria-describedby="field-message-error"
           ><?= e($contactForm['message']) ?></textarea>
           <label class="form-label" for="field-message">Mensaje <span class="form-required" aria-hidden="true">*</span></label>
           <div class="form-field-footer">
-            <small class="form-error" aria-live="polite"><?= isset($contactErrors['message']) ? e($contactErrors['message']) : '' ?></small>
+            <small class="form-error" id="field-message-error" aria-live="polite"><?= isset($contactErrors['message']) ? e($contactErrors['message']) : '' ?></small>
             <span class="form-char-counter" data-max="3000">
               <span class="form-char-counter__current"><?= mb_strlen($contactForm['message']) ?></span>&nbsp;/ 3000
             </span>
           </div>
+        </div>
+
+        <div class="form-consent<?= isset($contactErrors['privacy']) ? ' has-error' : '' ?>">
+          <label class="form-consent__label" for="field-privacy">
+            <input
+              type="checkbox" name="privacy" id="field-privacy" value="1"
+              required
+              <?= $privacyAccepted ? 'checked' : '' ?>
+              <?= isset($contactErrors['privacy']) ? 'aria-invalid="true"' : '' ?>
+              aria-describedby="field-privacy-error"
+            >
+            <span>
+              Acepto la
+              <a href="<?= e(site_url('politica-de-privacidad.php')) ?>" target="_blank" rel="noopener">política de privacidad</a>
+              y el tratamiento de mis datos para responder esta consulta.
+            </span>
+          </label>
+          <small class="form-error" id="field-privacy-error" aria-live="polite"><?= isset($contactErrors['privacy']) ? e($contactErrors['privacy']) : '' ?></small>
         </div>
 
         <div class="form-honeypot" aria-hidden="true">

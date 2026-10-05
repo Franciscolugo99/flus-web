@@ -15,10 +15,15 @@ $site = [
     'turnstile_site_key' => '',
     'turnstile_secret_key' => '',
     // SEO / medición: completar en includes/config.local.php cuando tengas los IDs.
+    // Ver includes/config.local.php.example. NO hardcodear IDs en este archivo:
+    // el valor real de produccion vive en config.local.php (fuera del repo).
     'google_site_verification' => '',
     'ga4_measurement_id' => '',
-    'contact_phone' => '+54 261-273-1742',
-    'whatsapp_number' => '+54 261-273-1742',
+    // Telefono comercial para mostrar y para enlaces tel: (sin prefijo 9).
+    'contact_phone' => '+54 261 273-1742',
+    // WhatsApp exige el prefijo 9 de servicio movil en Argentina: 54 + 9 + 261 + numero.
+    // Esto genera https://wa.me/5492612731742 de forma correcta.
+    'whatsapp_number' => '+54 9 261 273-1742',
     'demo_url' => 'https://app.flus.com.ar/',
     'commercial' => [
         'web' => [
@@ -154,17 +159,44 @@ function phone_href(string $phone): string
     return preg_replace('/\D+/', '', $phone);
 }
 
-function has_contact_info(): bool
+/**
+ * Convierte un telefono argentino a la forma que exige wa.me.
+ *
+ * WhatsApp necesita 54 + 9 + codigo de area + numero para celulares de
+ * Argentina. Si la config ya trae el 9 (formato internacional correcto) se
+ * respeta; si viene sin el 9 (formato fijo/local) se agrega, para no volver a
+ * generar enlaces wa.me inalcanzables.
+ */
+function whatsapp_msisdn(string $number): string
 {
-    global $site;
-    return $site['contact_email'] !== '' || $site['contact_phone'] !== '' || $site['whatsapp_number'] !== '';
+    $digits = preg_replace('/\D+/', '', $number);
+    if ($digits === null || $digits === '') {
+        return '';
+    }
+
+    // Ya tiene el prefijo movil de Argentina (54 9 ...).
+    if (str_starts_with($digits, '549')) {
+        return $digits;
+    }
+
+    // 54 + area + numero, sin el 9: agregarlo.
+    if (str_starts_with($digits, '54') && strlen($digits) >= 12) {
+        return '549' . substr($digits, 2);
+    }
+
+    // Numero local con 0 de larga distancia (ej. 0261...): quitar el 0.
+    if (str_starts_with($digits, '0')) {
+        $digits = ltrim($digits, '0');
+    }
+
+    return '549' . $digits;
 }
 
 function whatsapp_url(string $message = ''): string
 {
     global $site;
 
-    $number = preg_replace('/\D+/', '', $site['whatsapp_number'] ?? '');
+    $number = whatsapp_msisdn((string) ($site['whatsapp_number'] ?? ''));
     if ($number === '') {
         return '#';
     }
@@ -175,6 +207,21 @@ function whatsapp_url(string $message = ''): string
     }
 
     return $url;
+}
+
+/** Enlace tel: para el telefono comercial (sin el 9 de WhatsApp). */
+function tel_url(): string
+{
+    global $site;
+
+    $digits = phone_href((string) ($site['contact_phone'] ?? ''));
+    return $digits === '' ? '' : 'tel:' . $digits;
+}
+
+function has_contact_info(): bool
+{
+    global $site;
+    return $site['contact_email'] !== '' || $site['contact_phone'] !== '' || $site['whatsapp_number'] !== '';
 }
 
 function breadcrumb_schema(array $items): array

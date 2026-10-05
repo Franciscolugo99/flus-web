@@ -48,7 +48,7 @@ require __DIR__ . '/../includes/header.php';
   </article>
   <aside class="article-side"><div class="article-side__sticky">
     <div class="article-side__box"><strong>En esta guía</strong><?php foreach (($articleToc ?? []) as $anchor => $label): ?><a href="#<?= e($anchor) ?>"><?= e($label) ?></a><?php endforeach; ?></div>
-    <div class="article-side__box"><strong>Verlo en FLUS</strong><p style="margin:0 0 10px;color:#766c7e;font-size:14px;line-height:1.5">Probá la operación real desde el navegador.</p><a class="btn btn-primary" href="<?= e((string)$site['demo_url']) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Artículo <?= e($article['slug']) ?>">Abrir FLUS Web</a></div>
+    <div class="article-side__box"><strong>Verlo en FLUS</strong><p style="margin:0 0 10px;color:#766c7e;font-size:14px;line-height:1.5">Probá la operación real desde el navegador.</p><a class="btn btn-primary" href="<?= e((string)$site['demo_url']) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="Artículo <?= e($article['slug']) ?>Probar FLUS</a></div>
   </div></aside>
 </div>
 <section class="resource-section resource-section--soft"><div class="container"><div class="resource-head"><h2>Seguí aprendiendo.</h2><p>Estas guías están conectadas para que puedas ordenar el comercio por etapas.</p></div><div class="related-grid">

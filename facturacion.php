@@ -35,7 +35,7 @@ require __DIR__ . '/includes/header.php';
         reduce pasos manuales y sostiene mejor la trazabilidad de cada operación.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Revisar facturación</a>
+        <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="facturacion probar FLUS">Probar FLUS</a>
         <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>">Ver sistema completo</a>
       </div>
     </div>
@@ -109,7 +109,7 @@ require __DIR__ . '/includes/header.php';
         La idea no es sumar complejidad. La idea es cerrar mejor el proceso comercial y sostener una gestión más prolija.
       </p>
       <div class="inline-actions">
-        <a class="btn btn-primary" href="<?= e(site_url('contacto.php')) ?>" data-track-event="click_demo">Consultar integración</a>
+        <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="facturacion probar FLUS">Probar FLUS</a>
         <a class="btn btn-secondary" href="<?= e(site_url()) ?>#precios">Ver planes y precios</a>
       </div>
     </div>

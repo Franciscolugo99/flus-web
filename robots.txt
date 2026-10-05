@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /portal/
+Disallow: /includes/
+Disallow: /track.php
+Disallow: /*.bak$
 
 Sitemap: https://flus.com.ar/sitemap.xml

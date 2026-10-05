@@ -62,13 +62,33 @@ ErrorDocument 404 /404.php
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(self), microphone=(), geolocation=()"
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
-  Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com"
+  Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com; frame-src https://challenges.cloudflare.com"
 </IfModule>
 
-# ── Forzar HTTPS (activar cuando tengas SSL en Wiroos) ───────
+# ── MIME correcto para el manifest de la PWA ─────────────────
+# Sin esto, algunos servidores devuelven application/octet-stream y el
+# manifest no se aplica.
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+  AddType image/x-icon .ico
+</IfModule>
+
+# ── Forzar HTTPS + unificar el host canonico en flus.com.ar ──
+# Objetivo: una sola URL canonica https://flus.com.ar/ (sin www y sin http).
+# Se resuelve en UN solo salto: la regla decide el destino final y redirige
+# directo, evitando cadenas http://www -> https://www -> https:// del tipo
+# "redirect chain". Incluye X-Forwarded-Proto para instalaciones detras de proxy.
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # No tocar hosts locales de desarrollo.
   RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|10\.[0-9.]+|192\.168\.[0-9.]+|172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9.]+)(:\d+)?$ [NC]
+
+  # Caso 1: viene con www (con o sin HTTPS) -> https://flus.com.ar sin www.
+  RewriteCond %{HTTP_HOST} ^www\.flus\.com\.ar$ [NC]
+  RewriteRule ^ https://flus.com.ar%{REQUEST_URI} [L,R=301]
+
+  # Caso 2: sin www pero por HTTP -> HTTPS.
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
   RewriteRule ^ https://flus.com.ar%{REQUEST_URI} [L,R=301]

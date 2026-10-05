@@ -26,8 +26,25 @@ return [
     'turnstile_site_key' => 'TU_TURNSTILE_SITE_KEY',
     'turnstile_secret_key' => 'TU_TURNSTILE_SECRET_KEY',
 
+    // ── SEO y medicion (opcionales) ─────────────────────────────
+    // Google Analytics 4. Formato: G-XXXXXXXXXX.
+    // Mientras este vacio, GA4 NO se carga en el sitio (y tampoco se carga
+    // antes del consentimiento de cookies: ver assets/js/consent.js).
+    'ga4_measurement_id' => '',
+
+    // Token de verificacion de Google Search Console (solo el valor del
+    // meta name="google-site-verification"). Si se verifica por DNS, dejar vacio.
+    'google_site_verification' => '',
+
+    // Dato publico de contacto (no es un secreto).
+    'demo_url' => 'https://app.flus.com.ar/',
+
     // Datos de contacto publicos
     'contact_email' => 'info@tudominio.com.ar',
     'contact_phone' => '+54 261-000-0000',
-    'whatsapp_number' => '+54 261-000-0000',
+    // WhatsApp: usar el formato internacional con el 9 de movil de Argentina.
+    // Ejemplo correcto: +54 9 261 273-1742  ->  https://wa.me/5492612731742
+    // whatsapp_url() agrega el 9 automaticamente si falta, pero lo ideal es
+    // cargarlo ya correcto.
+    'whatsapp_number' => '+54 9 261-000-0000',
 ];

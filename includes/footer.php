@@ -14,9 +14,9 @@
           Dos ediciones para una misma operación: FLUS Web para trabajar desde cualquier dispositivo y FLUS Server para instalaciones locales más completas y personalizadas.
         </p>
         <div class="footer-cta-row">
-          <a href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="click_demo" data-track-label="Footer demo Web">Demo Web</a>
+          <a href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="Footer probar FLUS">Probar FLUS</a>
           <?php if ($site['whatsapp_number'] !== ''): ?>
-            <a class="footer-whatsapp" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer WhatsApp">WhatsApp comercial</a>
+            <a class="footer-whatsapp" href="<?= e(whatsapp_url('Hola, quiero conocer FLUS.')) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="Footer WhatsApp">Hablar por WhatsApp</a>
           <?php endif; ?>
         </div>
       </div>
@@ -61,6 +61,12 @@
 
     <div class="container footer-bottom">
       <p>&copy; <?= date('Y') ?> FLUS. Gestión comercial para una operación más ordenada, trazable y profesional.</p>
+      <ul class="footer-legal">
+        <li><a href="<?= e(site_url('aviso-legal.php')) ?>">Aviso legal</a></li>
+        <li><a href="<?= e(site_url('politica-de-privacidad.php')) ?>">Privacidad</a></li>
+        <li><a href="<?= e(site_url('politica-de-cookies.php')) ?>">Cookies</a></li>
+        <li><button type="button" class="footer-legal__consent" data-consent-reopen>Preferencias de cookies</button></li>
+      </ul>
       <p><?= e($site['domain']) ?></p>
     </div>
   </footer>
@@ -92,16 +98,16 @@
       $scriptSrc .= '?v=' . filemtime($scriptPath);
   }
   ?>
-  <script>window.FLUS_ANALYTICS_ENDPOINT = <?= json_encode(site_url('track.php')) ?>;</script>
-  <?php
-  $analyticsScriptPath = __DIR__ . '/../assets/js/site-analytics.js';
-  $analyticsScriptSrc = asset_url('js/site-analytics.js');
-  if (is_file($analyticsScriptPath)) {
-      $analyticsScriptSrc .= '?v=' . filemtime($analyticsScriptPath);
-  }
-  ?>
   <script src="<?= e($scriptSrc) ?>"></script>
-  <script src="<?= e($analyticsScriptSrc) ?>"></script>
+  <script>
+    // Reabrir las preferencias de cookies desde el footer.
+    document.addEventListener('click', function (event) {
+      var trigger = event.target.closest('[data-consent-reopen]');
+      if (!trigger || !window.FLUSConsent) return;
+      event.preventDefault();
+      window.FLUSConsent.reset();
+    });
+  </script>
 <?php if (!empty($trackLeadSuccess)): ?>
   <script>window.FLUSTrack && window.FLUSTrack.track('lead_form_success', {form_id:'formulario-contacto', label:'Consulta comercial enviada'});</script>
 <?php endif; ?>
