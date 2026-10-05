@@ -812,28 +812,28 @@ moduleMarquees.forEach((marquee) => {
     if (isServer) {
       icon.textContent = 'S';
       title.textContent = 'FLUS Server';
-      copy.textContent = 'Por lo que marcaste, tu operación parece necesitar una instalación más personalizada, con varias cajas, datos para pasar o sistemas para conectar.';
-      benefits.innerHTML = '<li>Se adapta a tus cajas y puestos</li><li>Se instala en tu negocio o servidor</li><li>Cotización según lo que necesitás</li>';
+      copy.textContent = 'Por lo que marcaste, tu operación parece necesitar una implementación más personalizada, con infraestructura propia, más puestos o integraciones específicas.';
+      benefits.innerHTML = '<li>Implementación según puestos y operación</li><li>Infraestructura propia o del cliente</li><li>Cotización personalizada según alcance</li>';
       primary.textContent = 'Cotizar FLUS Server';
       primary.setAttribute('href', whatsappUrl);
       primary.setAttribute('target', '_blank');
       primary.setAttribute('rel', 'noopener');
       primary.setAttribute('data-track-event', 'click_whatsapp');
       primary.setAttribute('data-track-label', 'Quiz cotizar Server');
-      secondary.textContent = 'Volver a FLUS Web →';
+      secondary.textContent = 'Comparar con FLUS Web →';
       secondary.setAttribute('href', '#flus-web');
     } else {
       icon.textContent = 'W';
       title.textContent = 'FLUS Web';
-      copy.textContent = 'Por lo que marcaste, te conviene empezar con la versión Web: rápida de implementar y con la parte técnica resuelta por FLUS.';
-      benefits.innerHTML = '<li>Funciona en PC, tablet y teléfono</li><li>FLUS se ocupa de la parte técnica</li><li>Entrada mensual simple para empezar</li>';
-      primary.textContent = 'Ver la operación';
+      copy.textContent = 'Por lo que marcaste, te conviene empezar con la versión Web: rápida de implementar, administrada por FLUS y lista para usar desde distintos dispositivos.';
+      benefits.innerHTML = '<li>Acceso desde navegador y PWA</li><li>Infraestructura administrada</li><li>Entrada mensual simple para empezar</li>';
+      primary.textContent = 'Probar FLUS Web';
       primary.setAttribute('href', webDemoUrl);
       primary.setAttribute('target', '_blank');
       primary.setAttribute('rel', 'noopener');
-      primary.setAttribute('data-track-event', 'click_demo');
-      primary.setAttribute('data-track-label', 'Quiz ver operación');
-      secondary.textContent = 'Consultar por WhatsApp';
+      primary.setAttribute('data-track-event', 'cta_primary_click');
+      primary.setAttribute('data-track-label', 'Quiz probar FLUS');
+      secondary.textContent = 'Hablar con nosotros →';
       secondary.setAttribute('href', whatsappUrl);
     }
   }

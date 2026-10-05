@@ -3,7 +3,11 @@ $site = [
     'name' => 'FLUS',
     'tagline' => 'Sistema de gestión comercial',
     'domain' => 'flus.com.ar',
-    'contact_email' => 'info@flus.com.ar',
+    // Correo PUBLICO que se muestra en el sitio (produccion usa soporte@).
+    'contact_email' => 'soporte@flus.com.ar',
+    // Buzon donde caen las consultas del formulario y datos de envio SMTP.
+    // Se mantienen en info@ porque es lo que el repositorio venia usando y
+    // cambiarlo alteraria el destino real de los mensajes: confirmar antes.
     'mail_to' => 'info@flus.com.ar',
     'mail_from' => 'info@flus.com.ar',
     'mail_host' => 'mail.flus.com.ar',

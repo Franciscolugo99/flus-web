@@ -17,13 +17,64 @@ $pageSchemas = [
     ],
 ];
 
+/**
+ * Cualificacion comercial del formulario.
+ * Las opciones estan copiadas EXACTAMENTE del formulario publicado en
+ * produccion (/contacto.php) para no perder ni alterar datos que hoy se
+ * reciben. No se invento ninguna opcion.
+ */
+$contactQualifiers = [
+    'business_type' => [
+        'label' => 'Rubro / tipo de negocio',
+        'required' => true,
+        'default' => 'Elegir…',
+        'options' => ['Kiosco / almacén', 'Dietética', 'Vinoteca', 'Ferretería', 'Indumentaria', 'Bazar / regalería', 'Otro comercio minorista', 'Servicios / otro'],
+    ],
+    'current_system' => [
+        'label' => '¿Cómo trabajás hoy?',
+        'required' => true,
+        'default' => 'Elegir…',
+        'options' => ['Excel / planillas', 'Cuaderno / manual', 'Otro sistema', 'Estoy abriendo el negocio', 'Otro'],
+    ],
+    'locations' => [
+        'label' => 'Locales',
+        'required' => false,
+        'default' => 'No informado',
+        'options' => ['1', '2', '3 o más'],
+    ],
+    'registers' => [
+        'label' => 'Cajas / puestos',
+        'required' => false,
+        'default' => 'No informado',
+        'options' => ['1', '2', '3-5', '6 o más'],
+    ],
+    'products' => [
+        'label' => 'Productos aprox.',
+        'required' => false,
+        'default' => 'No informado',
+        'options' => ['Menos de 500', '500-2.000', '2.000-10.000', 'Más de 10.000'],
+    ],
+    'needs_arca' => [
+        'label' => '¿Necesitás facturación ARCA?',
+        'required' => false,
+        'default' => 'No informado',
+        'options' => ['Sí', 'No', 'Más adelante', 'No estoy seguro'],
+    ],
+    'priority' => [
+        'label' => '¿Qué querés resolver primero?',
+        'required' => false,
+        'default' => 'Elegir…',
+        'options' => ['Caja y ventas', 'Stock e inventario', 'Compras y proveedores', 'Facturación', 'Ordenar todo el circuito', 'Reemplazar sistema actual'],
+    ],
+];
+
 $contactForm = [
     'name' => '',
     'email' => '',
     'phone' => '',
     'company' => '',
     'message' => '',
-];
+] + array_map(static fn (array $q): string => '', $contactQualifiers);
 $contactErrors = [];
 $contactNotice = null;
 $contactNoticeType = 'success';
@@ -38,6 +89,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         'company' => trim((string) ($_POST['company'] ?? '')),
         'message' => trim((string) ($_POST['message'] ?? '')),
     ];
+    // Solo se aceptan valores que existan en la lista de opciones: un valor
+    // arbitrario enviado a mano se descarta en vez de guardarse.
+    foreach ($contactQualifiers as $key => $def) {
+        $raw = trim((string) ($_POST[$key] ?? ''));
+        $contactForm[$key] = in_array($raw, $def['options'], true) ? $raw : '';
+    }
     $websiteField = trim((string) ($_POST['website'] ?? ''));
     $turnstileToken = trim((string) ($_POST['cf-turnstile-response'] ?? ''));
     $privacyAccepted = (string) ($_POST['privacy'] ?? '') !== '';
@@ -97,6 +154,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $contactErrors['message'] = 'El mensaje es demasiado largo.';
     }
 
+    // Campos de cualificacion obligatorios (los mismos que exige produccion).
+    foreach ($contactQualifiers as $key => $def) {
+        if ($def['required'] && $contactForm[$key] === '') {
+            $contactErrors[$key] = 'Elegí una opción.';
+        }
+    }
+
     if ($turnstileEnabled) {
         if ($turnstileToken === '') {
             $contactErrors['turnstile'] = 'Completá la verificación antes de enviar la consulta.';
@@ -124,9 +188,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             'Telefono: ' . ($contactForm['phone'] !== '' ? $contactForm['phone'] : 'No informado'),
             'Empresa: ' . ($contactForm['company'] !== '' ? $contactForm['company'] : 'No informada'),
             '',
-            'Mensaje:',
-            $contactForm['message'],
+            'Cualificacion comercial:',
         ];
+        foreach ($contactQualifiers as $key => $def) {
+            $bodyLines[] = $def['label'] . ': '
+                . ($contactForm[$key] !== '' ? $contactForm[$key] : 'No informado');
+        }
+        $bodyLines[] = '';
+        $bodyLines[] = 'Mensaje:';
+        $bodyLines[] = $contactForm['message'];
+
         $mailSent = false;
         if ($mailTo !== '') {
             $mailSent = smtp_send_mail([
@@ -148,7 +219,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 'phone' => '',
                 'company' => '',
                 'message' => '',
-            ];
+            ] + array_map(static fn (array $q): string => '', $contactQualifiers);
             $privacyAccepted = false;
         } else {
             error_log('[FLUS Web] envio SMTP de contacto fallo (mail_to=' . $mailTo . ').');
@@ -311,6 +382,35 @@ require __DIR__ . '/includes/header.php';
             <small class="form-error" id="field-company-error" aria-live="polite"><?= isset($contactErrors['company']) ? e($contactErrors['company']) : '' ?></small>
           </div>
 
+        </div>
+
+        <div class="form-grid contact-qualifier-grid">
+          <?php foreach ($contactQualifiers as $key => $def):
+            $fieldId = 'field-' . str_replace('_', '-', $key);
+            $errorId = $fieldId . '-error';
+            $hasError = isset($contactErrors[$key]);
+            $value = (string) $contactForm[$key];
+            $fullWidth = $key === 'priority';
+          ?>
+          <div class="form-field"<?= $fullWidth ? ' style="grid-column:1/-1"' : '' ?>>
+            <label class="form-label form-label--static" for="<?= e($fieldId) ?>">
+              <?= e($def['label']) ?><?php if ($def['required']): ?> <span class="form-required" aria-hidden="true">*</span><?php endif; ?>
+            </label>
+            <select
+              class="form-input form-select<?= $hasError ? ' is-invalid' : '' ?>"
+              name="<?= e($key) ?>" id="<?= e($fieldId) ?>"
+              <?php if ($def['required']): ?>required data-validate="required" data-error-required="Elegí una opción."<?php endif; ?>
+              <?= $hasError ? 'aria-invalid="true"' : '' ?>
+              aria-describedby="<?= e($errorId) ?>"
+            >
+              <option value=""><?= e($def['default']) ?></option>
+              <?php foreach ($def['options'] as $option): ?>
+                <option value="<?= e($option) ?>"<?= $value === $option ? ' selected' : '' ?>><?= e($option) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <small class="form-error" id="<?= e($errorId) ?>" aria-live="polite"><?= $hasError ? e($contactErrors[$key]) : '' ?></small>
+          </div>
+          <?php endforeach; ?>
         </div>
 
         <div class="form-field form-field--float form-field--textarea<?= $contactForm['message'] !== '' ? ' has-value' : '' ?><?= isset($contactErrors['message']) ? ' has-error' : '' ?>">
