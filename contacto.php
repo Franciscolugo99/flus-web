@@ -43,7 +43,7 @@ $contactQualifiers = [
         'options' => ['1', '2', '3 o más'],
     ],
     'registers' => [
-        'label' => 'Cajas / puestos',
+        'label' => 'Cajas de cobro',
         'required' => false,
         'default' => 'No informado',
         'options' => ['1', '2', '3-5', '6 o más'],
@@ -55,7 +55,7 @@ $contactQualifiers = [
         'options' => ['Menos de 500', '500-2.000', '2.000-10.000', 'Más de 10.000'],
     ],
     'needs_arca' => [
-        'label' => '¿Necesitás facturación ARCA?',
+        'label' => '¿Necesitás facturación electrónica con ARCA?',
         'required' => false,
         'default' => 'No informado',
         'options' => ['Sí', 'No', 'Más adelante', 'No estoy seguro'],
@@ -299,7 +299,7 @@ require __DIR__ . '/includes/header.php';
       <ul class="check-list">
         <li>Revisar si FLUS encaja con tu operación.</li>
         <li>Mirar ventas, stock, caja y facturación con foco real.</li>
-        <li>Entender dónde habría más orden y trazabilidad.</li>
+        <li>Entender qué podés ordenar y llevar un mejor registro.</li>
         <li>Definir próximos pasos para una demo más profunda.</li>
       </ul>
     </aside>
@@ -560,7 +560,7 @@ require __DIR__ . '/includes/header.php';
       </p>
       <ul class="link-list">
         <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Sistema de gestión</a></li>
-        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Sistema POS</a></li>
+        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Caja y ventas</a></li>
         <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Control de stock</a></li>
         <li><a href="<?= e(site_url('facturacion.php')) ?>">Facturación</a></li>
       </ul>

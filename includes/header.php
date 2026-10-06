@@ -160,11 +160,11 @@ if (is_file($consentScriptPath)) {
             <div class="nav-dropdown__menu">
               <a href="<?= e(site_url('flus-web.php')) ?>" class="<?= is_active_page('flus-web.php') ? 'active' : '' ?>">
                 <strong>FLUS Web</strong>
-                <span>Navegador, PWA, PC, tablet y teléfono</span>
+                <span>Usalo desde tu computadora, tablet o celular</span>
               </a>
               <a href="<?= e(site_url('flus-server.php')) ?>" class="<?= is_active_page('flus-server.php') ? 'active' : '' ?>">
                 <strong>FLUS Server</strong>
-                <span>Infraestructura propia y proyecto a medida</span>
+                <span>Instalación en los equipos de tu negocio</span>
               </a>
             </div>
           </div>
@@ -179,7 +179,7 @@ if (is_file($consentScriptPath)) {
                 <span>Ventas, caja, stock, clientes y facturación</span>
               </a>
               <a href="<?= e(site_url('sistema-pos.php')) ?>" class="<?= is_active_page('sistema-pos.php') ? 'active' : '' ?>">
-                <strong>Sistema POS</strong>
+                <strong>Caja y ventas</strong>
                 <span>Punto de venta ágil con control de caja</span>
               </a>
               <a href="<?= e(site_url('control-de-stock.php')) ?>" class="<?= is_active_page('control-de-stock.php') ? 'active' : '' ?>">
@@ -201,4 +201,4 @@ if (is_file($consentScriptPath)) {
     </div>
   </header>
 
-  <main id="main-content">
+  <main id="main-content" tabindex="-1">

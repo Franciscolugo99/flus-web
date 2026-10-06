@@ -10,7 +10,7 @@ function flus_resource_articles(): array
         'controlar-stock-comercio' => [
             'title' => 'Cómo controlar el stock de un comercio sin depender de Excel',
             'short_title' => 'Cómo controlar el stock de un comercio',
-            'description' => 'Método práctico para ordenar entradas, ventas, ajustes, inventarios y stock mínimo sin perder trazabilidad.',
+            'description' => 'Cómo ordenar entradas, ventas, ajustes, inventarios y stock mínimo con un historial claro de movimientos.',
             'category' => 'Stock e inventario',
             'published' => '2026-08-18',
             'updated' => '2026-08-18',
@@ -27,7 +27,7 @@ function flus_resource_articles(): array
             'updated' => '2026-08-18',
             'reading_time' => '7 min',
             'image' => 'assets/img/seo/sistema-pos-caja-comercio-flus.webp',
-            'image_alt' => 'Pantalla de caja POS de FLUS para ventas y cierre de caja',
+            'image_alt' => 'Pantalla de caja de ventas de FLUS para ventas y cierre de caja',
         ],
         'excel-vs-sistema-de-gestion' => [
             'title' => 'Excel vs. sistema de gestión: cuándo conviene cambiar en un comercio',
@@ -38,7 +38,7 @@ function flus_resource_articles(): array
             'updated' => '2026-08-18',
             'reading_time' => '8 min',
             'image' => 'assets/img/seo/dashboard-ventas-comercio-flus.webp',
-            'image_alt' => 'Dashboard de ventas e indicadores de FLUS para comercios',
+            'image_alt' => 'Resumen de ventas e indicadores de FLUS para comercios',
         ],
         'que-sistema-necesita-un-kiosco' => [
             'title' => 'Qué sistema necesita un kiosco para controlar ventas, caja y stock',
@@ -49,7 +49,7 @@ function flus_resource_articles(): array
             'updated' => '2026-08-18',
             'reading_time' => '9 min',
             'image' => 'assets/img/seo/sistema-pos-caja-comercio-flus.webp',
-            'image_alt' => 'Sistema POS FLUS usado para ventas rápidas en un comercio',
+            'image_alt' => 'Caja y ventas FLUS usado para ventas rápidas en un comercio',
         ],
     ];
 }

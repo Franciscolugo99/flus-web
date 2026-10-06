@@ -322,7 +322,7 @@
 /* ── Planes de FLUS Web ────────────────────────────────────────
    Cuatro cards en escritorio, 2x2 en tablet y una columna en movil.
    Se evita la grilla de 4 columnas angostas: a 980px ya pasa a 2x2. */
-.flus26-price-grid--plans { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.flus26-price-grid.flus26-price-grid--plans { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .flus26-price-card--plan { display: flex; flex-direction: column; padding: 24px 22px; }
 .flus26-price-card--plan .flus26-price-card__top { gap: 10px; }
 .flus26-price-card--plan .flus26-price-card__label { color: #ddd6fe; }
@@ -345,12 +345,21 @@
 
 .flus26-price-card--plan .flus26-price-card__amount { margin: 16px 0 14px; }
 .flus26-price-card--plan .flus26-price-card__amount strong { font-size: clamp(1.75rem, 2.4vw, 2.5rem); letter-spacing: -.04em; }
-/* Sin precio configurado no se inventa un numero: se muestra mas chico y neutro. */
-.flus26-price-card--plan .flus26-price-card__amount strong.is-placeholder {
-  color: rgba(255,255,255,.62);
-  font-size: clamp(1.25rem, 1.6vw, 1.5rem);
+/* La cotizacion tiene el mismo peso visual que los abonos, sin inventar un precio. */
+.flus26-price-card--plan .flus26-price-card__amount strong.is-quote {
+  color: rgba(255,255,255,.78);
   font-weight: 800;
   letter-spacing: -.02em;
+}
+
+/* Alinear cada fila por su contenido real, sin fijar alturas ni recortar texto. */
+@supports (grid-template-rows: subgrid) {
+  .flus26-price-card--plan {
+    display: grid;
+    grid-row: span 6;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
 }
 
 .flus26-price-card__specs { display: grid; gap: 9px; margin: 0 0 20px; padding: 0; list-style: none; }
@@ -363,9 +372,12 @@
 .flus26-pricing .btn-secondary:hover { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.06); }
 
 .flus26-price-note--pending { color: rgba(255,255,255,.6); }
+.flus26-price-note--terms { color: rgba(255,255,255,.72); font-size: .82rem; line-height: 1.6; }
 
 /* ── Tabla comparativa ─────────────────────────────────────── */
 .flus26-compare { margin-top: 40px; }
+/* Dentro del pricing, el titulo y la nota claros van sobre su fondo oscuro. */
+.flus26-pricing .flus26-compare { background: transparent; }
 .flus26-compare__title { margin: 0 0 16px; color: #fff; font-size: clamp(1.15rem, 1.6vw, 1.45rem); letter-spacing: -.02em; }
 .flus26-table--plans { min-width: 720px; }
 /* La tabla tiene su PROPIO fondo claro (.flus26-tablewrap es #fff), asi que el
@@ -385,10 +397,10 @@
 .flus26-server-note p { margin: 0 0 18px; color: rgba(255,255,255,.6); font-size: .88rem; line-height: 1.6; }
 
 @media (max-width: 980px) {
-  .flus26-price-grid--plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .flus26-price-grid.flus26-price-grid--plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 700px) {
-  .flus26-price-grid--plans { grid-template-columns: 1fr; }
+  .flus26-price-grid.flus26-price-grid--plans { grid-template-columns: 1fr; }
   .flus26-price-card--plan { padding: 22px 20px; }
   .flus26-server-note { padding: 22px 20px; }
 }
@@ -480,6 +492,7 @@
   padding-bottom: 34px;
 }
 .flus26-edition__lead { min-height: 0; }
+.flus26-edition .flus26-checks { margin-top: 18px; }
 .flus26-checks {
   margin-bottom: 28px;
   padding-bottom: 2px;
@@ -493,6 +506,10 @@
 }
 .flus26-edition__foot > span {
   line-height: 1.45;
+}
+.flus26-edition--server .flus26-edition__code,
+.flus26-edition--server .flus26-edition__foot > span {
+  color: rgba(245,243,255,.68);
 }
 .flus26-arrowlink {
   min-height: 32px;
@@ -1538,8 +1555,10 @@
 
 @media (max-width: 980px) {
   .flus26-tour { grid-template-columns: 1fr; }
-  .flus26-tour__nav { grid-template-columns: repeat(4, minmax(0, 1fr)); overflow-x: auto; padding: 8px; }
-  .flus26-tour__tab { grid-template-columns: 1fr; min-width: 145px; min-height: 88px; gap: 5px; }
+  .flus26-tour__nav { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px; }
+  .flus26-tour__tab { grid-template-columns: 1fr; min-width: 0; min-height: 64px; gap: 5px; text-align: center; }
+  .flus26-tour__tab:hover { transform: none; }
+  .flus26-tour__tab.is-active { box-shadow: none; }
   .flus26-tour__num, .flus26-tour__arrow { display: none; }
   .flus26-tour__tabcopy small { display: none; }
   .flus26-tour__tabcopy strong { font-size: .86rem; }
@@ -1548,8 +1567,8 @@
   .flus26-product-tour__head { margin-bottom: 24px; }
   .flus26-product-tour__head h2 br { display: none; }
   .flus26-tour { gap: 12px; }
-  .flus26-tour__nav { margin: 0 -2px; border-radius: 18px; }
-  .flus26-tour__tab { min-width: 118px; min-height: 54px; padding: 10px 12px; border-radius: 13px; }
+  .flus26-tour__nav { grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 18px; }
+  .flus26-tour__tab { min-width: 0; min-height: 48px; padding: 10px 12px; border-radius: 13px; }
   .flus26-tour__stage { border-radius: 20px; }
   .flus26-tour__windowbar { grid-template-columns: 55px 1fr; min-height: 42px; padding: 0 12px; }
   .flus26-tour__windowbar > strong { justify-self: start; font-size: .68rem; }
@@ -1582,7 +1601,7 @@
 .page-index .flus26-finder__secondary { color: #5b21b6; font-weight: 850; }
 .page-index .flus26-finder__secondary:hover { color: #241334; }
 .page-index .flus26-price-card__textlink { display: none; }
-.page-index .flus26-price-card .btn { margin-top: 22px; }
+.page-index .flus26-price-card:not(.flus26-price-card--plan) .btn { margin-top: 22px; }
 
 @media (max-width: 980px) {
   .flus26-social__inner { grid-template-columns: 1fr 1fr; }

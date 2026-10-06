@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/web-analytics.php';
 require_once __DIR__ . '/includes/security.php';
+require_once __DIR__ . '/includes/consent.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -17,6 +18,12 @@ if (strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 if (!security_same_origin_request()) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'origin_not_allowed'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// Defensa en servidor: revocar el consentimiento tambien impide guardar eventos.
+if (!flus_analytics_allowed()) {
+    http_response_code(204);
     exit;
 }
 

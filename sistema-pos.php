@@ -1,19 +1,19 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
-$pageTitle = 'Sistema POS para comercios con caja y stock integrado | FLUS';
-$pageDescription = 'FLUS funciona como sistema POS para comercios que necesitan vender, cobrar, revisar caja y operar con stock dentro de una misma logica comercial.';
+$pageTitle = 'Caja y ventas para comercios con caja y stock integrado | FLUS';
+$pageDescription = 'FLUS funciona como sistema de caja y ventas para comercios que necesitan vender, cobrar, revisar caja y operar con stock dentro de una misma logica comercial.';
 $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
-    ['name' => 'Sistema POS', 'url' => page_url('sistema-pos.php')],
+    ['name' => 'Caja y ventas', 'url' => page_url('sistema-pos.php')],
 ];
 $pageSchemas = [
     [
         '@context' => 'https://schema.org',
         '@type' => 'SoftwareApplication',
-        'name' => 'FLUS — Sistema POS',
+        'name' => 'FLUS — Caja y ventas',
         'applicationCategory' => 'BusinessApplication',
         'operatingSystem' => 'Web',
-        'description' => 'Sistema POS para comercios con punto de venta ágil, control de caja, múltiples medios de pago y stock integrado.',
+        'description' => 'Caja y ventas para comercios con punto de venta ágil, control de caja, múltiples medios de pago y stock integrado.',
         'url' => page_url('sistema-pos.php'),
         'featureList' => 'Punto de venta, Control de caja, Medios de pago, Stock integrado, Historial de clientes, Facturación',
     ],
@@ -26,10 +26,10 @@ require __DIR__ . '/includes/header.php';
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="<?= e(site_url()) ?>">Inicio</a>
         <span>/</span>
-        <span aria-current="page">Sistema POS</span>
+        <span aria-current="page">Caja y ventas</span>
       </nav>
       <span class="eyebrow">Pantalla de cobro</span>
-      <h1>Un sistema POS para vender y cobrar con m&aacute;s control, no solo m&aacute;s r&aacute;pido</h1>
+      <h1>Un sistema de caja y ventas para vender y cobrar con m&aacute;s control, no solo m&aacute;s r&aacute;pido</h1>
       <p>
         FLUS ayuda a trabajar el mostrador con agilidad, pero tambi&eacute;n con mejor contexto sobre caja,
         medios de pago, stock y continuidad comercial.
@@ -41,12 +41,12 @@ require __DIR__ . '/includes/header.php';
     </div>
 
     <aside class="hero-panel">
-      <h2>Qu&eacute; deber&iacute;a aportar un POS serio</h2>
+      <h2>Qu&eacute; deber&iacute;a aportar un sistema de caja serio</h2>
       <ul class="check-list">
         <li>M&aacute;s agilidad en caja sin perder control.</li>
         <li>Claridad sobre medios de pago y movimientos.</li>
         <li>Relaci&oacute;n directa con stock y seguimiento.</li>
-        <li>Trazabilidad sobre cada operaci&oacute;n.</li>
+        <li>Historial sobre cada operaci&oacute;n.</li>
       </ul>
     </aside>
   </div>
@@ -55,7 +55,7 @@ require __DIR__ . '/includes/header.php';
 <section class="section" data-reveal>
   <div class="container">
     <span class="section-kicker">Uso real en mostrador</span>
-    <h2>El problema aparece cuando el POS resuelve el cobro y deja todo lo dem&aacute;s afuera</h2>
+    <h2>El problema aparece cuando el sistema de caja resuelve el cobro y deja todo lo dem&aacute;s afuera</h2>
     <div class="feature-grid">
       <article class="feature-card">
         <h3>Cobro sin contexto</h3>
@@ -107,7 +107,7 @@ require __DIR__ . '/includes/header.php';
 <section class="section section-dark" data-reveal>
   <div class="container split-grid">
     <div class="surface-card">
-      <h3>Qu&eacute; valor aporta FLUS como POS</h3>
+      <h3>Qu&eacute; valor aporta FLUS como sistema de caja</h3>
       <ul class="plain-list">
         <li>Venta m&aacute;s &aacute;gil y mejor registrada.</li>
         <li>Caja diaria con m&aacute;s orden y visibilidad.</li>
@@ -119,7 +119,7 @@ require __DIR__ . '/includes/header.php';
     <div class="surface-card">
       <h3>Qu&eacute; conviene mirar despu&eacute;s del cobro</h3>
       <p>
-        Ah&iacute; se ve si el POS sirve de verdad: cuando la operaci&oacute;n sigue bien cerrada y no obliga a reconstruir informaci&oacute;n.
+        Ah&iacute; se ve si el sistema de caja sirve de verdad: cuando la operaci&oacute;n sigue bien cerrada y no obliga a reconstruir informaci&oacute;n.
       </p>
       <ul class="link-list">
         <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Ver c&oacute;mo trabaja el stock</a></li>

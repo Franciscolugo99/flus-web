@@ -1,0 +1,14 @@
+<?php
+// Copiar a legal.local.php y completar con datos confirmados del titular.
+// Este archivo separado no cambia SMTP, Turnstile, GA4 ni la base de datos.
+return [
+    'legal_name' => '',
+    'legal_cuit' => '',
+    'legal_address' => '',
+    'legal_tax_status' => '',
+    'legal_registration' => 'No corresponde',
+    'hosting_provider' => 'Wiroos Internet Hosting',
+    'hosting_country' => '',
+    'form_retention_months' => 24,
+    'analytics_retention_months' => 14,
+];

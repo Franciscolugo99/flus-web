@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 $pageTitle = 'Control de stock para comercios y pymes | FLUS';
-$pageDescription = 'FLUS ayuda a controlar stock, productos, movimientos y disponibilidad dentro del flujo comercial del negocio, con menos incertidumbre y más trazabilidad.';
+$pageDescription = 'FLUS ayuda a controlar stock, productos, movimientos y disponibilidad dentro del flujo comercial del negocio, con menos dudas y un historial de movimientos.';
 $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'Control de stock', 'url' => page_url('control-de-stock.php')],
@@ -15,7 +15,7 @@ $pageSchemas = [
         'operatingSystem' => 'Web',
         'description' => 'Control de stock para comercios y pymes: inventario en tiempo real, movimientos trazables y disponibilidad integrada al punto de venta.',
         'url' => page_url('control-de-stock.php'),
-        'featureList' => 'Control de inventario, Movimientos de stock, Alertas de bajo stock, Trazabilidad, Integración con ventas',
+        'featureList' => 'Control de inventario, Movimientos de stock, Alertas de bajo stock, Historial, Integración con ventas',
     ],
 ];
 require __DIR__ . '/includes/header.php';
@@ -36,7 +36,7 @@ require __DIR__ . '/includes/header.php';
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="control-de-stock probar FLUS">Probar FLUS</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema de caja y ventas</a>
       </div>
     </div>
 
@@ -46,7 +46,7 @@ require __DIR__ . '/includes/header.php';
         <li>Disponibilidad más confiable para vender.</li>
         <li>Movimientos con mejor contexto operativo.</li>
         <li>Menos incertidumbre al reponer.</li>
-        <li>Más trazabilidad para revisar lo que pasó.</li>
+        <li>Un historial para revisar lo que pasó.</li>
       </ul>
     </aside>
   </div>
@@ -95,7 +95,7 @@ require __DIR__ . '/includes/header.php';
         El stock vale más cuando se lo mira dentro del circuito comercial y no como una lista suelta de productos.
       </p>
       <ul class="link-list">
-        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Ver relación con el sistema POS</a></li>
+        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Ver relación con el sistema de caja y ventas</a></li>
         <li><a href="<?= e(site_url('facturacion.php')) ?>">Ver relación con facturación</a></li>
       </ul>
     </div>

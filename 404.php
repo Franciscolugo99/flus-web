@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/bootstrap.php';
 $pageTitle = 'Página no encontrada | FLUS';
 $pageDescription = 'La página que buscás no existe o fue movida. Podés volver al inicio o explorar FLUS desde otra sección.';
+$pageRobots = 'noindex,follow';
 http_response_code(404);
 require __DIR__ . '/includes/header.php';
 ?>
@@ -22,7 +23,7 @@ require __DIR__ . '/includes/header.php';
       <p style="color:rgba(238,247,245,0.6); font-size:0.92rem;">También podés explorar:</p>
       <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:12px;">
         <a class="btn btn-secondary" href="<?= e(site_url('sistema-de-gestion.php')) ?>" style="min-height:40px; font-size:0.88rem;">Sistema</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>" style="min-height:40px; font-size:0.88rem;">POS</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>" style="min-height:40px; font-size:0.88rem;">sistema de caja</a>
         <a class="btn btn-secondary" href="<?= e(site_url('control-de-stock.php')) ?>" style="min-height:40px; font-size:0.88rem;">Stock</a>
         <a class="btn btn-secondary" href="<?= e(site_url()) ?>#precios" style="min-height:40px; font-size:0.88rem;">Precios</a>
       </div>

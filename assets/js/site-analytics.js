@@ -37,7 +37,7 @@
   // se escribe nada. consent.js carga este archivo solo despues de aceptar,
   // pero el guard se mantiene por defensa en profundidad.
   function consentGranted() {
-    return window.FLUSAnalyticsAllowed === true;
+    return window.FLUSAnalyticsAllowed === true && window.FLUSConsent?.granted() === true;
   }
 
   function safeText(value, maxLength = 190) {
@@ -250,7 +250,7 @@
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        if (!entry.isIntersecting) {
+        if (!entry.isIntersecting || !consentGranted()) {
           return;
         }
         observer.disconnect();
@@ -260,7 +260,8 @@
       });
     }, { threshold: 0.35 });
 
-    observer.observe(pricing);
+    // Una seccion completa supera varias pantallas en movil: observar el titulo.
+    observer.observe(pricing.querySelector('h2') || pricing);
   })();
 
   document.addEventListener('click', (event) => {

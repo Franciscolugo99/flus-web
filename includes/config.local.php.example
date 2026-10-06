@@ -72,27 +72,6 @@ return [
     'form_retention_months' => 24,        // Consultas del formulario: meses desde el ultimo contacto
     'analytics_retention_months' => 14,   // Analitica propia: la purga real usa este valor
 
-    // ── Precios de los planes de FLUS Web ───────────────────────
-    // Van aca porque este repositorio es publico y los precios cambian: asi se
-    // actualizan sin tocar el codigo.
-    //
-    // MIENTRAS ESTEN VACIOS NO SE PUBLICA NINGUN NUMERO: la seccion de precios
-    // muestra un texto neutro ("A definir" / "Según operación") y el schema
-    // Offer no declara precios. NO usar 0 ni valores de relleno: se consideran
-    // "sin precio" (ver flus_plan_price_text() en includes/plans.php).
-    //
-    // Formato visible, tal como se quiere mostrar: '$24.900'. El "desde" lo
-    // agrega la UI segun 'price_from' de cada plan.
-    // El schema NO usa este texto: se convierte a valor numerico con
-    // flus_plan_price_value(), porque un schema con "$24.900" es invalido.
-    //
-    // NO agregar "IVA incluido" ni "+ IVA" hasta que la situacion fiscal
-    // comercial este definida.
-    'plans' => [
-        'inicio' => ['price' => '$24.900'],
-        'negocio' => ['price' => '$44.900'],
-        'pro' => ['price' => '$69.900'],
-        // Multi se cotiza: su texto lo define el plan ('Según operación').
-        'multi' => ['price' => ''],
-    ],
+    // Los precios publicos se versionan en includes/plans.php y viajan en el
+    // ZIP. Una clave 'plans' de configuraciones antiguas ya no los reemplaza.
 ];

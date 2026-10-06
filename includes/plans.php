@@ -4,11 +4,11 @@
  *
  * Todos los planes son FLUS Web: no son productos distintos, son la misma
  * plataforma con distinta capacidad. La diferenciacion es por locales, cajas,
- * usuarios, capacidad y nivel de soporte — NO por funciones centrales, que estan
+ * usuarios, capacidad y nivel de soporte — NO por funciones de caja, ventas y stock, que estan
  * presentes desde el plan de entrada.
  *
  * IMPORTANTE (verificado contra la superficie publica del repo):
- *   - Las funciones centrales (caja, ventas, productos, stock, compras,
+ *   - Las funciones de caja, ventas y stock (caja, ventas, productos, stock, compras,
  *     proveedores, clientes) estan documentadas en el sitio publico.
  *   - "Facturacion ARCA / integracion fiscal" NO se anuncia como incluida en
  *     ningun plan: el propio sitio la condiciona a la implementacion acordada
@@ -16,9 +16,8 @@
  *   - Cuenta corriente, precios mayoristas y backups NO tienen evidencia en la
  *     superficie publica: no se anuncian hasta confirmarlos.
  *
- * Los PRECIOS no viven aca: salen de $site['plans'][<id>]['price'] en
- * includes/config.local.php. Mientras no esten definidos, la UI no inventa
- * numeros (ver flus_plan_price_text()).
+ * Precios publicos y capacidades se versionan juntos para que el ZIP publique
+ * la misma oferta probada, sin sobrescribir SMTP ni secretos de config.local.php.
  */
 
 if (!function_exists('flus_web_plans')) {
@@ -38,6 +37,7 @@ if (!function_exists('flus_web_plans')) {
             'inicio' => [
                 'id' => 'inicio',
                 'name' => 'FLUS Inicio',
+                'price' => '$24.900',
                 'tagline' => 'Empezá a ordenar tu negocio.',
                 'audience' => 'Kiosco, almacén o emprendimiento atendido por su dueño. Para quien hoy usa cuaderno, Excel o un sistema muy básico.',
                 'specs' => [
@@ -65,6 +65,7 @@ if (!function_exists('flus_web_plans')) {
             'negocio' => [
                 'id' => 'negocio',
                 'name' => 'FLUS Negocio',
+                'price' => '$34.900',
                 'tagline' => 'Para el comercio que ya tiene movimiento todos los días.',
                 'audience' => 'Comercio con empleados y más de una persona operando. Cuando una sola caja y un solo usuario ya no alcanzan.',
                 'specs' => [
@@ -77,7 +78,7 @@ if (!function_exists('flus_web_plans')) {
                 'price_from' => true,
                 'price_fallback' => 'A definir',
                 'cta' => 'demo',
-                'highlight' => 'Más elegido',
+                'highlight' => 'Recomendado',
                 'capacity' => ['locales' => '1', 'cajas' => 'hasta 2', 'usuarios' => 'hasta 3', 'operacion' => 'Operación con equipo'],
                 'catalog' => 'Hasta ~6.000 productos (orientativo)',
                 'comparison' => [
@@ -92,6 +93,7 @@ if (!function_exists('flus_web_plans')) {
             'pro' => [
                 'id' => 'pro',
                 'name' => 'FLUS Pro',
+                'price' => '$44.900',
                 'tagline' => 'Más cajas, más equipo, más control.',
                 'audience' => 'Comercio con mayor volumen, varias cajas y varios usuarios. Uno o dos locales y necesidad de más control.',
                 'specs' => [
@@ -119,16 +121,17 @@ if (!function_exists('flus_web_plans')) {
             'multi' => [
                 'id' => 'multi',
                 'name' => 'FLUS Multi',
+                'price' => '',
                 'tagline' => 'Cuando tu negocio ya opera en otra escala.',
-                'audience' => 'Varias sucursales, múltiples cajas y una estructura que necesita configuración comercial según la operación.',
+                'audience' => 'Para negocios con varias sucursales, muchas cajas y equipos de trabajo. Armamos la propuesta según lo que necesitás.',
                 'specs' => [
                     'Varias sucursales',
                     'Múltiples cajas y usuarios',
-                    'Gran volumen de catálogo',
-                    'Configuración según operación',
+                    'Muchos productos',
+                    'Preparado según tu negocio',
                 ],
                 'price_from' => false,
-                'price_fallback' => 'Según operación',
+                'price_fallback' => 'A medida',
                 'cta' => 'consulta',
                 'highlight' => null,
                 'capacity' => ['locales' => 'varios', 'cajas' => 'múltiples', 'usuarios' => 'múltiples', 'operacion' => 'A convenir'],
@@ -139,7 +142,7 @@ if (!function_exists('flus_web_plans')) {
                     'usuarios' => 'Múltiples',
                     'operacion' => 'A convenir',
                     'soporte' => 'A convenir',
-                    'crecimiento' => 'Configuración según operación',
+                    'crecimiento' => 'Preparado según tu negocio',
                 ],
             ],
         ];
@@ -156,18 +159,12 @@ if (!function_exists('flus_web_plan')) {
 
 if (!function_exists('flus_plans_have_prices')) {
     /**
-     * ¿Hay algun precio real definido en configuracion?
-     *
-     * Sirve para no publicar precios inventados: si no hay ninguno, la UI usa el
-     * texto neutro de cada plan y el schema Offer no declara precios.
+     * ¿Hay algun precio publico definido en el registro comercial?
      */
     function flus_plans_have_prices(): bool
     {
-        global $site;
-
-        foreach (array_keys(flus_web_plans()) as $id) {
-            $price = trim((string) ($site['plans'][$id]['price'] ?? ''));
-            if ($price !== '') {
+        foreach (flus_web_plans() as $plan) {
+            if (trim((string) ($plan['price'] ?? '')) !== '') {
                 return true;
             }
         }
@@ -177,18 +174,18 @@ if (!function_exists('flus_plans_have_prices')) {
 }
 
 if (!function_exists('flus_plan_price')) {
-    /** Precio configurado de un plan, o '' si todavia no se definio. */
+    /** Precio publico versionado del plan; Multi se cotiza. */
     function flus_plan_price(string $id): string
     {
-        global $site;
-        return trim((string) ($site['plans'][$id]['price'] ?? ''));
+        $plan = flus_web_plan($id);
+        return trim((string) ($plan['price'] ?? ''));
     }
 }
 
 if (!function_exists('flus_plan_price_text')) {
     /**
      * Texto de precio para mostrar. NUNCA inventa un numero: si el plan no tiene
-     * precio configurado, devuelve su texto neutro ("A definir" / "Según
+     * precio definido, devuelve su texto neutro ("A definir" / "Según
      * operación"). Se elimina cualquier simbolo de moneda vacio o "$0".
      */
     function flus_plan_price_text(string $id): string

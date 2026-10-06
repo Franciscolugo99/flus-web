@@ -10,7 +10,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
  * exactamente las visibles en la pagina.
  */
 $pageTitle = 'Sistema de gestión para comercios | FLUS Web y Server';
-$pageDescription = 'Sistema de gestión para comercios con caja POS, ventas, stock, compras y proveedores. Usá FLUS Web desde PC y móvil o implementá FLUS Server en infraestructura propia.';
+$pageDescription = 'Sistema de gestión para comercios: caja, ventas, stock y compras. Usá FLUS por internet o instalado en los equipos de tu negocio.';
 
 // El schema Offer se construye desde el registro de planes.
 // IMPORTANTE: si un plan todavia no tiene precio configurado NO se declara
@@ -43,12 +43,12 @@ foreach (flus_web_plans() as $planId => $plan) {
 
 // Preguntas del schema == preguntas visibles en la HOME (extraidas del markup).
 $faqItems = [
-    ['question' => "¿Cuál es la diferencia entre FLUS Web y FLUS Server?", 'answer' => "FLUS Web está pensado como servicio administrado y accesible desde navegador/PWA. FLUS Server se instala en la infraestructura del cliente y permite una implementación más personalizada."],
-    ['question' => "¿FLUS Web funciona en teléfono y tablet?", 'answer' => "Sí. La interfaz está preparada para PC y uso móvil, incluyendo Android, iPhone y tablet en los flujos principales."],
-    ['question' => "¿Puedo usar lector de código de barras?", 'answer' => "Sí. FLUS contempla lector de códigos y, en la edición Web, también flujos de escaneo con cámara en dispositivos compatibles."],
-    ['question' => "¿La facturación ARCA está incluida?", 'answer' => "Depende de la edición, perfil e implementación contratada. En proyectos Server puede incorporarse como parte del alcance; en Web se define según el perfil comercial del cliente."],
-    ['question' => "¿Puedo sumar más cajas o sucursales?", 'answer' => "Sí. En FLUS Web la propuesta base parte de 1 local y 1 caja, y se puede ampliar. En Server se define la cantidad de puestos al cotizar la instalación."],
-    ['question' => "¿Puedo ver una demo antes de contratar?", 'answer' => "Sí. La demo está pensada para mostrar una operación real: venta, caja, stock, productos y seguimiento desde las pantallas de FLUS."],
+    ['question' => "¿Cuál es la diferencia entre FLUS Web y FLUS Server?", 'answer' => "FLUS Web se usa por internet y nosotros nos encargamos de mantenerlo funcionando. FLUS Server se instala en los equipos de tu negocio y se prepara a medida."],
+    ['question' => "¿FLUS Web funciona en teléfono y tablet?", 'answer' => "Sí. Podés usar las funciones principales desde tu computadora, tablet o celular Android o iPhone."],
+    ['question' => "¿Puedo usar lector de código de barras?", 'answer' => "Sí. Podés usar un lector de códigos de barras. En FLUS Web también podés usar la cámara de un celular compatible."],
+    ['question' => "¿La facturación electrónica está incluida?", 'answer' => "La facturación electrónica con ARCA se confirma y presupuesta antes de contratar. El abono no la incluye automáticamente."],
+    ['question' => "¿Puedo sumar más cajas o sucursales?", 'answer' => "Sí. Elegí un plan de FLUS Web con las cajas y locales que necesitás. Si elegís FLUS Server, acordamos la cantidad de computadoras al preparar la instalación."],
+    ['question' => "¿Puedo probar FLUS antes de contratar?", 'answer' => "Sí. Podés probar las pantallas de venta, caja, stock y productos para conocer el sistema antes de contratar."],
 ];
 
 $pageSchemas = [
@@ -64,7 +64,7 @@ require __DIR__ . '/includes/header.php';
       <div class="flus26-pill"><span></span> FLUS · Gestión comercial 2026</div>
       <h1>Sistema de gestión para comercios.<br><em>Tu negocio bajo control.</em></h1>
       <p class="flus26-hero__lead">
-        Caja, ventas, stock y compras en una misma operación. Empezá rápido con FLUS Web o elegí FLUS Server cuando necesitás infraestructura propia y una implementación más personalizada.
+        Vendé, controlá el stock y registrá tus compras en un solo lugar. Empezá por internet con FLUS Web o elegí una instalación a medida para tu negocio con FLUS Server.
       </p>
       <div class="flus26-hero__actions">
         <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="Hero probar FLUS Web">Probar FLUS Web</a>
@@ -73,7 +73,7 @@ require __DIR__ . '/includes/header.php';
       <div class="flus26-hero__trust" aria-label="Características principales">
         <span>PC + móvil + tablet</span>
         <span>Caja + stock + ventas</span>
-        <span>Implementación acompañada</span>
+        <span>Te ayudamos a empezar</span>
       </div>
     </div>
 
@@ -86,21 +86,21 @@ require __DIR__ . '/includes/header.php';
           <div class="flus26-windowbar"><span></span><span></span><span></span><b>FLUS · Caja</b></div>
           <picture>
             <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
-            <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla real de caja POS de FLUS en computadora" width="1608" height="978" fetchpriority="high" decoding="async">
+            <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla real de caja de ventas de FLUS en computadora" width="1608" height="978" fetchpriority="high" decoding="async">
           </picture>
         </div>
         <div class="flus26-float-card flus26-float-card--server">
           <span class="flus26-server-icon">S</span>
-          <div><b>FLUS Server</b><small>Infraestructura propia</small></div>
+          <div><b>FLUS Server</b><small>En los equipos de tu negocio</small></div>
         </div>
       </div>
 
       <?php /* Mockup decorativo: el texto de adentro es contenido de ejemplo (productos,
               totales, stock) y un lector de pantalla lo anunciaria como si fuera real.
-              La imagen real de la caja POS del stage de escritorio SI queda accesible:
+              La imagen real de la caja de ventas del stage de escritorio SI queda accesible:
               es el unico contenido con informacion verdadera de esta zona. */ ?>
       <div class="flus26-phone-wrap" role="img" aria-label="FLUS Web en el teléfono: caja, stock y resumen de ventas del día">
-        <div class="flus26-phone-badge" aria-hidden="true"><span class="flus26-version-dot"></span><b>FLUS Web</b><small>Móvil + PWA</small></div>
+        <div class="flus26-phone-badge" aria-hidden="true"><span class="flus26-version-dot"></span><b>FLUS Web</b><small>También en tu celular</small></div>
         <div class="flus26-phone" aria-hidden="true">
           <div class="flus26-phone__island"></div>
           <div class="flus26-phone__screen">
@@ -137,7 +137,7 @@ require __DIR__ . '/includes/header.php';
               </div>
 
               <div class="flus26-phone-panel flus26-phone-panel--dash">
-                <div class="flus26-phone__sectiontop"><div><small>RESUMEN DE HOY</small><b>Dashboard</b></div><span>↗</span></div>
+                <div class="flus26-phone__sectiontop"><div><small>RESUMEN DE HOY</small><b>Resumen</b></div><span>↗</span></div>
                 <div class="flus26-phone__salescard"><small>Ventas del día</small><b>$186.420</b><span>↑ 12,4% vs. ayer</span></div>
                 <div class="flus26-phone__bars" aria-hidden="true">
                   <i style="--h:38%"></i><i style="--h:58%"></i><i style="--h:46%"></i><i style="--h:72%"></i><i style="--h:64%"></i><i style="--h:88%"></i><i style="--h:76%"></i>
@@ -153,7 +153,7 @@ require __DIR__ . '/includes/header.php';
         </div>
       </div>
 
-      <div class="flus26-sync-chip"><span>↻</span><div><b>La misma operación</b><small>PC, tablet y teléfono</small></div></div>
+      <div class="flus26-sync-chip"><span>↻</span><div><b>La misma operación</b><small>Computadora, tablet y celular</small></div></div>
     </div>
   </div>
 </section>
@@ -161,9 +161,9 @@ require __DIR__ . '/includes/header.php';
 <section class="flus26-signalbar" aria-label="Resumen del producto">
   <div class="container flus26-signalbar__inner">
     <span><b>2</b> ediciones</span>
-    <span><b>1</b> plataforma de gestión</span>
-    <span><b>Responsive</b> PC, tablet y teléfono</span>
-    <span><b>Demo</b> con operación real</span>
+    <span><b>Todo</b> en un solo lugar</span>
+    <span><b>Tus dispositivos</b> Computadora, tablet y celular</span>
+    <span><b>Probalo</b> antes de decidir</span>
   </div>
 </section>
 
@@ -172,38 +172,24 @@ require __DIR__ . '/includes/header.php';
     <div class="flus26-sectionhead">
       <span class="section-kicker">Versiones</span>
       <h2>¿Qué FLUS le conviene a tu negocio?</h2>
-      <p>No son “planes” del mismo producto. Son dos formas distintas de implementar FLUS según cómo trabaja tu comercio.</p>
+      <p>Elegí cómo querés usar el sistema: por internet o instalado en los equipos de tu negocio. Después elegimos el plan que necesitás.</p>
     </div>
 
     <div class="flus26-edition-grid">
       <article class="flus26-edition flus26-edition--web" id="flus-web">
         <div class="flus26-edition__top">
           <span class="flus26-edition__tag">Recomendado para empezar</span>
-          <span class="flus26-edition__code">WEB / PWA</span>
+          <span class="flus26-edition__code">POR INTERNET</span>
         </div>
         <h3>FLUS Web</h3>
-        <p class="flus26-edition__lead">Tu sistema listo para usar desde navegador, PC, tablet, Android o iPhone, sin montar un servidor dentro del negocio.</p>
-        <div class="flus26-edition__price">
-          <?php if (flus_plan_price('inicio') !== ''): ?>
-            <span>Desde</span>
-            <strong><?= e(flus_plan_price('inicio')) ?></strong>
-            <small>ARS / mes</small>
-          <?php else: ?>
-            <span>Plan de entrada</span>
-            <strong class="is-placeholder"><?= e(flus_plan_price_text('inicio')) ?></strong>
-            <small>Precios en definición</small>
-          <?php endif; ?>
-        </div>
+        <p class="flus26-edition__lead">Entrá por internet desde tu computadora, tablet o celular. Nosotros nos encargamos de mantener el sistema funcionando.</p>
         <ul class="flus26-checks">
-          <li>1 local + 1 caja en la propuesta base</li>
-          <li>Hosting e infraestructura administrada</li>
-          <li>Actualizaciones y soporte incluidos</li>
-          <li>Caja, ventas, productos, stock, compras y proveedores</li>
-          <li>Usuarios, roles, terminales y precios</li>
-          <li>Lector y cámara para códigos de barras</li>
+          <li>Usalo desde computadora, tablet o celular</li>
+          <li>Nos encargamos del sistema y sus actualizaciones</li>
+          <li>Soporte incluido para ayudarte en el día a día</li>
         </ul>
         <div class="flus26-edition__foot">
-          <span>Puesta en marcha según configuración · hosting, soporte y actualizaciones incluidos.</span>
+          <span>Te ayudamos a empezar y te acompañamos en el uso diario.</span>
           <a href="<?= e(site_url('flus-web.php')) ?>" class="flus26-arrowlink" data-track-event="click_contact" data-track-label="Conocer FLUS Web">Conocer FLUS Web <span>→</span></a>
         </div>
       </article>
@@ -211,25 +197,17 @@ require __DIR__ . '/includes/header.php';
       <article class="flus26-edition flus26-edition--server" id="flus-server">
         <div class="flus26-edition__top">
           <span class="flus26-edition__tag">Más control y personalización</span>
-          <span class="flus26-edition__code">SERVER / LOCAL</span>
+          <span class="flus26-edition__code">EN TU NEGOCIO</span>
         </div>
         <h3>FLUS Server</h3>
-        <p class="flus26-edition__lead">Instalación en infraestructura propia para operaciones que necesitan una implementación más completa, control local y adaptación por proyecto.</p>
-        <div class="flus26-edition__price flus26-edition__price--quote">
-          <span>Propuesta según tu operación</span>
-          <strong>Cotización personalizada</strong>
-          <small>Sin precio genérico: se define por puestos, infraestructura y alcance.</small>
-        </div>
+        <p class="flus26-edition__lead">FLUS instalado en los equipos de tu negocio, con una configuración a medida cuando necesitás una forma de trabajo más específica.</p>
         <ul class="flus26-checks">
-          <li>Instalación local o en servidor del cliente</li>
-          <li>Configuración según cantidad de puestos</li>
-          <li>Migración y puesta en marcha según proyecto</li>
-          <li>Gestión comercial completa y módulos avanzados</li>
-          <li>Integraciones fiscales/ARCA según implementación</li>
-          <li>Soporte y actualizaciones adaptados al proyecto</li>
+          <li>Instalación en los equipos de tu negocio</li>
+          <li>Configuración según tus cajas y forma de trabajar</li>
+          <li>Carga de datos, capacitación y soporte acordados con vos</li>
         </ul>
         <div class="flus26-edition__foot">
-          <span>El valor final depende de puestos, infraestructura e integraciones.</span>
+          <span>Revisamos cómo trabajás para preparar la instalación que necesitás.</span>
           <a href="<?= e(site_url('flus-server.php')) ?>" class="flus26-arrowlink" data-track-event="click_contact" data-track-label="Conocer FLUS Server">Conocer FLUS Server <span>→</span></a>
         </div>
       </article>
@@ -244,7 +222,7 @@ require __DIR__ . '/includes/header.php';
         <span class="section-kicker">Elegí mejor</span>
         <h2>¿Qué FLUS necesitás?</h2>
       </div>
-      <p>Marcá lo que más se parece a tu negocio. Es una orientación rápida; después ajustamos la implementación con vos.</p>
+      <p>Contanos cómo querés trabajar y te orientamos sobre la opción más conveniente.</p>
     </div>
 
     <div class="flus26-finder__grid" data-flus-finder>
@@ -252,22 +230,22 @@ require __DIR__ . '/includes/header.php';
         <fieldset class="flus26-choicegroup" data-finder-group="access">
           <legend>1. ¿Cómo querés trabajar?</legend>
           <div class="flus26-choicegroup__options">
-            <button type="button" class="is-selected" data-finder-choice="web">Desde PC, tablet y teléfono</button>
-            <button type="button" data-finder-choice="server">En mi red / servidor propio</button>
+            <button type="button" class="is-selected" data-finder-choice="web">Desde computadora, tablet y celular</button>
+            <button type="button" data-finder-choice="server">En los equipos de mi negocio</button>
           </div>
         </fieldset>
         <fieldset class="flus26-choicegroup" data-finder-group="scale">
           <legend>2. ¿Qué tan compleja es la operación?</legend>
           <div class="flus26-choicegroup__options">
             <button type="button" class="is-selected" data-finder-choice="web">Quiero empezar simple y rápido</button>
-            <button type="button" data-finder-choice="server">Tengo varios puestos o requisitos propios</button>
+            <button type="button" data-finder-choice="server">Necesito una forma de trabajo a medida</button>
           </div>
         </fieldset>
         <fieldset class="flus26-choicegroup" data-finder-group="custom">
           <legend>3. ¿Cuánta personalización necesitás?</legend>
           <div class="flus26-choicegroup__options">
-            <button type="button" class="is-selected" data-finder-choice="web">Configuración estándar del comercio</button>
-            <button type="button" data-finder-choice="server">Migraciones, integraciones o adaptación avanzada</button>
+            <button type="button" class="is-selected" data-finder-choice="web">Quiero empezar con las funciones habituales</button>
+            <button type="button" data-finder-choice="server">Necesito pasar datos o adaptar el sistema</button>
           </div>
         </fieldset>
       </div>
@@ -275,11 +253,11 @@ require __DIR__ . '/includes/header.php';
       <aside class="flus26-finder__result is-web" data-finder-result aria-live="polite">
         <span class="flus26-finder__eyebrow">Nuestra recomendación</span>
         <div class="flus26-finder__resulthead"><span class="flus26-finder__resulticon">W</span><div><small>PARA TU ESCENARIO</small><h3 data-finder-title>FLUS Web</h3></div></div>
-        <p data-finder-copy>Por lo que marcaste, te conviene empezar con la versión Web: rápida de implementar, administrada por FLUS y lista para usar desde distintos dispositivos.</p>
+        <p data-finder-copy>Por lo que marcaste, FLUS Web es una buena opción: empezás por internet desde tu computadora o celular y nosotros nos encargamos del sistema.</p>
         <ul data-finder-benefits>
-          <li>Acceso desde navegador y PWA</li>
-          <li>Infraestructura administrada</li>
-          <li>Desde el plan de entrada, con las funciones centrales incluidas</li>
+          <li>Usalo desde computadora, tablet o celular</li>
+          <li>Nos encargamos de mantenerlo funcionando</li>
+          <li>Caja, ventas y stock desde el primer plan</li>
         </ul>
         <div class="flus26-finder__actions">
           <a class="btn btn-primary" data-finder-primary href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener">Probar FLUS Web</a>
@@ -295,13 +273,13 @@ require __DIR__ . '/includes/header.php';
     <div class="flus26-sectionhead flus26-sectionhead--dark">
       <span class="section-kicker">Producto real</span>
       <h2>Lo que usás todos los días, conectado.</h2>
-      <p>FLUS no es solo una pantalla de caja. La venta alimenta stock, historial, compras, usuarios y control operativo.</p>
+      <p>Cada venta actualiza el stock y queda registrada. Consultá tus productos, compras y ventas desde el mismo sistema.</p>
     </div>
 
     <div class="flus26-feature-grid">
               <article class="flus26-feature">
           <span class="flus26-feature__number">01</span>
-          <h3>Caja POS</h3>
+          <h3>Caja de ventas</h3>
           <p>Venta rápida, ticket, medios de pago, apertura y cierre de caja.</p>
         </article>
               <article class="flus26-feature">
@@ -321,8 +299,8 @@ require __DIR__ . '/includes/header.php';
         </article>
               <article class="flus26-feature">
           <span class="flus26-feature__number">05</span>
-          <h3>Usuarios y terminales</h3>
-          <p>Roles, permisos y operación por caja o puesto de trabajo.</p>
+          <h3>Accesos y cajas</h3>
+          <p>Dale a cada persona el acceso que necesita y organizá quién puede usar cada caja.</p>
         </article>
               <article class="flus26-feature">
           <span class="flus26-feature__number">06</span>
@@ -338,21 +316,21 @@ require __DIR__ . '/includes/header.php';
     <div class="flus26-sectionhead flus26-sectionhead--split flus26-product-tour__head">
       <div>
         <span class="section-kicker">Producto real</span>
-        <h2>Conocé FLUS<br>por dentro.</h2>
+        <h2>Conocé FLUS<br> por dentro.</h2>
       </div>
-      <p>Explorá las pantallas que vas a usar todos los días. Sin maquetas: caja, indicadores, stock y ventas reales del sistema.</p>
+      <p>Mirá las pantallas que vas a usar todos los días para vender, revisar el stock y saber cómo va tu negocio.</p>
     </div>
 
     <div class="flus26-tour">
       <div class="flus26-tour__nav" role="tablist" aria-label="Pantallas de FLUS">
         <button class="flus26-tour__tab is-active" type="button" role="tab" aria-selected="true" aria-controls="flus-tour-caja" data-tour-target="caja">
           <span class="flus26-tour__num">01</span>
-          <span class="flus26-tour__tabcopy"><strong>Caja POS</strong><small>Venta, ticket y cobro en una sola vista.</small></span>
+          <span class="flus26-tour__tabcopy"><strong>Caja</strong><small>Venta, ticket y cobro en una sola vista.</small></span>
           <span class="flus26-tour__arrow" aria-hidden="true">→</span>
         </button>
         <button class="flus26-tour__tab" type="button" role="tab" aria-selected="false" aria-controls="flus-tour-dashboard" data-tour-target="dashboard">
           <span class="flus26-tour__num">02</span>
-          <span class="flus26-tour__tabcopy"><strong>Dashboard</strong><small>Indicadores claros para leer el negocio.</small></span>
+          <span class="flus26-tour__tabcopy"><strong>Resumen</strong><small>Un resumen para saber cómo va tu negocio.</small></span>
           <span class="flus26-tour__arrow" aria-hidden="true">→</span>
         </button>
         <button class="flus26-tour__tab" type="button" role="tab" aria-selected="false" aria-controls="flus-tour-stock" data-tour-target="stock">
@@ -370,21 +348,21 @@ require __DIR__ . '/includes/header.php';
       <div class="flus26-tour__stage">
         <div class="flus26-tour__windowbar">
           <div class="flus26-tour__dots" aria-hidden="true"><i></i><i></i><i></i></div>
-          <strong data-tour-window-title>FLUS · Caja POS</strong>
+          <strong data-tour-window-title>FLUS · Caja</strong>
           <span><i></i> Producto real</span>
         </div>
 
         <div class="flus26-tour__viewport">
-          <figure class="flus26-tour__panel is-active" id="flus-tour-caja" role="tabpanel" data-tour-panel="caja" data-tour-title="FLUS · Caja POS" data-tour-kicker="OPERACIÓN DIARIA" data-tour-caption="Vendé, elegí el medio de pago y cerrá la operación sin cambiar de pantalla.">
+          <figure class="flus26-tour__panel is-active" id="flus-tour-caja" role="tabpanel" data-tour-panel="caja" data-tour-title="FLUS · Caja" data-tour-kicker="OPERACIÓN DIARIA" data-tour-caption="Vendé, elegí el medio de pago y cerrá la operación sin cambiar de pantalla.">
             <picture>
               <source srcset="<?= e(asset_url('img/flus-caja-pos.webp')) ?>" type="image/webp">
-              <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla de Caja POS de FLUS" width="1608" height="978" loading="lazy">
+              <img src="<?= e(asset_url('img/flus-caja-pos.png')) ?>" alt="Pantalla de Caja de ventas de FLUS" width="1608" height="978" loading="lazy">
             </picture>
           </figure>
-          <figure class="flus26-tour__panel" id="flus-tour-dashboard" role="tabpanel" hidden data-tour-panel="dashboard" data-tour-title="FLUS · Dashboard" data-tour-kicker="CONTROL DEL NEGOCIO" data-tour-caption="Ventas, productos y medios de pago resumidos para entender qué está pasando.">
+          <figure class="flus26-tour__panel" id="flus-tour-dashboard" role="tabpanel" hidden data-tour-panel="dashboard" data-tour-title="FLUS · Resumen" data-tour-kicker="CONTROL DEL NEGOCIO" data-tour-caption="Ventas, productos y medios de pago resumidos para entender qué está pasando.">
             <picture>
               <source srcset="<?= e(asset_url('img/Dashboard.webp')) ?>" type="image/webp">
-              <img src="<?= e(asset_url('img/Dashboard.png')) ?>" alt="Dashboard de FLUS" width="1536" height="1024" loading="lazy">
+              <img src="<?= e(asset_url('img/Dashboard.png')) ?>" alt="Resumen de ventas de FLUS" width="1536" height="1024" loading="lazy">
             </picture>
           </figure>
           <figure class="flus26-tour__panel" id="flus-tour-stock" role="tabpanel" hidden data-tour-panel="stock" data-tour-title="FLUS · Stock" data-tour-kicker="INVENTARIO" data-tour-caption="Detectá faltantes y revisá existencias con filtros y alertas en una misma vista.">
@@ -393,7 +371,7 @@ require __DIR__ . '/includes/header.php';
               <img src="<?= e(asset_url('img/Stock.png')) ?>" alt="Control de stock de FLUS" width="1536" height="1024" loading="lazy">
             </picture>
           </figure>
-          <figure class="flus26-tour__panel" id="flus-tour-ventas" role="tabpanel" hidden data-tour-panel="ventas" data-tour-title="FLUS · Ventas" data-tour-kicker="SEGUIMIENTO" data-tour-caption="Consultá operaciones anteriores y mantené trazabilidad de las ventas del comercio.">
+          <figure class="flus26-tour__panel" id="flus-tour-ventas" role="tabpanel" hidden data-tour-panel="ventas" data-tour-title="FLUS · Ventas" data-tour-kicker="SEGUIMIENTO" data-tour-caption="Revisá las ventas anteriores y encontrá el detalle de cada compra.">
             <picture>
               <source srcset="<?= e(asset_url('img/ventas.webp')) ?>" type="image/webp">
               <img src="<?= e(asset_url('img/ventas.png')) ?>" alt="Historial de ventas de FLUS" width="1536" height="1024" loading="lazy">
@@ -403,7 +381,7 @@ require __DIR__ . '/includes/header.php';
 
         <div class="flus26-tour__caption">
           <div><span data-tour-kicker-output>OPERACIÓN DIARIA</span><strong data-tour-caption-output>Vendé, elegí el medio de pago y cerrá la operación sin cambiar de pantalla.</strong></div>
-          <span class="flus26-tour__hint">Elegí un módulo para explorarlo</span>
+          <span class="flus26-tour__hint">Elegí una pantalla para conocerla</span>
         </div>
       </div>
     </div>
@@ -415,7 +393,7 @@ require __DIR__ . '/includes/header.php';
     <div class="flus26-sectionhead">
       <span class="section-kicker">Comparación</span>
       <h2>Web o Server, sin vueltas.</h2>
-      <p>La diferencia principal no es la caja: es dónde vive el sistema, cómo se administra y cuánto necesita personalizarse.</p>
+      <p>Las dos opciones te ayudan a vender y llevar el control del negocio. La diferencia está en cómo lo usás y quién se encarga de los equipos.</p>
     </div>
 
     <div class="flus26-tablewrap" role="region" aria-label="Comparación entre FLUS Web y FLUS Server" tabindex="0">
@@ -424,13 +402,13 @@ require __DIR__ . '/includes/header.php';
           <tr><th>Característica</th><th>FLUS Web</th><th>FLUS Server</th></tr>
         </thead>
         <tbody>
-          <tr><th>Acceso</th><td>Navegador + PWA</td><td>Red / infraestructura propia</td></tr>
-          <tr><th>Dispositivos</th><td>PC, tablet, Android, iPhone</td><td>Puestos definidos en la instalación</td></tr>
-          <tr><th>Infraestructura</th><td>Administrada por FLUS</td><td>Del cliente</td></tr>
-          <tr><th>Actualizaciones</th><td>Incluidas en el abono</td><td>Según soporte/proyecto</td></tr>
-          <tr><th>Implementación</th><td>Rápida y estandarizada por perfil</td><td>Más personalizada</td></tr>
-          <tr><th>Integraciones fiscales</th><td>Según edición/perfil contratado</td><td>Según implementación requerida</td></tr>
-          <tr><th>Ideal para</th><td>Comercios que quieren empezar rápido</td><td>Operaciones con requisitos propios</td></tr>
+          <tr><th>Acceso</th><td>Por internet</td><td>En los equipos de tu negocio</td></tr>
+          <tr><th>Dispositivos</th><td>PC, tablet, Android, iPhone</td><td>Computadoras acordadas para tu negocio</td></tr>
+          <tr><th>¿Quién mantiene el sistema?</th><td>Nos encargamos nosotros</td><td>Se acuerda para tu instalación</td></tr>
+          <tr><th>Actualizaciones</th><td>Incluidas en el abono</td><td>Acordadas para tu instalación</td></tr>
+          <tr><th>Cómo empezás</th><td>Con ayuda de FLUS</td><td>Con una instalación a medida</td></tr>
+          <tr><th>Facturación electrónica</th><td>Se confirma antes de contratar</td><td>Se confirma antes de contratar</td></tr>
+          <tr><th>Ideal para</th><td>Comercios que quieren empezar rápido</td><td>Negocios que necesitan una instalación a medida</td></tr>
         </tbody>
       </table>
     </div>
@@ -442,7 +420,7 @@ require __DIR__ . '/includes/header.php';
     <div class="flus26-sectionhead flus26-sectionhead--dark">
       <span class="section-kicker">Planes</span>
       <h2>Empezá con lo que necesitás hoy. FLUS crece con tu negocio.</h2>
-      <p>Todos los planes son FLUS Web: la misma plataforma con distinta capacidad. Las funciones centrales están desde el primer plan; la diferencia está en cuántos locales, cajas y usuarios necesitás.</p>
+      <p>Todos los planes incluyen caja, ventas, stock y compras. Elegí según cuántos locales, cajas y personas van a usar el sistema.</p>
     </div>
 
     <div class="flus26-price-grid flus26-price-grid--plans">
@@ -462,9 +440,9 @@ require __DIR__ . '/includes/header.php';
         <p class="flus26-price-card__tagline"><?= e($plan['tagline']) ?></p>
 
         <div class="flus26-price-card__amount">
-          <?php if ($hasPrice && $plan['price_from']): ?><small>Desde</small><?php endif; ?>
-          <strong class="<?= $hasPrice ? '' : 'is-placeholder' ?>"><?= e($priceText) ?></strong>
-          <?php if ($hasPrice): ?><span>ARS / mes</span><?php endif; ?>
+          <?php if ($hasPrice && $plan['price_from']): ?><small>Desde</small><?php elseif (!$hasPrice): ?><small>Según tu negocio</small><?php endif; ?>
+          <strong class="<?= $hasPrice ? '' : 'is-quote' ?>"><?= e($priceText) ?></strong>
+          <?php if ($hasPrice): ?><span>por mes</span><?php endif; ?>
         </div>
 
         <p class="flus26-price-card__audience"><?= e($plan['audience']) ?></p>
@@ -495,6 +473,11 @@ require __DIR__ . '/includes/header.php';
       </p>
     <?php endif; ?>
 
+    <p class="flus26-price-note flus26-price-note--terms">
+      Abonos mensuales en pesos argentinos. La configuración inicial, el traspaso de datos y la
+      facturación electrónica con ARCA se acuerdan y presupuestan antes de contratar.
+    </p>
+
     <div class="flus26-compare">
       <h3 class="flus26-compare__title">Comparar todos los planes</h3>
       <div class="flus26-tablewrap" role="region" aria-label="Comparación de los planes de FLUS Web" tabindex="0">
@@ -512,7 +495,7 @@ require __DIR__ . '/includes/header.php';
             <?php
             $rows = [
                 'locales' => 'Locales',
-                'cajas' => 'Cajas / puestos',
+                'cajas' => 'Cajas de cobro',
                 'usuarios' => 'Usuarios',
                 'operacion' => 'Tipo de operación',
                 'soporte' => 'Soporte',
@@ -533,15 +516,15 @@ require __DIR__ . '/includes/header.php';
               <?php endforeach; ?>
             </tr>
             <tr>
-              <th scope="row">Funciones centrales</th>
+              <th scope="row">Caja, ventas y stock</th>
               <?php foreach (flus_web_plans() as $plan): ?>
-                <td>Incluidas</td>
+                <td>Sí</td>
               <?php endforeach; ?>
             </tr>
             <tr>
-              <th scope="row">Facturación / ARCA</th>
+              <th scope="row">Facturación electrónica</th>
               <?php foreach (flus_web_plans() as $plan): ?>
-                <td>Según implementación</td>
+                <td>Se acuerda antes de contratar</td>
               <?php endforeach; ?>
             </tr>
             <tr>
@@ -554,15 +537,15 @@ require __DIR__ . '/includes/header.php';
         </table>
       </div>
       <p class="flus26-compare__foot">
-        La cantidad de productos es una <b>orientación de catálogo</b>, no un límite del sistema:
-        se puede ampliar sin cambiar de plan. Lo que define el plan son los locales, las cajas y
-        los usuarios. Las ventas no tienen tope en ningún plan.
+        Las cantidades de productos son orientativas: podés ampliar el catálogo sin cambiar de plan.
+        Los planes se diferencian por la cantidad de locales, cajas y usuarios.
+        Las ventas no tienen tope en ningún plan.
       </p>
     </div>
 
     <div class="flus26-server-note">
-      <h3>¿Necesitás una implementación propia?</h3>
-      <p><b>FLUS Server</b> es otra modalidad, no un plan más: instalación en tu infraestructura, varios puestos, migraciones, integraciones y escenarios especiales.</p>
+      <h3>¿Preferís instalar FLUS en tu negocio?</h3>
+      <p><b>FLUS Server</b> se instala en los equipos de tu negocio. Si necesitás una forma de trabajo a medida, contanos tu caso y te preparamos una propuesta.</p>
       <a class="btn btn-secondary" href="<?= e(site_url('flus-server.php')) ?>" data-track-event="pricing_plan_click" data-track-plan="server" data-track-label="Plan FLUS Server">Consultar FLUS Server</a>
     </div>
   </div>
@@ -573,12 +556,12 @@ require __DIR__ . '/includes/header.php';
     <div class="flus26-sectionhead">
       <span class="section-kicker">Puesta en marcha</span>
       <h2>De la consulta a la primera venta.</h2>
-      <p>No te entregamos un sistema vacío y te dejamos solo. La implementación se arma alrededor de cómo trabaja tu comercio.</p>
+      <p>Te ayudamos a preparar el sistema y a dar los primeros pasos según cómo trabaja tu comercio.</p>
     </div>
     <div class="flus26-onboarding__grid">
       <article><span>01</span><h3>Nos contás tu operación</h3><p>Cajas, productos, medios de pago, stock, usuarios y qué necesitás resolver.</p></article>
-      <article><span>02</span><h3>Elegimos Web o Server</h3><p>Te recomendamos la versión que tenga sentido hoy, sin sobredimensionar el proyecto.</p></article>
-      <article><span>03</span><h3>Configuramos FLUS</h3><p>Preparamos la base, parámetros, accesos y carga o migración inicial según alcance.</p></article>
+      <article><span>02</span><h3>Elegimos Web o Server</h3><p>Elegimos la opción que mejor se adapta a tu negocio.</p></article>
+      <article><span>03</span><h3>Configuramos FLUS</h3><p>Preparamos los accesos, la configuración y la carga de tus productos según lo acordado.</p></article>
       <article><span>04</span><h3>Empezás a operar</h3><p>Probamos el flujo real y te acompañamos en la puesta en marcha.</p></article>
     </div>
   </div>
@@ -606,12 +589,12 @@ require __DIR__ . '/includes/header.php';
       <h2>Lo importante antes de elegir.</h2>
     </div>
     <div class="flus26-faq-grid">
-      <details open><summary>¿Cuál es la diferencia entre FLUS Web y FLUS Server?</summary><p>FLUS Web está pensado como servicio administrado y accesible desde navegador/PWA. FLUS Server se instala en la infraestructura del cliente y permite una implementación más personalizada.</p></details>
-      <details><summary>¿FLUS Web funciona en teléfono y tablet?</summary><p>Sí. La interfaz está preparada para PC y uso móvil, incluyendo Android, iPhone y tablet en los flujos principales.</p></details>
-      <details><summary>¿Puedo usar lector de código de barras?</summary><p>Sí. FLUS contempla lector de códigos y, en la edición Web, también flujos de escaneo con cámara en dispositivos compatibles.</p></details>
-      <details><summary>¿La facturación ARCA está incluida?</summary><p>Depende de la edición, perfil e implementación contratada. En proyectos Server puede incorporarse como parte del alcance; en Web se define según el perfil comercial del cliente.</p></details>
-      <details><summary>¿Puedo sumar más cajas o sucursales?</summary><p>Sí. En FLUS Web la propuesta base parte de 1 local y 1 caja, y se puede ampliar. En Server se define la cantidad de puestos al cotizar la instalación.</p></details>
-      <details><summary>¿Puedo ver una demo antes de contratar?</summary><p>Sí. La demo está pensada para mostrar una operación real: venta, caja, stock, productos y seguimiento desde las pantallas de FLUS.</p></details>
+      <details open><summary>¿Cuál es la diferencia entre FLUS Web y FLUS Server?</summary><p>FLUS Web se usa por internet y nosotros nos encargamos de mantenerlo funcionando. FLUS Server se instala en los equipos de tu negocio y se prepara a medida.</p></details>
+      <details><summary>¿FLUS Web funciona en teléfono y tablet?</summary><p>Sí. Podés usar las funciones principales desde tu computadora, tablet o celular Android o iPhone.</p></details>
+      <details><summary>¿Puedo usar lector de código de barras?</summary><p>Sí. Podés usar un lector de códigos de barras. En FLUS Web también podés usar la cámara de un celular compatible.</p></details>
+      <details><summary>¿La facturación electrónica está incluida?</summary><p>La facturación electrónica con ARCA se confirma y presupuesta antes de contratar. El abono no la incluye automáticamente.</p></details>
+      <details><summary>¿Puedo sumar más cajas o sucursales?</summary><p>Sí. Elegí un plan de FLUS Web con las cajas y locales que necesitás. Si elegís FLUS Server, acordamos la cantidad de computadoras al preparar la instalación.</p></details>
+      <details><summary>¿Puedo probar FLUS antes de contratar?</summary><p>Sí. Podés probar las pantallas de venta, caja, stock y productos para conocer el sistema antes de contratar.</p></details>
     </div>
   </div>
 </section>
@@ -620,11 +603,11 @@ require __DIR__ . '/includes/header.php';
   <div class="container flus26-cta__inner">
     <div>
       <span>¿WEB O SERVER?</span>
-      <h2>Probá FLUS primero. Después elegimos la implementación.</h2>
-      <p>Podés entrar a la demo de FLUS Web o contarnos cómo trabajás para que te recomendemos la edición adecuada.</p>
+      <h2>Probá FLUS y contanos cómo es tu negocio.</h2>
+      <p>Probá cómo se usa el sistema o hablá con nosotros para elegir la opción que más te conviene.</p>
     </div>
     <div class="flus26-cta__actions">
-      <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="CTA final demo">Abrir demo de FLUS Web</a>
+      <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php'))) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="CTA final demo">Probar FLUS Web</a>
               <a class="btn btn-secondary" href="<?= e(whatsapp_url("Hola, quiero saber si me conviene FLUS Web o FLUS Server.")) ?>" target="_blank" rel="noopener" data-track-event="click_whatsapp" data-track-label="CTA final WhatsApp">Hablar por WhatsApp</a>
           </div>
   </div>

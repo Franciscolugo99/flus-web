@@ -2153,12 +2153,14 @@ body.nav-open .nav-toggle span:nth-child(4) {
   box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4), 0 2px 6px rgba(0,0,0,0.15);
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
   opacity: 0;
+  visibility: hidden;
   transform: translateY(12px) scale(0.96);
   pointer-events: none;
 }
 
 .whatsapp-fab.is-visible {
   opacity: 1;
+  visibility: visible;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
@@ -2187,11 +2189,17 @@ body.nav-open .nav-toggle span:nth-child(4) {
   white-space: nowrap;
 }
 
+@media (max-width: 1399px) {
+  .whatsapp-fab { width: 52px; padding: 0; justify-content: center; }
+  .whatsapp-fab__label { display: none; }
+}
+
 @media (max-width: 480px) {
   .whatsapp-fab {
     bottom: 16px;
     right: 16px;
-    padding: 0 14px;
+    width: 48px;
+    padding: 0;
     height: 48px;
     font-size: 0.85rem;
   }
@@ -2570,11 +2578,17 @@ body.nav-open .nav-toggle span:nth-child(4) {
    ══════════════════════════════════════════════ */
 
 [data-reveal] {
-  opacity: 0;
-  transform: translateY(28px);
+  opacity: 1;
+  transform: none;
   transition:
     opacity 0.62s ease,
     transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Solo ocultar cuando el observer ya pudo inicializarse. Sin JS se lee todo. */
+[data-reveal].reveal-ready:not(.is-revealed) {
+  opacity: 0;
+  transform: translateY(28px);
 }
 
 [data-reveal].is-revealed {
@@ -2613,7 +2627,7 @@ body.nav-open .nav-toggle span:nth-child(4) {
 
 /* No reveal animation if user prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal] {
+  [data-reveal], [data-reveal].reveal-ready:not(.is-revealed) {
     opacity: 1;
     transform: none;
     transition: none;
@@ -3631,11 +3645,11 @@ h1, h2, h3, .brand-name {
 
 /* ── Contraste: números de módulo (antes 2.54:1) ───────────── */
 .module-card__num,
-.flus26-edition__code,
+.flus26-edition:not(.flus26-edition--server) .flus26-edition__code,
 .flus26-tour__num {
   color: #5b4a72 !important;
 }
-.flus26-edition__code,
+.flus26-edition:not(.flus26-edition--server) .flus26-edition__code,
 .flus26-tour__num {
   color: #6a5f79 !important;
 }
@@ -3809,18 +3823,15 @@ body.has-consent-banner .whatsapp-fab {
     flex-direction: column;
     align-items: stretch;
   }
+  .consent-banner__text {
+    flex: 0 1 auto;
+  }
   .consent-banner__actions {
     flex-direction: column-reverse;
   }
   .consent-banner__actions .btn {
     width: 100%;
     justify-content: center;
-  }
-}
-/* Cuando el banner está visible, dejamos aire para que no tape el pie. */
-@media (max-width: 640px) {
-  body.has-consent-banner .whatsapp-fab {
-    bottom: 172px;
   }
 }
 
@@ -3896,5 +3907,3 @@ body.has-consent-banner .whatsapp-fab {
   color: #2f2a36;
   background: #faf9f4;
 }
-
-

@@ -81,6 +81,9 @@ ErrorDocument 404 /404.php
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # Los helpers y perfiles locales solo se incluyen desde PHP.
+  RewriteRule ^includes(?:/|$) - [F,L,NC]
+
   # No tocar hosts locales de desarrollo.
   RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|10\.[0-9.]+|192\.168\.[0-9.]+|172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9.]+)(:\d+)?$ [NC]
 
@@ -89,6 +92,7 @@ ErrorDocument 404 /404.php
   RewriteRule ^ https://flus.com.ar%{REQUEST_URI} [L,R=301]
 
   # Caso 2: sin www pero por HTTP -> HTTPS.
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|10\.[0-9.]+|192\.168\.[0-9.]+|172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9.]+)(:\d+)?$ [NC]
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
   RewriteRule ^ https://flus.com.ar%{REQUEST_URI} [L,R=301]

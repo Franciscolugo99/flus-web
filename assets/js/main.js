@@ -6,7 +6,8 @@ const nav = document.querySelector('.nav');
 const body = document.body;
 const header = document.getElementById('site-header');
 
-function closeNav() {
+function closeNav(restoreFocus = false) {
+  const wasOpen = body.classList.contains('nav-open');
   body.classList.remove('nav-open');
   if (toggle) {
     toggle.setAttribute('aria-expanded', 'false');
@@ -18,6 +19,7 @@ function closeNav() {
     const trigger = dropdown.querySelector('.nav-dropdown__trigger');
     if (trigger) trigger.setAttribute('aria-expanded', 'false');
   });
+  if (restoreFocus && wasOpen && toggle) toggle.focus();
 }
 
 if (toggle && navPanel) {
@@ -51,7 +53,7 @@ if (toggle && navPanel) {
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-      closeNav();
+      closeNav(true);
     }
   });
 }
@@ -145,11 +147,43 @@ if (toggle && navPanel) {
 const fab = document.getElementById('whatsapp-fab');
 
 if (fab) {
-  const onFabScroll = () => {
-    fab.classList.toggle('is-visible', window.scrollY > 300);
+  // Los enlaces de contacto de estas secciones siguen disponibles al ocultar
+  // el flotante. No se mueve el foco si alguien ya lo está usando con teclado.
+  const regions = Array.from(document.querySelectorAll('#precios, .site-footer, .flus26-cta'));
+  const visibleRegions = new Set();
+  const observerSupported = 'IntersectionObserver' in window;
+  let frame = null;
+  const updateFab = () => {
+    frame = null;
+    const readingContactSection = observerSupported
+      ? visibleRegions.size > 0
+      : regions.some((region) => {
+        const rect = region.getBoundingClientRect();
+        return rect.bottom > 0 && rect.top < window.innerHeight;
+      });
+    const hasFocus = document.activeElement === fab;
+    const visible = hasFocus || (window.scrollY > 300 && !readingContactSection);
+    fab.classList.toggle('is-visible', visible);
+    fab.setAttribute('aria-hidden', String(!visible));
+    fab.tabIndex = visible ? 0 : -1;
   };
-  window.addEventListener('scroll', onFabScroll, { passive: true });
-  onFabScroll();
+  const scheduleFab = () => {
+    if (frame === null) frame = window.requestAnimationFrame(updateFab);
+  };
+  if (observerSupported) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) visibleRegions.add(entry.target);
+        else visibleRegions.delete(entry.target);
+      });
+      scheduleFab();
+    });
+    regions.forEach((region) => observer.observe(region));
+  }
+  window.addEventListener('scroll', scheduleFab, { passive: true });
+  window.addEventListener('resize', scheduleFab, { passive: true });
+  fab.addEventListener('blur', scheduleFab);
+  updateFab();
 }
 
 if (header) {
@@ -772,7 +806,14 @@ moduleMarquees.forEach((marquee) => {
     }
   );
 
-  targets.forEach((el) => observer.observe(el));
+  try {
+    targets.forEach((el) => {
+      observer.observe(el);
+      el.classList.add('reveal-ready');
+    });
+  } catch (error) {
+    targets.forEach((el) => el.classList.add('is-revealed'));
+  }
 })();
 
 /* FLUS V4 — edition finder */
@@ -812,9 +853,9 @@ moduleMarquees.forEach((marquee) => {
     if (isServer) {
       icon.textContent = 'S';
       title.textContent = 'FLUS Server';
-      copy.textContent = 'Por lo que marcaste, tu operación parece necesitar una implementación más personalizada, con infraestructura propia, más puestos o integraciones específicas.';
-      benefits.innerHTML = '<li>Implementación según puestos y operación</li><li>Infraestructura propia o del cliente</li><li>Cotización personalizada según alcance</li>';
-      primary.textContent = 'Cotizar FLUS Server';
+      copy.textContent = 'Por lo que marcaste, conviene revisar una instalación en los equipos de tu negocio y preparar el sistema según lo que necesitás.';
+      benefits.innerHTML = '<li>Instalación en los equipos de tu negocio</li><li>Configuración según tu forma de trabajar</li><li>Te ayudamos a pasar tus datos</li>';
+      primary.textContent = 'Consultar FLUS Server';
       primary.setAttribute('href', whatsappUrl);
       primary.setAttribute('target', '_blank');
       primary.setAttribute('rel', 'noopener');
@@ -825,8 +866,8 @@ moduleMarquees.forEach((marquee) => {
     } else {
       icon.textContent = 'W';
       title.textContent = 'FLUS Web';
-      copy.textContent = 'Por lo que marcaste, te conviene empezar con la versión Web: rápida de implementar, administrada por FLUS y lista para usar desde distintos dispositivos.';
-      benefits.innerHTML = '<li>Acceso desde navegador y PWA</li><li>Infraestructura administrada</li><li>Funciones centrales desde el plan de entrada</li>';
+      copy.textContent = 'Por lo que marcaste, FLUS Web es una buena opción: empezás por internet desde tu computadora o celular y nosotros nos encargamos del sistema.';
+      benefits.innerHTML = '<li>Usalo desde computadora, tablet o celular</li><li>Nos encargamos de mantenerlo funcionando</li><li>Caja, ventas y stock desde el primer plan</li>';
       primary.textContent = 'Probar FLUS Web';
       primary.setAttribute('href', webDemoUrl);
       primary.setAttribute('target', '_blank');

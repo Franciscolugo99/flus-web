@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 $pageTitle = 'Sistema de gestión comercial para comercios y pymes | FLUS';
-$pageDescription = 'Conocé FLUS como sistema de gestión comercial para ventas, stock, caja, clientes y facturación, pensado para ordenar la operación diaria con más control y trazabilidad.';
+$pageDescription = 'Conocé FLUS como sistema de gestión comercial para ventas, stock, caja, clientes y facturación, pensado para ordenar la operación diaria con más control y un historial claro.';
 $pageBreadcrumbs = [
     ['name' => 'Inicio', 'url' => page_url()],
     ['name' => 'Sistema de gestión', 'url' => page_url('sistema-de-gestion.php')],
@@ -36,7 +36,7 @@ require __DIR__ . '/includes/header.php';
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="sistema-de-gestion probar FLUS">Probar FLUS</a>
-        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema POS</a>
+        <a class="btn btn-secondary" href="<?= e(site_url('sistema-pos.php')) ?>">Ver sistema de caja y ventas</a>
       </div>
     </div>
 
@@ -95,7 +95,7 @@ require __DIR__ . '/includes/header.php';
         La conversación tiene más sentido cuando se mira cómo se conecta el flujo completo y no solo un módulo suelto.
       </p>
       <ul class="link-list">
-        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Profundizar en el sistema POS</a></li>
+        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Profundizar en el sistema de caja y ventas</a></li>
         <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Ver control de stock</a></li>
         <li><a href="<?= e(site_url('facturacion.php')) ?>">Ver facturación</a></li>
       </ul>

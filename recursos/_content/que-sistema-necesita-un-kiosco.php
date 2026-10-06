@@ -27,7 +27,7 @@
 
 <h2 id="movil">5. Poder mirar y operar desde otros dispositivos</h2>
 <p>El dueño no siempre está sentado frente a la caja. Poder consultar stock, movimientos o información comercial desde una notebook o un teléfono es una ventaja importante, especialmente en negocios pequeños donde una misma persona cumple varios roles.</p>
-<p>FLUS Web está orientado justamente a una operación por navegador/PWA, mientras que FLUS Server apunta a escenarios que requieren infraestructura propia y un proyecto más personalizado.</p>
+<p>FLUS Web está orientado justamente a usar el sistema por internet, mientras que FLUS Server apunta a negocios que necesitan instalar el sistema en sus equipos y adaptarlo a su forma de trabajar.</p>
 
 <h2 id="eleccion">Checklist para elegir un sistema para kiosco</h2>
 <ul class="article-checklist">
@@ -40,4 +40,4 @@
 <li>¿Hay soporte cuando aparece un problema operativo?</li>
 <li>¿La facturación fiscal requerida está contemplada en el alcance contratado?</li>
 </ul>
-<div class="article-cta"><h2>FLUS tiene una propuesta específica para kioscos y comercios de mostrador.</h2><p>Podés empezar con FLUS Web y probar la experiencia de caja antes de decidir. Para proyectos con infraestructura propia también existe FLUS Server.</p><div class="article-cta__actions"><a class="btn btn-primary" href="<?= e(site_url('sistema-para-kioscos/')) ?>">Ver FLUS para kioscos</a><a class="btn btn-secondary" href="<?= e((string)$site['demo_url']) ?>" target="_blank" rel="noopener" data-track-event="demo_click" data-track-label="Artículo kiosco CTA">Abrir demo de caja</a></div></div>
+<div class="article-cta"><h2>FLUS tiene una propuesta específica para kioscos y comercios de mostrador.</h2><p>Podés empezar con FLUS Web y probar la experiencia de caja antes de decidir. Para instalaciones en los equipos del negocio también existe FLUS Server.</p><div class="article-cta__actions"><a class="btn btn-primary" href="<?= e(site_url('sistema-para-kioscos/')) ?>">Ver FLUS para kioscos</a><a class="btn btn-secondary" href="<?= e((string)$site['demo_url']) ?>" target="_blank" rel="noopener" data-track-event="demo_click" data-track-label="Artículo kiosco CTA">Abrir demo de caja</a></div></div>

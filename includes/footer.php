@@ -11,7 +11,7 @@
           <span>FLUS</span>
         </a>
         <p class="footer-copy">
-          Dos ediciones para una misma operación: FLUS Web para trabajar desde cualquier dispositivo y FLUS Server para instalaciones locales más completas y personalizadas.
+          Elegí cómo usar FLUS: por internet con FLUS Web o instalado en los equipos de tu negocio con FLUS Server.
         </p>
         <div class="footer-cta-row">
           <a href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="Footer probar FLUS">Probar FLUS</a>
@@ -60,7 +60,7 @@
     </div>
 
     <div class="container footer-bottom">
-      <p>&copy; <?= date('Y') ?> FLUS. Gestión comercial para una operación más ordenada, trazable y profesional.</p>
+      <p>&copy; <?= date('Y') ?> FLUS. Caja, ventas y stock para llevar tu negocio al día.</p>
       <ul class="footer-legal">
         <li><a href="<?= e(site_url('aviso-legal.php')) ?>">Aviso legal</a></li>
         <li><a href="<?= e(site_url('politica-de-privacidad.php')) ?>">Privacidad</a></li>

@@ -13,9 +13,9 @@ $pageSchemas = [
         'name' => 'FLUS — Facturación',
         'applicationCategory' => 'BusinessApplication',
         'operatingSystem' => 'Web',
-        'description' => 'Facturación integrada al flujo comercial: comprobantes generados desde la misma venta, con trazabilidad entre cliente, caja y operación.',
+        'description' => 'Facturación integrada al flujo comercial: comprobantes generados desde la misma venta, con el cliente, la caja y la venta relacionados.',
         'url' => page_url('facturacion.php'),
-        'featureList' => 'Facturación electrónica, Comprobantes integrados, Trazabilidad fiscal, Continuidad operativa',
+        'featureList' => 'Facturación electrónica, Comprobantes integrados, Historial fiscal, Continuidad operativa',
     ],
 ];
 require __DIR__ . '/includes/header.php';
@@ -32,7 +32,7 @@ require __DIR__ . '/includes/header.php';
       <h1>Facturación integrada para que la venta no se corte a mitad de camino</h1>
       <p>
         Cuando la facturación acompaña el mismo circuito comercial, el negocio gana continuidad,
-        reduce pasos manuales y sostiene mejor la trazabilidad de cada operación.
+        reduce pasos manuales y deja un registro más claro de cada venta.
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="<?= e((string)($site['demo_url'] ?? site_url('contacto.php') . '#formulario-contacto')) ?>" target="_blank" rel="noopener" data-track-event="cta_primary_click" data-track-label="facturacion probar FLUS">Probar FLUS</a>
@@ -44,7 +44,7 @@ require __DIR__ . '/includes/header.php';
       <h2>Dónde aporta más orden</h2>
       <ul class="check-list">
         <li>Mayor continuidad entre venta y comprobante.</li>
-        <li>Mejor trazabilidad sobre clientes y operaciones.</li>
+        <li>Un historial más claro de clientes y ventas.</li>
         <li>Menos saltos entre herramientas separadas.</li>
         <li>Más contexto para revisar la gestión comercial.</li>
       </ul>
@@ -62,7 +62,7 @@ require __DIR__ . '/includes/header.php';
         <p>La venta avanza con más continuidad y sin tener que rearmar información en otra herramienta.</p>
       </article>
       <article class="feature-card">
-        <h3>Mejor trazabilidad comercial</h3>
+        <h3>Un historial de tus ventas</h3>
         <p>Cliente, caja, operación y comprobante quedan mejor conectados dentro del mismo contexto.</p>
       </article>
       <article class="feature-card">
@@ -94,7 +94,7 @@ require __DIR__ . '/includes/header.php';
         clientes y seguimiento del negocio.
       </p>
       <ul class="link-list">
-        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Ver relación con el sistema POS</a></li>
+        <li><a href="<?= e(site_url('sistema-pos.php')) ?>">Ver relación con el sistema de caja y ventas</a></li>
         <li><a href="<?= e(site_url('control-de-stock.php')) ?>">Ver relación con stock</a></li>
       </ul>
     </div>
