@@ -1,0 +1,51 @@
+/* Centro de Confianza FLUS: estilos encapsulados, sin alterar el sitio principal. */
+.tc-hero{padding:clamp(68px,9vw,118px) 0 76px;background:radial-gradient(circle at 78% 12%,rgba(145,93,255,.36),transparent 35%),linear-gradient(120deg,#0e0920 0%,#251140 57%,#140d29 100%);color:#fff;overflow:hidden}
+.tc-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(290px,.7fr);gap:clamp(28px,5vw,88px);align-items:center}
+.tc-kicker{display:inline-flex;gap:9px;align-items:center;border:1px solid rgba(222,208,255,.28);border-radius:999px;padding:9px 15px;color:#d9c5ff;letter-spacing:.08em;font-weight:800;font-size:11px;text-transform:uppercase}
+.tc-kicker:before{content:"";width:8px;height:8px;border-radius:50%;background:#b18bff;box-shadow:0 0 0 5px rgba(177,139,255,.13)}
+.tc-hero h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(43px,5.4vw,78px);line-height:.99;letter-spacing:-.06em;margin:22px 0 20px;max-width:850px}
+.tc-hero h1 em{font-style:normal;color:#c7a8ff}
+.tc-hero__lead{font-size:clamp(16px,1.8vw,19px);line-height:1.7;color:#e0d8eb;max-width:700px;margin:0 0 28px}
+.tc-actions{display:flex;flex-wrap:wrap;gap:12px}
+.tc-actions a{display:inline-flex;align-items:center;justify-content:center;padding:13px 20px;border-radius:13px;font-weight:800;text-decoration:none}
+.tc-actions__main{background:#fff;color:#34165d}.tc-actions__sub{border:1px solid rgba(223,208,255,.4);color:#fff}
+.tc-status{border:1px solid rgba(227,208,255,.25);border-radius:27px;padding:28px;background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.035));box-shadow:0 28px 66px rgba(0,0,0,.18)}
+.tc-status__label{color:#c6aafd;font-size:12px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}
+.tc-status h2{font-size:25px;line-height:1.1;color:#fff;margin:16px 0}
+.tc-status p{color:#e3dbea;line-height:1.65;margin:0}
+.tc-status__list{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:11px}
+.tc-status__list li{border-top:1px solid rgba(255,255,255,.14);padding-top:11px;display:flex;gap:12px;color:#eee9f7;font-size:14px}
+.tc-status__list li:before{content:"✓";color:#cbadff;font-weight:900}
+.tc-section{padding:78px 0}.tc-section--soft{background:#f8f5fd}
+.tc-head{max-width:800px;margin-bottom:30px}
+.tc-eyebrow{color:#6e38c7;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:900}
+.tc-head h2{font-family:"Bricolage Grotesque",sans-serif;font-size:clamp(31px,4vw,49px);line-height:1.09;letter-spacing:-.045em;margin:13px 0;color:#241235}
+.tc-head p{line-height:1.7;color:#645a70;margin:0;font-size:16px}
+.tc-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.tc-card{border:1px solid #e8ddf5;border-radius:23px;background:#fff;padding:27px;min-height:265px;display:flex;flex-direction:column;box-shadow:0 12px 28px rgba(54,23,94,.04)}
+.tc-card__icon{height:51px;width:51px;display:grid;place-items:center;border-radius:16px;background:#f2eafa;color:#6832ba;font-size:27px}
+.tc-card h3{font-size:21px;line-height:1.2;color:#231633;margin:19px 0 10px}
+.tc-card p{color:#665d70;line-height:1.65;font-size:14px;margin:0}
+.tc-card__footer{margin-top:auto;padding-top:20px;color:#5e27b0;font-size:13px;font-weight:800}
+.tc-card__footer a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.tc-card__badge{color:#766a84;font-size:12px;font-weight:700}
+.tc-note{border:1px solid #d9c8ee;border-radius:21px;padding:24px 28px;background:linear-gradient(125deg,#fff,#f3edfc);color:#443352;line-height:1.7}
+.tc-note strong{color:#2b1944}
+.tc-split{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.tc-panel{border-radius:24px;padding:30px;background:#201135;color:#f9f5ff}
+.tc-panel:nth-child(2){background:#f3ebfc;border:1px solid #dacbee;color:#311947}
+.tc-panel h3{font-size:24px;line-height:1.15;margin:0 0 12px}
+.tc-panel p{line-height:1.72;margin:0 0 17px;color:inherit;opacity:.82}
+.tc-panel a{font-weight:800;color:inherit;text-underline-offset:4px}
+.tc-legal{padding:62px 0 85px;max-width:900px}
+.tc-legal h1{font-family:"Bricolage Grotesque",sans-serif;font-size:clamp(38px,5vw,60px);line-height:1.08;letter-spacing:-.05em;color:#21112f}
+.tc-legal h2{font-size:24px;margin:37px 0 12px;color:#30164a}
+.tc-legal p,.tc-legal li{line-height:1.75;color:#51465e}
+.tc-legal li{margin:8px 0}
+.tc-legal a{color:#612db6;text-underline-offset:3px}
+.tc-legal__intro{font-size:18px!important}
+.tc-rule{border:1px solid #e3d8f1;border-radius:18px;padding:20px 24px;background:#f8f5fc}
+.tc-meta{font-size:13px;color:#766986}
+@media(max-width:950px){.tc-grid{grid-template-columns:1fr}.tc-status{max-width:650px}.tc-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:630px){.tc-hero{padding:64px 0}.tc-section{padding:55px 0}.tc-cards,.tc-split{grid-template-columns:1fr}.tc-card{min-height:auto}.tc-legal{padding:45px 0 65px}.tc-panel{padding:25px}}
+@media(prefers-reduced-motion:no-preference){.tc-card{transition:transform .2s,box-shadow .2s}.tc-card:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(54,23,94,.10)}}
