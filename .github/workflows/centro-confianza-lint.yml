@@ -1,0 +1,33 @@
+name: Centro de Confianza - PHP lint
+on:
+  push:
+    branches:
+      - feature/flus-centro-confianza-20261020
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar sintaxis PHP
+        run: |
+          php -v
+          for file in             centro-de-confianza.php             flus-bot-eliminar-datos.php             flus-bot-privacidad.php             flus-bot-terminos.php             includes/bot-legal.php             includes/footer.php; do
+            php -l "$file"
+          done
+      - name: Validar sitemap XML
+        run: |
+          python3 -c "import xml.etree.ElementTree as ET; ET.parse('sitemap.xml'); print('sitemap XML OK')"
+      - name: Verificar enlaces locales
+        run: |
+          test -f centro-de-confianza.php
+          test -f flus-bot-eliminar-datos.php
+          test -f flus-bot-privacidad.php
+          test -f flus-bot-terminos.php
+          test -f politica-de-cookies.php
+          test -f politica-de-privacidad.php
+          test -f aviso-legal.php
