@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/legal.php'; ?>
   </main><!-- #main-content -->
 
   <footer class="site-footer">
@@ -39,6 +40,7 @@
           <li><a href="<?= e(site_url('contacto.php')) ?>">Contacto y demo</a></li>
           <li><a href="<?= e(site_url('sistema-de-gestion.php')) ?>">Cómo trabaja FLUS</a></li>
           <li><a href="<?= e(site_url('recursos/')) ?>">Guías para comercios</a></li>
+          <li><a href="<?= e(site_url('centro-de-confianza.php')) ?>">Centro de Confianza</a></li>
           <li><a href="<?= e(site_url('sistema-para-kioscos/')) ?>">FLUS para kioscos</a></li>
         </ul>
       </div>
@@ -62,8 +64,11 @@
     <div class="container footer-bottom">
       <p>&copy; <?= date('Y') ?> FLUS. Caja, ventas y stock para llevar tu negocio al día.</p>
       <ul class="footer-legal">
+        <li><a href="<?= e(site_url('centro-de-confianza.php')) ?>">Centro de Confianza</a></li>
+        <?php if (flus_legal_ready()): ?>
         <li><a href="<?= e(site_url('aviso-legal.php')) ?>">Aviso legal</a></li>
         <li><a href="<?= e(site_url('politica-de-privacidad.php')) ?>">Privacidad</a></li>
+        <?php endif; ?>
         <li><a href="<?= e(site_url('politica-de-cookies.php')) ?>">Cookies</a></li>
         <li><button type="button" class="footer-legal__consent" data-consent-reopen>Preferencias de cookies</button></li>
       </ul>
