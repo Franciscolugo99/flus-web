@@ -1,4 +1,4 @@
-name: Centro de Confianza - PHP lint
+name: Centro de Confianza - validacion sin despliegue
 on:
   push:
     branches:
@@ -9,25 +9,44 @@ permissions:
   contents: read
 
 jobs:
-  syntax:
+  syntax-and-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verificar sintaxis PHP
+      - name: Sintaxis PHP
         run: |
-          php -v
-          for file in             centro-de-confianza.php             flus-bot-eliminar-datos.php             flus-bot-privacidad.php             flus-bot-terminos.php             includes/bot-legal.php             includes/footer.php; do
+          set -euo pipefail
+          for file in centro-de-confianza.php flus-bot-eliminar-datos.php flus-bot-privacidad.php flus-bot-terminos.php includes/bot-legal.php includes/footer.php; do
             php -l "$file"
           done
-      - name: Validar sitemap XML
+      - name: Validar sitemap XML y archivos
         run: |
+          set -euo pipefail
           python3 -c "import xml.etree.ElementTree as ET; ET.parse('sitemap.xml'); print('sitemap XML OK')"
-      - name: Verificar enlaces locales
-        run: |
-          test -f centro-de-confianza.php
-          test -f flus-bot-eliminar-datos.php
-          test -f flus-bot-privacidad.php
-          test -f flus-bot-terminos.php
           test -f politica-de-cookies.php
           test -f politica-de-privacidad.php
           test -f aviso-legal.php
+          test -f assets/css/trust-center.css
+      - name: Smoke HTTP sin datos legales
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:18766 -t . >/tmp/flus-trust-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl --silent --output /dev/null http://127.0.0.1:18766/centro-de-confianza.php; then break; fi
+            sleep 0.5
+          done
+          check_status() {
+            expected="$1"
+            path="$2"
+            actual="$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:18766/$path")"
+            echo "$path: HTTP $actual (esperado $expected)"
+            test "$actual" = "$expected"
+          }
+          check_status 200 centro-de-confianza.php
+          check_status 200 flus-bot-eliminar-datos.php
+          check_status 503 flus-bot-privacidad.php
+          check_status 503 flus-bot-terminos.php
+          check_status 503 politica-de-privacidad.php
+          check_status 503 aviso-legal.php
